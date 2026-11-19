@@ -33,10 +33,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install FFmpeg and thumbnail dependency
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-          npm install --no-save sharp
+        run: npm install --no-save sharp
       - name: Syntax checks
         run: |
           node --check agents/video-format-planner.js
