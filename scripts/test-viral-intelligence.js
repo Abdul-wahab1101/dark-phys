@@ -1,5 +1,9 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const os=require('node:os');
+const path=require('node:path');
+const {spawnSync}=require('node:child_process');
 const {scoreTopic,makeBrief,auditScript,WEIGHTS}=require('../agents/viral-intelligence-engine');
 const {prepareResearchPackage}=require('./viral-intelligence');
 const base={title:'Why people doubt their own memory',audience:'Psychology documentary viewers',language:'en',researchAgeDays:5,
@@ -25,3 +29,28 @@ assert.equal(integrated.approval.autoPublish,false);
 assert.throws(()=>prepareResearchPackage({...research,viralFactors:undefined}),/will not invent scores/);
 console.log('PASS Original Content Studio handoff, bilingual writer prompts and human approval gate');
 console.log('PASS Viral Intelligence: evidence scoring, confidence, briefs, Shorts, script audit and safety gates');
+
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),'dark-phys-viral-'));
+try {
+ const topicFile=path.join(temp,'topic.json'),briefOut=path.join(temp,'brief.json');
+ fs.writeFileSync(topicFile,JSON.stringify({...base,output:briefOut}));
+ const cli=path.join(__dirname,'viral-intelligence.js');
+ const help=spawnSync(process.execPath,[cli,'--help'],{encoding:'utf8'});
+ assert.equal(help.status,0,help.stderr);assert.match(help.stdout,/prepare research-package/);
+ const briefRun=spawnSync(process.execPath,[cli,'brief',topicFile],{encoding:'utf8'});
+ assert.equal(briefRun.status,0,briefRun.stderr);assert.ok(fs.existsSync(briefOut));
+ const briefData=JSON.parse(fs.readFileSync(briefOut,'utf8'));
+ assert.equal(briefData.brief.topic,base.title);assert.equal(briefData.brief.safety.autoPublish,false);
+ const researchFile=path.join(temp,'research.json'),preparedOut=path.join(temp,'prepared.json');
+ fs.writeFileSync(researchFile,JSON.stringify({...research,output:preparedOut}));
+ const prepareRun=spawnSync(process.execPath,[cli,'prepare',researchFile],{encoding:'utf8'});
+ assert.equal(prepareRun.status,0,prepareRun.stderr);assert.ok(fs.existsSync(preparedOut));
+ const prepared=JSON.parse(fs.readFileSync(preparedOut,'utf8'));
+ assert.equal(prepared.approval.autoPublish,false);assert.ok(prepared.writerPrompts['ur-Latn']);
+ const badFile=path.join(temp,'bad.json');
+ fs.writeFileSync(badFile,JSON.stringify({...research,narration:{en:'English only'},output:path.join(temp,'bad-out.json')}));
+ const badRun=spawnSync(process.execPath,[cli,'prepare',badFile],{encoding:'utf8'});
+ assert.notEqual(badRun.status,0);assert.match(badRun.stderr,/Roman Urdu/);assert.ok(!fs.existsSync(path.join(temp,'bad-out.json')));
+} finally { fs.rmSync(temp,{recursive:true,force:true}); }
+console.log('PASS CLI end-to-end: help, brief generation, bilingual prepare, validation failure and safe output');
+
