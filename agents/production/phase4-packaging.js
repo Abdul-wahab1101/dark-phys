@@ -63,6 +63,15 @@ function checkRights(assets=[]){
  });
  return {passed:missing.length===0,errors:missing,assetsReviewed:(assets||[]).length};
 }
+async function requestThumbnailConcepts(endpoint,token,title,subtitle='',fetchImpl=globalThis.fetch){
+ if(!/^https:\/\//i.test(String(endpoint||'')))throw new Error('A deployed HTTPS Worker endpoint is required');
+ if(typeof fetchImpl!=='function')throw new Error('Fetch is unavailable in this Node runtime');
+ const response=await fetchImpl(endpoint.replace(/\\/$/,'')+'/v1/concepts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+String(token||'')},body:JSON.stringify({title,subtitle})});
+ if(!response.ok)throw new Error('Thumbnail Worker returned HTTP '+response.status);
+ const data=await response.json();
+ if(!Array.isArray(data.concepts)||data.concepts.length<2||data.concepts.some(c=>!c.svg||c.width!==1280||c.height!==720))throw new Error('Thumbnail Worker response failed concept validation');
+ return data;
+}
 function sha256(value){return crypto.createHash('sha256').update(value).digest('hex');}
 function canonical(value){return JSON.stringify(value,Object.keys(value||{}).sort());}
 function createApproval(pkg,reviewer,checks={}){
@@ -84,4 +93,4 @@ function verifyApproval(pkg,approval){
 }
 function loadJson(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 function writeJson(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
-module.exports={buildSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256};
+module.exports={buildSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts};
