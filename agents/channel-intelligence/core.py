@@ -49,13 +49,18 @@ def token_set(value: str) -> set[str]:
 def similarity_report(candidate: str, existing: str) -> dict[str, Any]:
     a, b = normalize_text(candidate), normalize_text(existing)
     if not a or not b:
-        return {"ratio": 0.0, "token_overlap": 0.0, "duplicate": False}
+        return {"ratio": 0.0, "token_overlap": 0.0, "trigram_overlap": 0.0, "semantic_proxy": 0.0, "duplicate": False}
     ratio = difflib.SequenceMatcher(None, a, b).ratio()
     ta, tb = token_set(a), token_set(b)
     overlap = len(ta & tb) / max(1, len(ta | tb))
-    # Conservative guard: high phrase similarity OR strong token overlap.
-    duplicate = ratio >= 0.88 or (overlap >= 0.82 and min(len(ta), len(tb)) >= 4)
-    return {"ratio": round(ratio, 4), "token_overlap": round(overlap, 4), "duplicate": duplicate}
+    wa, wb = a.split(), b.split()
+    ga = {" ".join(wa[i:i+3]) for i in range(max(0, len(wa)-2))}
+    gb = {" ".join(wb[i:i+3]) for i in range(max(0, len(wb)-2))}
+    tri = len(ga & gb) / max(1, len(ga | gb))
+    proxy = 0.45 * overlap + 0.35 * tri + 0.20 * ratio
+    duplicate = ratio >= 0.88 or proxy >= 0.58 or (overlap >= 0.82 and min(len(ta), len(tb)) >= 4)
+    return {"ratio": round(ratio, 4), "token_overlap": round(overlap, 4),
+            "trigram_overlap": round(tri, 4), "semantic_proxy": round(proxy, 4), "duplicate": duplicate}
 
 
 def score_topic(factors: dict[str, Any]) -> dict[str, Any]:
@@ -128,6 +133,7 @@ class ChannelIntelligence:
               score_json TEXT,
               research_json TEXT NOT NULL DEFAULT '{}',
               script_hash TEXT,
+              script_text TEXT,
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL
             );
@@ -145,6 +151,9 @@ class ChannelIntelligence:
             );
             CREATE INDEX IF NOT EXISTS idx_evidence_topic ON research_evidence(topic_id);
             """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(topics)")}
+            if "script_text" not in columns:
+                db.execute("ALTER TABLE topics ADD COLUMN script_text TEXT")
     
     def _write_default_profiles(self):
         profiles = {
@@ -209,10 +218,13 @@ class ChannelIntelligence:
             title_match = similarity_report(title, row["title"])
             topic_match = similarity_report(candidate, row["core_topic"])
             exact_script = bool(script_hash and row["script_hash"] and script_hash == row["script_hash"])
-            if exact_script or title_match["ratio"] >= threshold or topic_match["ratio"] >= threshold or title_match["duplicate"] or topic_match["duplicate"]:
+            script_match = similarity_report(script, row["script_text"] or "") if script.strip() and row["script_text"] else None
+            script_near_duplicate = bool(script_match and script_match["semantic_proxy"] >= 0.66)
+            if exact_script or script_near_duplicate or title_match["duplicate"] or topic_match["duplicate"]:
                 found.append({"id":row["id"],"title":row["title"],"status":row["status"],
                               "title_similarity":title_match["ratio"],"topic_similarity":topic_match["ratio"],
-                              "exact_script_match":exact_script})
+                              "script_similarity":script_match["semantic_proxy"] if script_match else None,
+                              "exact_script_match":exact_script,"script_near_duplicate":script_near_duplicate})
         return found
 
     def set_script(self, topic_id: int, script: str) -> str:
@@ -221,7 +233,7 @@ class ChannelIntelligence:
             raise ValueError("Script fingerprint requires at least 80 normalized characters")
         digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
         with self._connect() as db:
-            db.execute("UPDATE topics SET script_hash=?,updated_at=? WHERE id=?", (digest, utc_now(), topic_id))
+            db.execute("UPDATE topics SET script_hash=?,script_text=?,updated_at=? WHERE id=?", (digest, normalized, utc_now(), topic_id))
             if db.total_changes == 0:
                 raise KeyError(f"Unknown topic id: {topic_id}")
         return digest
