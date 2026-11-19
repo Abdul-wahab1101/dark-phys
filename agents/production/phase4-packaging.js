@@ -14,6 +14,13 @@ function buildSeo(input={}){
  const tags=[...new Set((Array.isArray(input.tags)?input.tags:[]).map(clean).filter(Boolean))].slice(0,30);
  return {title,description,tags,chapters,slug:slug(title),language:clean(input.language||'en'),generatedAt:new Date().toISOString(),humanReviewRequired:true};
 }
+function checkSeo(seo={}){
+ const errors=[];
+ if(clean(seo.title).length<10||clean(seo.title).length>100)errors.push('SEO title must be 10-100 characters');
+ if(clean(seo.description).length<50||clean(seo.description).length>5000)errors.push('SEO description must be 50-5000 characters');
+ if(!Array.isArray(seo.tags)||seo.tags.length===0)errors.push('At least one relevant SEO tag is required');
+ return {passed:errors.length===0,errors};
+}
 function checkChapters(chapters,durationSeconds){
  const errors=[],seen=new Set();let previous=-1;
  if(!Array.isArray(chapters)||chapters.length<3)errors.push('At least 3 chapters are required');
@@ -79,8 +86,10 @@ function createApproval(pkg,reviewer,checks={}){
  if(!clean(reviewer))throw new Error('A human reviewer name is required');
  const rights=checkRights(pkg.rightsLedger||[]);
  const compliance=pkg.compliance||complianceReview(pkg);
+ const seo=checkSeo(pkg.seo||{});
  const chapter=checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0));
  if(!rights.passed)throw new Error('Rights review blocked: '+rights.errors.join('; '));
+ if(!seo.passed)throw new Error('SEO metadata blocked: '+seo.errors.join('; '));
  if(!chapter.passed)throw new Error('Chapter review blocked: '+chapter.errors.join('; '));
  if(checks.guidelines!==true||checks.advertiserSuitability!==true||checks.originality!==true||checks.reusedContent!==true||checks.inauthenticContent!==true||checks.claims!==true||checks.thumbnail!==true||checks.policyFlagsReviewed!==true)
   throw new Error('Every human review confirmation must be true');
@@ -95,4 +104,4 @@ function verifyApproval(pkg,approval){
 }
 function loadJson(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 function writeJson(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
-module.exports={buildSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts};
+module.exports={buildSeo,checkSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts};
