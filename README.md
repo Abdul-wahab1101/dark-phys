@@ -17,6 +17,9 @@ A Pixabay Video API adapter now supports safe-search metadata discovery and expl
 
 This is a sourcing foundation, not yet an automatic scene editor. Each clip still requires human selection and license/restrictions review.
 
+## Phase 3 — Cinematic Production Engine
+Dual Pixabay key support, scene-by-scene real video-footage shortlists, explicit asset/rights approval, FFmpeg moving-footage assembly, voice-led music ducking, and OpenMontage return-queue ingestion are documented in [PHASE-3-CINEMATIC-PRODUCTION.md](PHASE-3-CINEMATIC-PRODUCTION.md). Set PIXABAY_API_KEY and PIXABAY_API_KEY_2 locally. The renderer does not silently choose footage or publish; motion-map/graphics stages still depend on the separate OpenMontage runtime and human review.
+
 ## Phase 2 — Original Content Studio
 The source-traceable content studio builds bilingual documentary draft packages from researcher-supplied evidence and separate English/Roman Urdu narration. It includes claim references, fact-check review status, hooks, long-form structure, retention checkpoints, originality checklist and Shorts plans. See [PHASE-2-ORIGINAL-CONTENT-STUDIO.md](PHASE-2-ORIGINAL-CONTENT-STUDIO.md). Run `node scripts/research-content-studio.js "gaslighting psychology" --region=US --language=en` to collect public research leads, then `node scripts/content-studio.js research-package.json` to create source-bound bilingual writer prompts and review packages. Run `node scripts/test-content-studio.js` for regression tests. This is an offline editorial workflow, not autonomous web research or a finished AI writer; sources and narration must be supplied and verified by a human.
 
