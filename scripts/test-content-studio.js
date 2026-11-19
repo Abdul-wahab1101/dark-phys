@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('fs'), os = require('os'), path = require('path');
-const { validateResearch, factCheck, generatePackage, writePackage } = require('../agents/original-content-studio');
+const { validateResearch, factCheck, buildWriterPrompt, generatePackage, writePackage } = require('../agents/original-content-studio');
 let failed = 0;
 const ok = (v, m) => { console.log((v ? 'PASS ' : 'FAIL ') + m); if (!v) failed++; };
 const base = { topic: 'Why people doubt their own memory', sources: [
@@ -20,11 +20,14 @@ const fc = factCheck(base); ok(fc.summary.total === 2 && fc.summary.unsupported 
 const p = generatePackage(base); ok(p.structure.length === 8, 'creates long-form documentary structure');
 ok(p.scripts.en && p.scripts['ur-Latn'], 'keeps English and Roman Urdu drafts separate');
 ok(p.retentionReview.checkpoints.length === 8, 'creates retention checkpoints');
+ok(buildWriterPrompt(base, 'en').includes('1,250–1,650 words'), 'creates long-form evidence-bound English writer prompt');
+ok(buildWriterPrompt(base, 'ur-Latn').includes('Pakistani Roman Urdu'), 'creates native-style Roman Urdu writer prompt');
 ok(p.shorts.length === 2 && p.shorts.every(s => s.targetDurationSec === 45), 'plans language-specific Shorts from long-form source');
 ok(p.approval.status === 'draft_requires_review', 'keeps human approval gates');
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'darkphys-studio-'));
 const files = writePackage(p, out);
 ok(fs.existsSync(files.package) && fs.existsSync(files.references), 'writes package and source references');
+ok(fs.existsSync(path.join(out, 'writer-prompt-en.md')) && fs.existsSync(path.join(out, 'writer-prompt-roman-urdu.md')), 'exports both language writer prompts');
 fs.rmSync(out, { recursive: true, force: true });
 console.log(failed ? failed + ' failure(s)' : 'ALL CONTENT STUDIO CHECKS PASSED');
 process.exit(failed ? 1 : 0);
