@@ -13,7 +13,7 @@ try{
  assert.equal(en.id,'dark-phys-en');assert.equal(ur.port,3458);assert.equal(listWorkspaces(workspaces).length,2);assert.throws(()=>createWorkspace({id:'duplicate',name:'Duplicate',port:3457,sourceEngine:source,workspaceRoot:workspaces}),/already assigned/);
  const enEngine=en.enginePath,urEngine=ur.enginePath;
  assert(fs.existsSync(path.join(enEngine,'index.js')));assert(fs.existsSync(path.join(enEngine,'node_modules')));
- assert(!fs.existsSync(path.join(enEngine,'.env')));assert(!fs.existsSync(path.join(enEngine,'config','tokens.json')));assert(!fs.existsSync(path.join(enEngine,'data','db.sqlite')));
+ const freshEnv=fs.readFileSync(path.join(enEngine,'.env'),'utf8');assert(freshEnv.includes('PORT=3457'));assert(!freshEnv.includes('SECRET=do-not-copy'));assert(!fs.existsSync(path.join(enEngine,'config','tokens.json')));assert(!fs.existsSync(path.join(enEngine,'data','db.sqlite')));
  assert.notEqual(enEngine,urEngine);assert.equal(fs.readFileSync(path.join(enEngine,'.env'),'utf8').includes('PORT=3457'),true);assert.equal(fs.readFileSync(path.join(urEngine,'.env'),'utf8').includes('PORT=3458'),true);
  assert.equal(slug('../Hello Channel'),'hello-channel');console.log('PASS isolated per-channel workspaces, credentials/data separation, port collision guard');
 }finally{fs.rmSync(root,{recursive:true,force:true});}
