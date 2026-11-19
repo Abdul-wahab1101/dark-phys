@@ -19,8 +19,11 @@ $Parts = $Py.Split('.')
 if ([int]$Parts[0] -lt 3 -or ([int]$Parts[0] -eq 3 -and [int]$Parts[1] -lt 10)) { throw "Python 3.10+ is required." }
 
 $Youtube = Join-Path $Engines "youtube-automation-agent"
+$YoutubeCommit = "e973d515aef90c467da2289144df737a3bd03859"
 if (-not (Test-Path (Join-Path $Youtube ".git"))) {
-  git clone --depth 1 --branch master https://github.com/darkzOGx/youtube-automation-agent.git $Youtube
+  git clone https://github.com/darkzOGx/youtube-automation-agent.git $Youtube
+  git -C $Youtube fetch --depth 1 origin $YoutubeCommit
+  git -C $Youtube checkout --detach $YoutubeCommit
 } else { Write-Host "YouTube agent already cloned; keeping your local changes." }
 Push-Location $Youtube
 try {
@@ -34,8 +37,11 @@ try {
 } finally { Pop-Location }
 
 $OpenMontage = Join-Path $Engines "OpenMontage"
+$OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
 if (-not (Test-Path (Join-Path $OpenMontage ".git"))) {
-  git clone --depth 1 https://github.com/OpenMontageInc/OpenMontage.git $OpenMontage
+  git clone https://github.com/OpenMontageInc/OpenMontage.git $OpenMontage
+  git -C $OpenMontage fetch --depth 1 origin $OpenMontageCommit
+  git -C $OpenMontage checkout --detach $OpenMontageCommit
 } else { Write-Host "OpenMontage already cloned; keeping your local changes." }
 
 Write-Host ""
