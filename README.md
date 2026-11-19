@@ -20,11 +20,12 @@ Dark Phys is the channel workspace for research, scripting, production, review a
 6. Run `.\start-dark-phys.ps1` and open http://localhost:3456.
 
 ## Validation and sample render
-The unified GitHub Actions workflow checks the PowerShell setup/launch scripts on a Windows runner, starts the real Universal Doctor dashboard and verifies its localhost API/token guard, and creates/probes a short H.264/AAC sample MP4. These are hosted-runner checks, not proof that setup has completed on your personal PC. The full upstream engine installation still requires downloading dependencies and configuring your own provider credentials.
+The unified GitHub Actions workflow checks the PowerShell setup/launch scripts on a Windows runner, starts the real Universal Doctor dashboard on Windows and verifies its localhost API/token guard; it also starts the main YouTube automation dashboard in setup-required mode, and creates/probes a short H.264/AAC sample MP4. These are hosted-runner checks, not proof that setup has completed on your personal PC. The full upstream engine installation still requires downloading dependencies and configuring your own provider credentials.
 
 Run the lightweight local checks from the repository root:
 ```powershell
 python scripts/test-dashboard-launch.py
+node scripts/test-main-dashboard-launch.js  # run after upstream engine npm ci
 python agents/universal-doctor/doctor.py selftest
 node scripts/test-openmontage-handoff.js
 ```
