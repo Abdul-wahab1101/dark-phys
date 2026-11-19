@@ -128,6 +128,7 @@ jobs:
           node --check agents/production/audio-mix.js
           node --check agents/production/openmontage-return.js
           node --check scripts/cinematic-production.js
+          node --check scripts/watch-openmontage-return.js
           node scripts/test-phase3-production.js
           node scripts/cinematic-production.js
       - name: Test Original Content Studio
