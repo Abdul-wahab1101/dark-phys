@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {buildSeo,checkSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,requestThumbnailConcepts}=require('../agents/production/phase4-packaging');
-const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documentary about memory and evidence.',tags:['memory','psychology'],chapters:[{time:'00:00',title:'The question'},{time:'02:10',title:'What research shows'},{time:'05:20',title:'Practical takeaway'}]});
+const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documentary about memory, evidence, and the psychology behind everyday decisions.',tags:['memory','psychology'],chapters:[{time:'00:00',title:'The question'},{time:'02:10',title:'What research shows'},{time:'05:20',title:'Practical takeaway'}]});
 assert(seo.title.length>10);assert.equal(seo.tags.length,2);assert.equal(checkSeo(seo).passed,true);assert.equal(checkSeo({title:'bad'}).passed,false);assert.equal(checkChapters(seo.chapters,500).passed,true);
 assert.equal(checkChapters([{time:'00:20',title:'Late start'}],500).passed,false);
 const flagged=complianceReview({title:'How to poison someone'});assert(flagged.flags.length>0);assert.equal(flagged.requiresHumanReview,true);
