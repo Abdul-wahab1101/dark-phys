@@ -1,0 +1,128 @@
+name: Dark Phys CI
+on:
+  push:
+    branches: [integration/dark-phys-final]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: dark-phys-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  video-tools-and-doctor:
+    name: Video tools + Universal Doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install FFmpeg and Python imaging dependency
+        timeout-minutes: 8
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -version
+          python -m pip install --upgrade pip pillow
+      - name: Compile and test native video tools
+        run: |
+          python -m py_compile effects.py keyframes.py tests/test_video_tool_validation.py
+          python tests/test_video_tool_validation.py
+          python effects.py selftest --size 320x180
+          python keyframes.py selftest
+      - name: Install thumbnail renderer dependency
+        run: npm install --no-save sharp
+      - name: Test thumbnail designer and logger
+        run: |
+          node --check agents/thumbnail-designer-agent.js
+          node -e "const {Logger}=require('./utils/logger'); const {ThumbnailDesignerAgent,DESIGN_FAMILIES}=require('./agents/thumbnail-designer-agent'); const a=new ThumbnailDesignerAgent(null,{}); if(!(a.logger instanceof Logger)||DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS logger wiring and '+DESIGN_FAMILIES.length+' design families')"
+          node scripts/test-thumbnail-designer.js
+      - name: Compile Universal Doctor
+        run: python -m compileall -q agents/universal-doctor
+      - name: Doctor unit tests
+        run: python -m unittest discover -s agents/universal-doctor/tests -v
+      - name: Doctor safety and recovery self-test
+        run: python agents/universal-doctor/doctor.py selftest
+      - name: Doctor health and integrity check
+        working-directory: agents/universal-doctor
+        run: |
+          python doctor.py health
+          python -c "from doctor_core.safety import verify_integrity; bad=verify_integrity(); print('integrity:', bad or 'OK'); raise SystemExit(bool(bad))"
+  youtube-automation:
+    name: YouTube automation + quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Checkout pinned YouTube Automation Agent
+        uses: actions/checkout@v4
+        with:
+          repository: darkzOGx/youtube-automation-agent
+          ref: e973d515aef90c467da2289144df737a3bd03859
+          path: engines/youtube-automation-agent
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: engines/youtube-automation-agent/package-lock.json
+      - name: Install upstream dependencies
+        working-directory: engines/youtube-automation-agent
+        run: npm ci
+      - name: Configure bundled FFmpeg
+        working-directory: engines/youtube-automation-agent
+        run: |
+          node -e "const p=require('ffmpeg-static'); if(!p) process.exit(1); require('fs').accessSync(p); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFMPEG_PATH='+p+'\\n'); console.log('Using bundled FFmpeg:', p)"
+      - name: Run upstream regression suite
+        working-directory: engines/youtube-automation-agent
+        run: npm test
+      - name: Install Dark Phys test dependencies
+        run: npm install --no-save sharp ffprobe-static
+      - name: Test video format planner
+        run: node scripts/test-video-planner.js
+      - name: Test final video quality gate
+        run: node scripts/test-quality-check.js
+      - name: Test agent coordination and recovery
+        run: node scripts/test-agent-coordination.js
+  openmontage:
+    name: OpenMontage bridge + real render checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test Dark Phys handoff bridge
+        run: node scripts/test-openmontage-handoff.js
+      - name: Checkout pinned OpenMontage
+        uses: actions/checkout@v4
+        with:
+          repository: OpenMontageInc/OpenMontage
+          ref: 2e003e65fa99a0f329478a2c1cdcf26bc481933a
+          path: engines/OpenMontage
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install FFmpeg and OpenMontage test dependencies
+        working-directory: engines/OpenMontage
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Run FFmpeg vertical-render tests
+        working-directory: engines/OpenMontage
+        run: pytest -q tests/tools/test_video_compose_vertical.py
+      - name: Render Remotion demo
+        working-directory: engines/OpenMontage
+        run: python render_demo.py world-in-numbers
