@@ -50,3 +50,12 @@ No credentials are stored in this repository. Do not describe live publishing or
 - Compared 15 key files (CLI, README, unit tests, engine, repair, safety, monitor, recovery, backup, security, testing, self-test and supporting modules) with the extracted ZIP audit copy: all 15 are byte-identical.
 - Added a dedicated GitHub Actions job for Doctor compile, 20 unit tests, 61-check controlled self-test, self-health and safety-integrity manifest verification.
 - Latest workflow run **44497170679**: Universal Doctor regression job **passed**. Existing video-tool job is still running separately; do not mark the combined validation complete until it passes.
+
+
+## Professional reliability upgrades — integration
+- Audited the pinned upstream main controller and its existing strategy/script/thumbnail/SEO/production/publishing/analytics agent initialization. Kept one top-level controller and one scheduler; no duplicate production agent stack was added.
+- Verified existing Autonomous Channel Operator callback orchestration, GenerationRecoveryService checkpoints for six generation stages, artifact validation/reuse, bounded transient retry/backoff, resume-point calculation, interrupted-job recovery, and operator resume support.
+- Verified shared Winston scoped logging and production progress reporting; existing operator quality review includes a 90-day exact-topic duplicate check.
+- Added `start-dark-phys-lite.ps1`: optional Windows low-resource launcher with 2 GB Node heap cap, two-thread common pools and BelowNormal process priority attempt. Normal launcher unchanged.
+- Added `scripts/test-agent-coordination.js` and CI coverage for the controller/recovery/database/progress/logger wiring.
+- Live recovery after a real Windows crash, actual render throughput on the owner's PC and API/provider failures still require local testing; the structural CI check does not simulate those external services.
