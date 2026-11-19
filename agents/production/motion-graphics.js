@@ -10,7 +10,7 @@ function buildMotionFilters(scenes,options={}){
   const title=String(scene.title||scene.visual||scene.footageQuery||'').trim();
   if(title){
    const y=Math.round(height*.84),x1=Math.round(width*.055),x2=Math.round(width*.07);
-   filters.push("drawbox=x=0:y=h-"+Math.round(height*.19)+":w=w:h="+Math.round(height*.19)+":color=black@0.48:t=fill:enable='between(t,"+start.toFixed(3)+","+end.toFixed(3)+")'");
+   filters.push("drawbox=x=0:y=ih-"+Math.round(height*.19)+":w=iw:h="+Math.round(height*.19)+":color=black@0.48:t=fill:enable='between(t,"+start.toFixed(3)+","+end.toFixed(3)+")'");
    add(start,end,'LowerThird',title,'{\\fad(450,350)\\move('+x1+','+y+','+x2+','+y+',0,450)}');
   }
   for(const overlay of (Array.isArray(scene.overlays)?scene.overlays:[])){
