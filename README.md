@@ -45,3 +45,7 @@ For an older i7 / 8 GB RAM PC, start with the YouTube agent's local slideshow re
 - OpenMontage: AGPL-3.0 — https://github.com/OpenMontageInc/OpenMontage
 
 Each engine is cloned as its own upstream checkout. Keep its license and notices intact; do not remove attribution or imply that Dark Phys owns upstream code.
+
+
+## Professional reliability and lightweight mode
+The upstream single-controller orchestration already provides shared agent services, structured logs, job progress, persistent generation checkpoints, transient-error retries and resume support. Dark Phys adds a structural regression check and a conservative Windows launcher for lower-memory PCs. See [PROFESSIONAL-RELIABILITY-UPGRADES.md](PROFESSIONAL-RELIABILITY-UPGRADES.md). Use `start-dark-phys-lite.ps1` for the 2 GB Node heap profile; use the regular launcher for normal mode.
