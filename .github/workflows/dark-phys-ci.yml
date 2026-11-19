@@ -2,6 +2,8 @@ name: Dark Phys CI
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [integration/dark-phys-final]
   workflow_dispatch:
 concurrency:
   group: dark-phys-ci-${{ github.head_ref || github.ref }}
@@ -35,7 +37,12 @@ jobs:
           python-version: '3.12'
       - name: Validate Windows PowerShell scripts
         shell: pwsh
-        run: ./scripts/test-windows-setup.ps1
+        run: |
+          ./scripts/test-windows-setup.ps1
+          $tokens = $null; $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path './scripts/start-openmontage-bridge.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+          Write-Host 'PASS OpenMontage automatic bridge PowerShell syntax'
       - name: Smoke-test Doctor dashboard on Windows
         run: python scripts/test-dashboard-launch.py
   video-tools-and-doctor:
