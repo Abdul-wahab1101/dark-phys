@@ -5,10 +5,11 @@
 - Beat-based cinematic scene plan with B-roll queries, shot/movement cues, overlays and optional map metadata.
 - Real video-footage discovery with per-scene shortlist. No first-result auto-selection: a human chooses the clip and approves rights.
 - Approved clip download with current-result revalidation and source/creator/license manifest.
-- FFmpeg draft assembly from moving video clips (not still-image slideshows), 1080p/30fps H.264 using the ultrafast preset.
-- Voice/music mix with sidechain music ducking and loudness normalization.
-- OpenMontage return-folder copy into a human review queue, with no overwrites and no publishing.
-- Phase 3 regression tests.
+- FFmpeg draft assembly from moving video clips (not still-image slideshows), with planned per-scene trim timing.
+- Rendered kinetic lower-thirds, animated title fades, scene callouts and schematic route-map cards from scene metadata.
+- Voice processing, sidechain music ducking, loudness normalization and optional timed SFX track (`DARK_PHYS_SFX_FILE`).
+- OpenMontage project handoff brief plus a return-folder watcher that copies completed assets into the review queue without overwrites or publishing.
+- Low-memory render profile: automatic 720p preview on machines with 8 GB RAM or less, 1080p final via `DARK_PHYS_RENDER_QUALITY=final`, ultrafast H.264 and two threads.
 
 ## PowerShell workflow
 Set keys locally:
@@ -33,8 +34,11 @@ For automatic local return-folder pickup while OpenMontage is running:
 Keep this watcher running in a second terminal; it copies newly returned files into the review queue without publishing.
 Files are copied to uploads/review-queue/openmontage-return. Existing files are never overwritten. Publishing remains disabled.
 
-## Motion graphics and maps — honest boundary
-Scene plans preserve overlay and map metadata for OpenMontage stage execution. The current FFmpeg fallback assembles footage and mixes audio; it does not yet render a complete animated-map or kinetic-typography package itself. Use the map/motion-graphics capable OpenMontage stages and review the returned render. Do not mistake a scene brief for a rendered animation.
+## Motion graphics and maps
+The FFmpeg renderer applies animated lower-thirds, fade/slide title treatments, timed callouts and schematic route-map cards when a scene includes at least two normalized map points (`x` and `y` from 0 to 1). OpenMontage remains the higher-fidelity option for full geographic maps, complex camera moves and layered compositions.
+
+## Sound design
+Set `DARK_PHYS_SFX_FILE` to an approved local effects stem to add it to the master mix. Music is sidechain-ducked under processed narration; effects are gain-staged and included in the final loudness-normalized mix. Keep music/SFX rights records with the project.
 
 ## Low-spec Windows profile
-For an i7 4th-gen / 8 GB PC: one render at a time, 1080p only, short sample first, FFmpeg ultrafast preset, avoid concurrent AI engines and 4K. Heavy Remotion/browser compositions may be too slow locally. Actual speed must be measured on the owner's PC.
+On machines with 8 GB RAM or less, rendering defaults to 1280x720 preview, one filter thread, two encode threads, H.264 ultrafast and CRF 28. Set `DARK_PHYS_RENDER_QUALITY=final` for 1920x1080 final output (CRF 24). Render one project at a time; close browsers and other AI engines during encoding. Heavy Remotion/Chromium compositions remain optional and should be run only after a short sample proves stable.
