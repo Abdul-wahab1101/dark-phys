@@ -11,6 +11,17 @@ The studio accepts a researcher-prepared JSON package and produces a traceable d
 - Originality fingerprint and editorial checklist; compare against the channel history before approval.
 - Draft approval gates for evidence, fact-check, language edit, originality and script.
 
+## Live research intake
+
+Run the Phase 1 public research adapters from the Content Studio workflow:
+
+```powershell
+node scripts/research-content-studio.js "gaslighting psychology" --region=US --language=en
+node scripts/research-content-studio.js "emotional manipulation" --region=PK --language=en
+```
+
+This gathers available public signals from Google Trends RSS, GDELT news, Reddit public RSS and official YouTube Data API (YouTube requires `YOUTUBE_DATA_API_KEY`). It saves `research-signals.json` and `research-sources.md` under `uploads/content-studio/research-<topic>/`. Provider availability varies; results are source leads and snippets, not completed deep reading or proof. Open primary sources and verify them before entering claims.
+
 ## Input package
 
 Create a UTF-8 JSON file using this shape (replace example URLs and text with sources actually read):
@@ -40,6 +51,8 @@ node scripts/content-studio.js research-package.json --short
 node scripts/content-studio.js research-package.json --duration=600
 node scripts/test-content-studio.js
 \`\`\`
+
+The generated bundle also includes evidence-bound writer prompts for both languages (`writer-prompt-en.md` and `writer-prompt-roman-urdu.md`). Use them with the configured writing provider or a human writer, then paste the reviewed narration into the input package for the fact-check and export stage. The tool does not make an API call to an LLM itself.
 
 Outputs are written under \`uploads/content-studio/<topic>/\`: JSON package, source references, English narration and Roman Urdu narration.
 
