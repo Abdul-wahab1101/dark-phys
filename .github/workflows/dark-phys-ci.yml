@@ -131,12 +131,15 @@ jobs:
           node --check agents/production/pixabay-pool.js
           node --check agents/production/scene-planner.js
           node --check agents/production/audio-mix.js
+          node --check agents/production/narration.js
+          node --check scripts/narrate.js
           node --check agents/production/motion-graphics.js
           node --check agents/production/render-profile.js
           node --check agents/production/openmontage-return.js
           node --check scripts/cinematic-production.js
           node --check scripts/watch-openmontage-return.js
           node scripts/test-phase3-production.js
+          node scripts/test-phase3-narration.js
           node scripts/test-phase3-render.js
           node scripts/cinematic-production.js
       - name: Test Original Content Studio
