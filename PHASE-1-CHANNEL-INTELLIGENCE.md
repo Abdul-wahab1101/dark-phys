@@ -53,3 +53,36 @@ Database is created under `data/channel-intelligence.sqlite3`; it is runtime dat
 - Do not scrape private data or bypass platform restrictions.
 - A topic score is a prioritization aid, never a promise of virality.
 - Keep the human approval boundary before production and publishing.
+
+
+## Live public research adapters (added)
+- Google Trends trending RSS adapter (region-aware, keyless, cached).
+- GDELT public news search adapter (keyless, cached).
+- Public Reddit search RSS adapter (best-effort; availability/rate limits may vary).
+- Official YouTube Data API search adapter for public video metadata; requires `YOUTUBE_DATA_API_KEY`. Without the key it reports `needs_api_key` instead of failing silently.
+- Provider failures are isolated: one unavailable source does not discard results from other sources.
+- SQLite response cache reduces repeated requests. Cache database is local runtime data and is ignored by Git.
+- CLI: `python scripts/channel-intelligence.py research --query "emotional manipulation" --region US --language en`.
+- Individual adapters: `trends`, `news`, `reddit`, and `youtube-search`.
+
+## Competitor coverage-gap analysis
+Use public search-result video title/description metadata (official YouTube API results or a user-supplied JSON sample) to identify under-covered query terms and unanswered angles. The report explicitly states sample limitations. It does not estimate views, rank channels, infer audience demographics, or combine YouTube API data with external datasets.
+```powershell
+python scripts/channel-intelligence.py competitor-gap --query "psychology manipulation boundaries" --videos-json research-sample.json
+```
+The JSON file must contain an array of objects with `title`, `description`, and optional `url` fields.
+
+## Near-duplicate detection
+The enhanced text comparator combines token overlap, word-trigram overlap and sequence similarity. It is deterministic and works offline; it is a lexical similarity proxy, not a semantic embedding model. Exact normalized script fingerprints remain available for identical scripts. Similarity check:
+```powershell
+python scripts/channel-intelligence.py similarity --first "first draft text" --second "second draft text"
+```
+
+## Credentials and setup
+- Set `YOUTUBE_DATA_API_KEY` as a local environment variable only when using official YouTube Data API search. Never commit the key or put it in JSON profiles.
+- Google Trends RSS, GDELT and Reddit public RSS adapters do not require API credentials; public endpoints can still rate-limit or change.
+- YouTube Data API usage is cached and must follow the official Developer Policies and quota rules. Display API-sourced data as API-sourced data. Do not merge it with external analytics to calculate custom channel rankings, infer demographics, monetization or satisfaction.
+- No OAuth publishing scope is requested by Phase 1.
+
+## CI coverage
+The Phase 1 CI job compiles the modules, tests channel isolation/scoring/duplicate prevention, tests research adapter fallback behavior, validates competitor-gap output, and checks the CLI entry point. CI tests use controlled fixtures; they do not certify that external public feeds are available at every moment.
