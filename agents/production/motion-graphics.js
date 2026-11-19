@@ -4,7 +4,7 @@ function assText(value){return String(value==null?'':value).replace(/\\/g,'\\\\'
 function buildMotionFilters(scenes,options={}){
  if(!Array.isArray(scenes))throw new Error('scenes must be an array');
  const width=Math.max(320,Number(options.width)||1920),height=Math.max(180,Number(options.height)||1080),filters=[],events=[];let cursor=0;
- const add=(start,end,style,text,effect='')=>{if(String(text||'').trim())events.push('Dialogue: 0,'+time(start)+','+time(end)+','+style+',,0,0,0,'+effect+','+assText(text));};
+ const add=(start,end,style,text,effect='')=>{if(String(text||'').trim())events.push('Dialogue: 0,'+time(start)+','+time(end)+','+style+',,0,0,0,,'+effect+assText(text));};
  for(const scene of scenes){
   const duration=Math.max(1,Number(scene.durationSeconds)||8),start=cursor,end=cursor+duration;
   const title=String(scene.title||scene.visual||scene.footageQuery||'').trim();
