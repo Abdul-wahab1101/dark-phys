@@ -9,7 +9,7 @@ async function main(){
  const command=process.argv[2],file=path.resolve(arg('file','uploads/phase4-package.json'));
  if(command==='thumbnails'){
   const result=await p.requestThumbnailConcepts(arg('endpoint'),process.env.CLOUDFLARE_THUMBNAIL_TOKEN,arg('title'),arg('subtitle'));
-  const out=path.resolve(arg('output','uploads/thumbnail-concepts'));fs.mkdirSync(out,{recursive:true});p.writeJson(path.join(out,'concepts.json'),result);let sharp;try{sharp=require('sharp');}catch(_){throw new Error('Install sharp in the project root to convert SVG concepts to YouTube-ready PNG files');}for(const concept of result.concepts){await sharp(Buffer.from(concept.svg)).png().toFile(path.join(out,concept.id+'.png'));}console.log('Saved '+result.concepts.length+' PNG thumbnail concepts:',out);return;
+  const out=path.resolve(arg('output','uploads/thumbnail-concepts'));fs.mkdirSync(out,{recursive:true});p.writeJson(path.join(out,'concepts.json'),result);let sharp;try{sharp=require('sharp');}catch(_){try{sharp=require(path.join(__dirname,'../engines/youtube-automation-agent/node_modules/sharp'));}catch(__){throw new Error('Sharp is unavailable. Run the existing Dark Phys setup first or install sharp in the upstream engine.');}}for(const concept of result.concepts){await sharp(Buffer.from(concept.svg)).png().toFile(path.join(out,concept.id+'.png'));}console.log('Saved '+result.concepts.length+' PNG thumbnail concepts:',out);return;
  }
  if(command==='build'){
   const input=p.loadJson(file),pkg={...input,seo:p.buildSeo(input.seo||input),rightsLedger:p.rightsLedger(input.assets||input.rightsLedger||[]),compliance:p.complianceReview(input)};
