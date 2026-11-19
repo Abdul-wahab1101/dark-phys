@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import worker from '../workers/thumbnail-worker/src/index.mjs';
+import worker from '../src/index.mjs';
 const health=await worker.fetch(new Request('https://worker.test/health'),{});assert.equal(health.status,200);assert.equal((await health.json()).ok,true);
 const denied=await worker.fetch(new Request('https://worker.test/v1/concepts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Memory and the Mind'})}),{API_TOKEN:'secret'});assert.equal(denied.status,401);
 const unconfigured=await worker.fetch(new Request('https://worker.test/v1/concepts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:'Memory and the Mind'})}),{});assert.equal(unconfigured.status,503);
