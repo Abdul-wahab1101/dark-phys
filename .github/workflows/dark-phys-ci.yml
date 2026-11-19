@@ -126,6 +126,8 @@ jobs:
           node --check agents/production/pixabay-pool.js
           node --check agents/production/scene-planner.js
           node --check agents/production/audio-mix.js
+          node --check agents/production/motion-graphics.js
+          node --check agents/production/render-profile.js
           node --check agents/production/openmontage-return.js
           node --check scripts/cinematic-production.js
           node --check scripts/watch-openmontage-return.js
