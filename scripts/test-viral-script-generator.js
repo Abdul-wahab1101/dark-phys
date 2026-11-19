@@ -5,6 +5,7 @@ const pkg={topic:'Memory and human behavior',audience:'Documentary viewers',rese
 const draft={titleOptions:['A','B','C'],hooks:['one','two','three'],narration:'A sourced narration. '.repeat(15),chapters:[{time:'0:00',title:'Open',purpose:'Hook'}],visualPlan:[{time:'0:00',visual:'Relevant footage',assetType:'stock'}],sourceReferences:[{sourceId:'s1',claimIds:['c1']}],claimsToVerify:['Check claim']};
 assert.equal(validateDraft(draft,new Set(['s1'])).ok,true);
 assert.equal(validateDraft({...draft,sourceReferences:[{sourceId:'unknown'}]},new Set(['s1'])).ok,false);
+assert.equal(validateDraft({...draft,sourceReferences:[{sourceId:'s1',claimIds:['unknown-claim']}]},new Set(['s1']),new Set(['c1'])).ok,false);
 const calls=[];
 const fetchImpl=async(url,opts)=>{calls.push({url,opts});return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(draft)}}]})};};
 (async()=>{
