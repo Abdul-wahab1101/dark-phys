@@ -117,6 +117,12 @@ jobs:
         run: npm install --no-save sharp ffprobe-static
       - name: Test video format planner
         run: node scripts/test-video-planner.js
+      - name: Test stock footage adapter
+        run: |
+          node --check agents/stock-footage/pixabay.js
+          node --check scripts/stock-footage.js
+          node scripts/test-stock-footage.js
+          node scripts/stock-footage.js help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
