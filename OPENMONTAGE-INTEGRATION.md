@@ -8,7 +8,7 @@ Pinned upstream snapshot used for compatibility checks: `OpenMontageInc/OpenMont
 
 ## Windows setup (optional; not part of the lightweight YouTube setup)
 
-1. Run `.` setup-dark-phys.ps1 if the engines have not been cloned.
+1. Run `Set-ExecutionPolicy -Scope Process Bypass` and then `./setup-dark-phys.ps1` if the engines have not been cloned.
 2. Run `.` setup-openmontage.ps1 to install OpenMontage Python requirements and Remotion composer dependencies. This is a large optional install; close other apps on the older 8 GB machine.
 3. Confirm `ffmpeg -version` works.
 4. List zero-key Remotion demos:
