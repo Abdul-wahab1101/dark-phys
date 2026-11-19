@@ -8,6 +8,9 @@ on:
       - 'COMPLETE-AUTOMATION-WORKFLOW.md'
       - 'scripts/quality-check.js'
       - 'scripts/test-quality-check.js'
+      - 'scripts/test-agent-coordination.js'
+      - 'PROFESSIONAL-RELIABILITY-UPGRADES.md'
+      - 'start-dark-phys-lite.ps1'
       - 'setup-dark-phys.ps1'
       - 'scripts/**'
       - 'agents/**'
@@ -50,3 +53,5 @@ jobs:
         run: node scripts/test-thumbnail-designer.js
       - name: Validate final video quality gate
         run: node scripts/test-quality-check.js
+      - name: Validate agent coordination and recovery
+        run: node scripts/test-agent-coordination.js
