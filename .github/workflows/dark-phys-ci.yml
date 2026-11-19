@@ -1,12 +1,10 @@
 name: Dark Phys CI
 on:
-  push:
-    branches: [integration/dark-phys-final]
   pull_request:
     branches: [main]
   workflow_dispatch:
 concurrency:
-  group: dark-phys-ci-${{ github.event.pull_request.number || github.ref }}
+  group: dark-phys-ci-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
