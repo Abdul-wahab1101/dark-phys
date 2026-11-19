@@ -1,0 +1,60 @@
+name: Extract Dark Phys upgrade archives
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - '.github/workflows/extract-upgrades.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/dark-phys-final
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract archives for audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/dark-phys-audit
+          python - <<'PY'
+          import zipfile, pathlib, json
+          root=pathlib.Path('.')
+          out=pathlib.Path('/tmp/dark-phys-audit')
+          archives=[
+            ('youtube-agent-upgrade-v6 (1).zip','youtube-agent-upgrade-v6'),
+            ('UniversalDoctorAgent (1).zip','UniversalDoctorAgent')
+          ]
+          report=[]
+          for name,folder in archives:
+            p=root/name
+            if not p.exists():
+              raise SystemExit(f'Missing archive: {name}')
+            dest=out/folder
+            dest.mkdir(parents=True,exist_ok=True)
+            with zipfile.ZipFile(p) as z:
+              bad=z.testzip()
+              if bad: raise SystemExit(f'Corrupt member in {name}: {bad}')
+              for item in z.infolist():
+                if item.is_dir(): continue
+                target=(dest/item.filename).resolve()
+                if out.resolve() not in target.parents:
+                  raise SystemExit(f'Unsafe archive path: {item.filename}')
+                target.parent.mkdir(parents=True,exist_ok=True)
+                target.write_bytes(z.read(item))
+                report.append({'archive':name,'path':item.filename,'size':item.file_size})
+          (out/'ARCHIVE-MANIFEST.json').write_text(json.dumps(report,indent=2))
+          print(f'Extracted {len(report)} files')
+          PY
+          mkdir -p upgrade-audit
+          cp -R /tmp/dark-phys-audit/. upgrade-audit/
+      - name: Commit extracted source for review
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add upgrade-audit
+          git commit -m "chore: extract upgrade archives for audit" || exit 0
+          git push
