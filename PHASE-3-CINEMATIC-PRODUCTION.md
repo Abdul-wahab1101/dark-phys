@@ -7,7 +7,7 @@
 - Approved clip download with current-result revalidation and source/creator/license manifest.
 - FFmpeg draft assembly from moving video clips (not still-image slideshows), with planned per-scene trim timing.
 - Rendered kinetic lower-thirds, animated title fades, scene callouts and schematic route-map cards from scene metadata.
-- Voice processing, sidechain music ducking, loudness normalization and optional timed SFX track (`DARK_PHYS_SFX_FILE`).
+- ElevenLabs professional narration generation (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `eleven_multilingual_v2`) plus voice processing, sidechain music ducking, loudness normalization and optional timed SFX track (`DARK_PHYS_SFX_FILE`).
 - OpenMontage project handoff brief plus a return-folder watcher that copies completed assets into the review queue without overwrites or publishing.
 - Low-memory render profile: automatic 720p preview on machines with 8 GB RAM or less, 1080p final via `DARK_PHYS_RENDER_QUALITY=final`, ultrafast H.264 and two threads.
 
@@ -22,7 +22,7 @@ Review asset-selection.json. Set selectedAssetId to a listed ID and rightsApprov
     node scripts/cinematic-production.js download-approved uploads\production\PROJECT_ID\asset-selection.json
     node scripts/cinematic-production.js render uploads\production\PROJECT_ID\asset-selection.json uploads\narration.wav uploads\music.mp3 uploads\draft.mp4
 
-FFmpeg must be on PATH or configured through FFMPEG_PATH.
+Generate approved script narration with `node scripts/narrate.js uploads\\approved-narration.txt uploads\\narration.mp3` after setting the ElevenLabs key and voice ID locally. Then pass that narration MP3 to the render command. FFmpeg must be on PATH or configured through FFMPEG_PATH.
 
 ## OpenMontage return
 Use the existing export-openmontage.js for the handoff brief. After the separate OpenMontage engine finishes, copy its deliverables into the handoff return folder and run:
