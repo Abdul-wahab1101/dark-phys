@@ -116,15 +116,38 @@ function generatePackage(pkg, opts = {}) {
   return packageOut;
 }
 
+function buildWriterPrompt(pkg, lang, format = 'long-form') {
+  const isUr = lang === 'ur-Latn';
+  const target = format === 'short' ? '110–150 words for a 45–60 second Short' : '1,250–1,650 words for an 8–12 minute documentary';
+  const claims = (pkg.claims || []).map((x, i) => '[' + (x.id || 'claim-' + (i + 1)) + '] ' + x.text + ' (source IDs: ' + (x.sourceIds || []).join(', ') + ')').join('\\n');
+  const sources = (pkg.sources || []).map(s => '[' + s.id + '] ' + s.title + ' — ' + s.url).join('\\n');
+  return [
+    'ROLE: Senior documentary writer and evidence-led editorial researcher for Dark Phys.',
+    'LANGUAGE: ' + (isUr ? 'Natural Pakistani Roman Urdu. Write in fluent conversational Roman Urdu, not literal translation or Hindi-leaning wording.' : 'Natural, clear international English.'),
+    'FORMAT: ' + format + '; target ' + target + '.',
+    'TOPIC: ' + pkg.topic,
+    'RESEARCH CONTEXT: ' + (pkg.researchSummary || 'Use only the supplied evidence notes; request further research if evidence is insufficient.'),
+    'SUPPORTED CLAIMS (do not add unsupported facts):\\n' + claims,
+    'SOURCE REGISTER (cite IDs inline in draft and include a source list):\\n' + sources,
+    'STORY REQUIREMENTS: Open in a vivid relatable moment; create a clear curiosity gap; establish the central question; explain the mechanism with concrete examples; introduce a meaningful counterpoint or nuance; deliver practical safe takeaways; close by resolving the opening promise.',
+    'ORIGINALITY: Develop a distinct angle and fresh explanations. Do not imitate any named creator, copy phrasing, fabricate quotes, studies, statistics, case histories or source details.',
+    'FACT SAFETY: Distinguish established findings, interpretation and speculation. Attribute every factual claim to supplied source IDs. If evidence is missing, mark [NEEDS SOURCE] instead of inventing.',
+    'OUTPUT: Title options, 3 hook options, full narration, chapter beats with approximate timestamps, visual suggestions, and source-reference list. No generic intro or filler.',
+    'REVIEW: End with a short list of claims needing human verification and any evidence gaps.'
+  ].join('\\n\\n');
+}
+
 function writePackage(pkg, outDir) {
   fs.mkdirSync(outDir, { recursive: true });
   const file = path.join(outDir, 'content-studio-package.json');
   fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
   const refs = pkg.sources.map(s => '[' + s.id + '] ' + s.title + ' — ' + s.url + (s.publishedAt ? ' (published ' + s.publishedAt + ')' : '')).join('\n');
   fs.writeFileSync(path.join(outDir, 'source-references.md'), '# Source references\n\n' + refs + '\n', 'utf8');
+  for (const lang of LANGS) fs.writeFileSync(path.join(outDir, 'writer-prompt-' + (lang === 'en' ? 'en' : 'roman-urdu') + '.md'),
+    '# AI writer prompt — ' + lang + '\\n\\n' + buildWriterPrompt(pkg, lang) + '\\n', 'utf8');
   for (const lang of LANGS) fs.writeFileSync(path.join(outDir, 'narration-' + (lang === 'en' ? 'en' : 'roman-urdu') + '.md'),
     '# ' + pkg.scripts[lang].title + '\n\n## Hook options\n\n- ' + pkg.scripts[lang].hook.recommended + '\n\n## Narration draft\n\n' + pkg.scripts[lang].narrationDraft + '\n', 'utf8');
   return { package: file, references: path.join(outDir, 'source-references.md') };
 }
 
-module.exports = { validateResearch, factCheck, makeHooks, buildSections, retentionReview, generatePackage, writePackage };
+module.exports = { validateResearch, factCheck, makeHooks, buildSections, retentionReview, buildWriterPrompt, generatePackage, writePackage };
