@@ -34,3 +34,8 @@ It writes a format/shot/caption/music plan under `uploads/video-plans/<slug>/`. 
 GitHub Actions workflow `.github/workflows/validate-youtube-agent.yml` checks out a pinned upstream commit, installs its locked dependencies and FFmpeg, runs the upstream `npm test` regression suite, then tests the Dark Phys format planner and thumbnail designer. The ZIP Doctor checks remain in `.github/workflows/validate-upgrades.yml`.
 
 CI uses no user API keys or YouTube OAuth. Therefore it verifies offline/system behavior, not live trend data, provider-generated scripts/images, a real channel upload or live analytics. Those capabilities become available after the owner configures credentials on their own PC. Publishing remains explicitly approval-gated.
+
+
+## Final quality gate
+
+Before approving a rendered video, run `node scripts/quality-check.js` with the MP4, SRT, thumbnail and SEO JSON. The gate checks audio/video streams, duration, resolution/orientation, frame rate and required deliverables. It writes a JSON report and blocks on any failed check. See [COMPLETE-AUTOMATION-WORKFLOW.md](COMPLETE-AUTOMATION-WORKFLOW.md) for long-form and Shorts commands. This is a technical gate; factual accuracy, rights and creative quality still need human review.
