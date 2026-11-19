@@ -21,6 +21,8 @@ jobs:
         run: |
           python -m py_compile agents/channel-intelligence/core.py scripts/channel-intelligence.py tests/test_channel_intelligence.py
           python -m unittest discover -s tests -p 'test_channel_intelligence.py' -v
+          python -m unittest discover -s tests -p 'test_channel_research.py' -v
+          python scripts/channel-intelligence.py --help
           python scripts/channel-intelligence.py channels
   windows-setup-and-launchers:
     name: Windows setup + launcher validation
