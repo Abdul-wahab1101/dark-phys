@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+'use strict';
+const fs=require('node:fs');
+const path=require('node:path');
+const {buildReport}=require('../agents/viral-intelligence-engine');
+function usage(){console.log('Dark Phys Viral Intelligence Engine\nUsage:\n  node scripts/viral-intelligence.js brief topic.json [--short] [--language=en|ur-Latn]\n  node scripts/viral-intelligence.js score topic.json\n  node scripts/viral-intelligence.js audit script.json\nInput topic JSON: {title,audience,language,researchAgeDays,factors:{...},evidence:[{title,url}],competitors:[{title,url,views,ageDays}],...}\nScores are editorial prioritisation only, never viral/view predictions.');}
+function main(argv=process.argv.slice(2)){
+ const [cmd,file]=argv;if(!cmd||cmd==='--help'||cmd==='help'){usage();return 0;}
+ if(!file)throw new Error('Input JSON path is required');
+ const input=JSON.parse(fs.readFileSync(path.resolve(file),'utf8'));
+ let result;
+ if(cmd==='score'){result=buildReport(input).brief.editorialScore;}
+ else if(cmd==='brief'){result=buildReport(input,{format:argv.includes('--short')?'short':'long',language:(argv.find(x=>x.startsWith('--language='))||'').split('=')[1]||undefined});}
+ else if(cmd==='audit'){result=buildReport({title:input.topic||'Script audit',factors:{audience_fit:3}}, {script:input.script,claims:input.claims,sections:input.sections}).scriptAudit;}
+ else throw new Error('Unknown command: '+cmd);
+ const out=path.resolve(input.output||path.join('uploads','viral-intelligence',(input.title||input.topic||'topic').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,60)+'-'+Date.now()+'.json'));
+ fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
+ console.log(JSON.stringify({output:out,command:cmd,summary:cmd==='score'?result:cmd==='brief'?{topic:result.brief.topic,score:result.brief.editorialScore,goNoGo:result.brief.goNoGo}:result.readiness},null,2));
+ return 0;
+}
+if(require.main===module){try{process.exitCode=main();}catch(e){console.error('Viral Intelligence error:',e.message);process.exitCode=1;}}
+module.exports={main};
