@@ -40,12 +40,12 @@ python scripts/channel-intelligence.py show-topic 1
 
 Database is created under `data/channel-intelligence.sqlite3`; it is runtime data and must not be committed. Channel profiles live in `config/channel-profiles.json` and can be edited or extended without changing the engine.
 
-## Not yet implemented in Phase 1
-- Live Google Trends/Reddit/news provider adapters and scheduled refresh.
-- YouTube OAuth/API integration and live competitor research.
-- Automated semantic embeddings; current duplicate detection is deterministic lexical similarity plus exact normalized script hash.
-- Dashboard UI and automated channel onboarding.
-- Automatic topic generation. These require explicit provider/credential choices and later integration work.
+## Remaining boundaries (not blockers for the Phase 1 research foundation)
+- Scheduled/background refresh and dashboard UI are future phases; current research is explicitly user-invoked through the CLI.
+- YouTube search uses the official Data API with an API key, not OAuth. OAuth is not required for public search.
+- Similarity is a deterministic lexical semantic proxy, not a transformer embedding model; exact script hashes and near-duplicate checks are stored per channel.
+- The system does not auto-generate or auto-approve video topics. Research evidence and competitor-gap reports are decision support; human review selects the topic.
+- Provider APIs can rate-limit, change or be unavailable. Results include provider status and cache timestamps; they must not be treated as guaranteed coverage.
 
 ## Quality and safety boundaries
 - Do not generate scripts or videos from weak/unsupported topics just to fill a schedule.
