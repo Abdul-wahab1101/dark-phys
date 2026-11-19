@@ -159,8 +159,10 @@ jobs:
           node --check agents/production/phase4-packaging.js
           node --check scripts/phase4-package.js
           node --check workers/thumbnail-worker/src/index.mjs
+          node --check scripts/test-phase4-cli.js
           node workers/thumbnail-worker/test/worker.test.mjs
           node scripts/test-phase4-packaging.js
+          node scripts/test-phase4-cli.js
           node scripts/phase4-package.js
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
