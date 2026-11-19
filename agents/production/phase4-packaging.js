@@ -51,7 +51,7 @@ function complianceReview(input={}){
  return {automatedScreening:'advisory_only',flags,checks,passed:flags.length===0,requiresHumanReview:true};
 }
 function rightsLedger(assets=[]){
- return assets.map((a,i)=>({assetId:clean(a.assetId||'asset-'+(i+1)),kind:clean(a.kind||'unknown'),source:clean(a.source),sourceUrl:clean(a.sourceUrl),creator:clean(a.creator),license:clean(a.license),licenseUrl:clean(a.licenseUrl),retrievedAt:clean(a.retrievedAt),proofPath:clean(a.proofPath),commercialUseVerified:a.commercialUseVerified===true,modifications:clean(a.modifications),attributionRequired:a.attributionRequired===true,attributionText:clean(a.attributionText),reviewStatus:'pending'}));
+ return assets.map((a,i)=>({assetId:clean(a.assetId||'asset-'+(i+1)),kind:clean(a.kind||'unknown'),source:clean(a.source),sourceUrl:clean(a.sourceUrl),creator:clean(a.creator),license:clean(a.license),licenseUrl:clean(a.licenseUrl),retrievedAt:clean(a.retrievedAt),proofPath:clean(a.proofPath),commercialUseVerified:a.commercialUseVerified===true,modifications:clean(a.modifications),attributionRequired:a.attributionRequired===true,attributionText:clean(a.attributionText),reviewStatus:a.reviewStatus==='approved'?'approved':'pending'}));
 }
 function checkRights(assets=[]){
  const missing=[];
