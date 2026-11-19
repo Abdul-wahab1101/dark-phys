@@ -1,0 +1,25 @@
+# Secrets
+.env
+.env.*
+!.env.example
+**/config/credentials.json
+**/token.json
+**/*token*.json
+# Dependencies and local runtimes
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+# Generated media and local state
+output/
+outputs/
+renders/
+media/
+.cache/
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.sqlite
+*.db
