@@ -5,7 +5,7 @@ function buildAudioFilter(options={}) {
  const voiceGain=Number.isFinite(Number(options.voiceGainDb))?Number(options.voiceGainDb):0;
  const musicGain=Number.isFinite(Number(options.musicGainDb))?Number(options.musicGainDb):-24;
  const duck=options.duckMusic!==false;
- const musicChain=duck?'[2:a]volume='+musicGain+'dB,sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450[musicduck]':'[2:a]volume='+musicGain+'dB[musicduck]';
+ const musicChain=duck?'[2:a]volume='+musicGain+'dB[musicbase];[musicbase][voice]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450[musicduck]':'[2:a]volume='+musicGain+'dB[musicduck]';
  return {filter: '[1:a]volume='+voiceGain+'dB,highpass=f=75,acompressor=threshold=0.12:ratio=2.5:attack=15:release=180[voice];'+musicChain+';[voice][musicduck]amix=inputs=2:duration=first:dropout_transition=2,loudnorm=I=-16:TP=-1.5:LRA=11[aout]',output:'[aout]'};
 }
 function ffmpegArgs({video,voice,music,output,filter}) {
