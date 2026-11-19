@@ -39,6 +39,7 @@ def main():
             print("PASS real Doctor dashboard launch, HTML, state API, and mutation-token guard")
         finally:
             server.stop()
+            doctor.kb.close()
 
 
 if __name__ == "__main__":
