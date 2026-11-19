@@ -6,7 +6,8 @@ const {buildReport}=require('../agents/viral-intelligence-engine');
 const {buildWriterPrompt,validateResearch}=require('../agents/original-content-studio');
 function usage(){console.log('Dark Phys Viral Intelligence Engine\\nUsage:\\n  node scripts/viral-intelligence.js brief topic.json [--short] [--language=en|ur-Latn]\\n  node scripts/viral-intelligence.js score topic.json\\n  node scripts/viral-intelligence.js audit script.json\\n  node scripts/viral-intelligence.js prepare research-package.json [--short]\\nInput topic JSON: {title,audience,language,researchAgeDays,factors:{...},evidence:[{title,url}],competitors:[{title,url,views,ageDays}],...}\\nScores are editorial prioritisation only, never viral/view predictions.');}
 function prepareResearchPackage(input,format='long'){
- const validation=validateResearch(input);\n if(!validation.ok){const e=new Error('Original Content Studio research validation failed: '+validation.errors.join('; '));e.validation=validation;throw e;}
+ const validation=validateResearch(input);
+ if(!validation.ok){const e=new Error('Original Content Studio research validation failed: '+validation.errors.join('; '));e.validation=validation;throw e;}
  if(!input.viralFactors||typeof input.viralFactors!=='object')throw new Error('Add researcher-rated viralFactors (0–5) to the package; the engine will not invent scores');
  const evidence=input.sources.map(s=>({title:s.title,url:s.url,publishedAt:s.publishedAt,accessedAt:s.accessedAt}));
  const brief=buildReport({title:input.topic,audience:input.audience,language:input.language||'en',researchAgeDays:input.researchAgeDays,factors:input.viralFactors,evidence,competitors:input.competitors||[]},{format}).brief;
