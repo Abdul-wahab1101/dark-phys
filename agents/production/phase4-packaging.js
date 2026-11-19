@@ -67,7 +67,7 @@ function checkRights(assets=[]){
 async function requestThumbnailConcepts(endpoint,token,title,subtitle='',fetchImpl=globalThis.fetch){
  if(!/^https:\/\//i.test(String(endpoint||'')))throw new Error('A deployed HTTPS Worker endpoint is required');
  if(typeof fetchImpl!=='function')throw new Error('Fetch is unavailable in this Node runtime');
- const response=await fetchImpl(endpoint.replace(/\\/$/,'')+'/v1/concepts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+String(token||'')},body:JSON.stringify({title,subtitle})});
+ const response=await fetchImpl(endpoint.replace(/\/+$/, '')+'/v1/concepts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+String(token||'')},body:JSON.stringify({title,subtitle})});
  if(!response.ok)throw new Error('Thumbnail Worker returned HTTP '+response.status);
  const data=await response.json();
  if(!Array.isArray(data.concepts)||data.concepts.length<2||data.concepts.some(c=>!c.svg||c.width!==1280||c.height!==720))throw new Error('Thumbnail Worker response failed concept validation');
