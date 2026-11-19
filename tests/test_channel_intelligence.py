@@ -52,6 +52,26 @@ class ChannelIntelligenceTests(unittest.TestCase):
         self.assertEqual(first, self.intel.set_script(topic_id, script))
         self.assertTrue(self.intel.find_duplicates("dark-phys-en","A different title",script=script))
 
+
+    def test_semantic_near_duplicate_title_detection(self):
+        report = core.similarity_report(
+            "Why people use emotional manipulation tactics",
+            "Why people use emotional manipulation tactics in relationships"
+        )
+        self.assertTrue(report["duplicate"])
+        self.assertIn("semantic_proxy", report)
+
+    def test_script_near_duplicate_detection(self):
+        topic_id = self.intel.add_topic("dark-phys-en", "Original script")
+        original = ("People sometimes use emotional pressure to control another person's choices. "
+                    "Recognizing repeated patterns helps protect healthy boundaries. " * 4)
+        self.intel.set_script(topic_id, original)
+        paraphrase = ("People may apply emotional pressure to influence another person's decisions. "
+                      "Noticing recurring patterns can help maintain healthy boundaries. " * 4)
+        matches = self.intel.find_duplicates("dark-phys-en", "A completely different title", script=paraphrase)
+        self.assertTrue(matches)
+        self.assertTrue(matches[0]["script_near_duplicate"])
+
     def test_evidence_requires_source_url_and_known_type(self):
         topic_id = self.intel.add_topic("dark-phys-en","Research test")
         with self.assertRaises(ValueError):
