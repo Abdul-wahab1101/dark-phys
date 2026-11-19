@@ -59,6 +59,7 @@ function checkRights(assets=[]){
  (assets||[]).forEach((a,i)=>{
   ['source','sourceUrl','creator','license','licenseUrl','retrievedAt'].forEach(k=>{if(!clean(a[k]))missing.push('Asset '+(i+1)+' missing '+k);});
   if(a.commercialUseVerified!==true)missing.push('Asset '+(i+1)+' commercial-use permission not verified');
+  if(a.reviewStatus!=='approved')missing.push('Asset '+(i+1)+' rights review is not approved');
   if(a.attributionRequired===true&&!clean(a.attributionText))missing.push('Asset '+(i+1)+' requires attribution text');
  });
  return {passed:missing.length===0,errors:missing,assetsReviewed:(assets||[]).length};
@@ -81,10 +82,11 @@ function createApproval(pkg,reviewer,checks={}){
  const chapter=checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0));
  if(!rights.passed)throw new Error('Rights review blocked: '+rights.errors.join('; '));
  if(!chapter.passed)throw new Error('Chapter review blocked: '+chapter.errors.join('; '));
- if(checks.guidelines!==true||checks.advertiserSuitability!==true||checks.originality!==true||checks.claims!==true||checks.thumbnail!==true)
-  throw new Error('All human review confirmations must be true');
+ if(checks.guidelines!==true||checks.advertiserSuitability!==true||checks.originality!==true||checks.reusedContent!==true||checks.inauthenticContent!==true||checks.claims!==true||checks.thumbnail!==true||checks.policyFlagsReviewed!==true)
+  throw new Error('Every human review confirmation must be true');
+ if((compliance.flags||[]).length&&!checks.policyFlagsReviewed)throw new Error('Policy screening flags need human review');
  if(!pkg.finalVideo||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video and SEO metadata are required');
- return {status:'approved_for_manual_upload_only',reviewer:clean(reviewer),approvedAt:new Date().toISOString(),packageHash:sha256(JSON.stringify({...pkg,approval:undefined})),checks:{guidelines:true,advertiserSuitability:true,originality:true,claims:true,thumbnail:true,rights:true,chapters:true},publishingPermission:false,automatedUploadAllowed:false};
+ return {status:'approved_for_manual_upload_only',reviewer:clean(reviewer),approvedAt:new Date().toISOString(),packageHash:sha256(JSON.stringify({...pkg,approval:undefined})),checks:{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,rights:true,chapters:true},publishingPermission:false,automatedUploadAllowed:false};
 }
 function verifyApproval(pkg,approval){
  if(!approval||approval.status!=='approved_for_manual_upload_only'||approval.publishingPermission!==false)return {valid:false,reason:'No valid manual-upload approval'};
