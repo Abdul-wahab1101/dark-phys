@@ -175,9 +175,13 @@ jobs:
       - name: Test Phase 6 Viral Intelligence Engine
         run: |
           node --check agents/viral-intelligence-engine.js
+          node --check agents/viral-intelligence-sources.js
           node --check scripts/viral-intelligence.js
+          node --check scripts/viral-trends.js
           node scripts/test-viral-intelligence.js
+          node scripts/test-viral-intelligence-sources.js
           node scripts/viral-intelligence.js --help
+          node scripts/viral-trends.js --help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
