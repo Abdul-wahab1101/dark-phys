@@ -22,6 +22,8 @@ function validateDraft(draft,knownSourceIds,knownClaimIds=new Set()){
  const refs=Array.isArray(draft.sourceReferences)?draft.sourceReferences:[];
  const unknown=refs.filter(x=>!knownSourceIds.has(String(x.sourceId)));
  if(unknown.length)errors.push('Draft references unknown source IDs: '+unknown.map(x=>x.sourceId).join(', '));
+ const unknownClaims=refs.flatMap(x=>Array.isArray(x.claimIds)?x.claimIds:[]).filter(id=>knownClaimIds.size&&!knownClaimIds.has(String(id)));
+ if(unknownClaims.length)errors.push('Draft references unknown claim IDs: '+unknownClaims.join(', '));
  if(!refs.length)errors.push('No sourceReferences returned; factual review cannot proceed');
  return {ok:errors.length===0,errors};
 }
