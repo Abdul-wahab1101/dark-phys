@@ -42,3 +42,11 @@ No credentials are stored in this repository. Do not describe live publishing or
 - `effects.py selftest` passed all **91/91** FFmpeg checks on the hosted runner.
 - Thumbnail Designer logger import and instance wiring passed; upgraded module loads and exposes its 18+ design families. The ZIP-extracted upgrade copy matches the integrated module's Git blob; the older main-branch copy is retained only as historical comparison.
 - Keyframes self-test initially exposed a regression from the new validation guard (missing design-to-output scale assignment); fixed that and reran the full suite. Latest validation run is in progress; do not mark the full keyframes regression suite complete until its latest run passes.
+
+
+## Universal Doctor Agent — audit and safe integration
+- Audited the integrated Doctor CLI, orchestrator, repair engine, permissions controller, backup/rollback, security scanner, shadow test runner, monitor, recovery helpers and local dashboard.
+- Kept it as an opt-in maintenance subsystem, separate from the YouTube/render orchestration. Default mode remains read-only diagnostic; supervised/autonomous repair gates are documented. Added `UNIVERSAL-DOCTOR-INTEGRATION.md` with Windows commands and safe operating policy.
+- Compared 15 key files (CLI, README, unit tests, engine, repair, safety, monitor, recovery, backup, security, testing, self-test and supporting modules) with the extracted ZIP audit copy: all 15 are byte-identical.
+- Added a dedicated GitHub Actions job for Doctor compile, 20 unit tests, 61-check controlled self-test, self-health and safety-integrity manifest verification.
+- Latest workflow run **44497170679**: Universal Doctor regression job **passed**. Existing video-tool job is still running separately; do not mark the combined validation complete until it passes.
