@@ -15,7 +15,8 @@ export default {
   const url=new URL(request.url);
   if(request.method==='GET'&&url.pathname==='/health')return Response.json({ok:true,service:'dark-phys-thumbnail-worker',version:1});
   if(request.method!=='POST'||url.pathname!=='/v1/concepts')return new Response('Not found',{status:404});
-  if(env.API_TOKEN&&request.headers.get('Authorization')!=='Bearer '+env.API_TOKEN)return new Response('Unauthorized',{status:401});
+  if(!env.API_TOKEN)return new Response('Worker secret API_TOKEN is not configured',{status:503});
+  if(request.headers.get('Authorization')!=='Bearer '+env.API_TOKEN)return new Response('Unauthorized',{status:401});
   let body;try{body=await request.json();}catch{return Response.json({error:'Expected JSON body'},{status:400});}
   const title=String(body.title||'').trim(),subtitle=String(body.subtitle||'').trim();
   if(title.length<4||title.length>90||subtitle.length>90)return Response.json({error:'title must be 4-90 chars; subtitle max 90'},{status:400});
