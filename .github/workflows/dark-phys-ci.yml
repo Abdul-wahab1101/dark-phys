@@ -123,6 +123,13 @@ jobs:
           node --check scripts/stock-footage.js
           node scripts/test-stock-footage.js
           node scripts/stock-footage.js help
+          node --check agents/production/pixabay-pool.js
+          node --check agents/production/scene-planner.js
+          node --check agents/production/audio-mix.js
+          node --check agents/production/openmontage-return.js
+          node --check scripts/cinematic-production.js
+          node scripts/test-phase3-production.js
+          node scripts/cinematic-production.js
       - name: Test Original Content Studio
         run: |
           node --check agents/original-content-studio.js
