@@ -26,6 +26,11 @@ FFmpeg must be on PATH or configured through FFMPEG_PATH.
 ## OpenMontage return
 Use the existing export-openmontage.js for the handoff brief. After the separate OpenMontage engine finishes, copy its deliverables into the handoff return folder and run:
     node scripts/ingest-openmontage-return.js PATH_TO_RETURN_FOLDER
+
+For automatic local return-folder pickup while OpenMontage is running:
+    node scripts/watch-openmontage-return.js PATH_TO_RETURN_FOLDER
+
+Keep this watcher running in a second terminal; it copies newly returned files into the review queue without publishing.
 Files are copied to uploads/review-queue/openmontage-return. Existing files are never overwritten. Publishing remains disabled.
 
 ## Motion graphics and maps — honest boundary
