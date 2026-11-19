@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
-const {buildSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval}=require('../agents/production/phase4-packaging');
+const {buildSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,requestThumbnailConcepts}=require('../agents/production/phase4-packaging');
 const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documentary about memory and evidence.',tags:['memory','psychology'],chapters:[{time:'00:00',title:'The question'},{time:'02:10',title:'What research shows'},{time:'05:20',title:'Practical takeaway'}]});
 assert(seo.title.length>10);assert.equal(seo.tags.length,2);assert.equal(checkChapters(seo.chapters,500).passed,true);
 assert.equal(checkChapters([{time:'00:20',title:'Late start'}],500).passed,false);
@@ -12,4 +12,4 @@ const approval=createApproval(pkg,'reviewer',{guidelines:true,advertiserSuitabil
 assert.equal(verifyApproval(pkg,approval).valid,true);
 assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
 assert.equal(approval.automatedUploadAllowed,false);
-console.log('PASS Phase 4 SEO, chapters, rights, advisory policy, tamper-evident human approval');
+(async()=>{const data=await requestThumbnailConcepts('https://worker.example.test','secret','Memory and the Mind','Psychology Explained',async(url,opts)=>({ok:true,json:async()=>({concepts:[{id:'cinematic',width:1280,height:720,svg:'<svg/>'},{id:'editorial',width:1280,height:720,svg:'<svg/>'},{id:'bold',width:1280,height:720,svg:'<svg/>'}]})}));assert.equal(data.concepts.length,3);await assert.rejects(()=>requestThumbnailConcepts('http://unsafe.test','x','Title'));console.log('PASS Phase 4 SEO, chapters, rights, advisory policy, Worker adapter and tamper-evident approval');})().catch(e=>{console.error(e);process.exit(1);});
