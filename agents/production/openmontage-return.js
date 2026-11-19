@@ -17,7 +17,7 @@ async function ingestReturn({returnDir,reviewDir,waitForStableMs=0}) {
   try{await fs.copyFile(src,target,require('node:fs').constants.COPYFILE_EXCL);copied.push({file:entry.name,status:'copied'});}
   catch(e){if(e.code==='EEXIST')copied.push({file:entry.name,status:'already_exists'});else throw e;}
  }
- const createdAt=new Date().toISOString(),manifestName='return-manifest-'+createdAt.replace(/[:.]/g,'-')+'.json';
+ const createdAt=new Date().toISOString(),manifestName='return-manifest-'+createdAt.replace(/[:.]/g,'-')+'-'+require('node:crypto').randomUUID()+'.json';
  const report={createdAt,source:root,reviewQueue:dest,files:copied,approvalRequired:true,published:false};
  await fs.writeFile(path.join(dest,manifestName),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
  return report;
