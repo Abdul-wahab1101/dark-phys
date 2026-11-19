@@ -1,7 +1,7 @@
 # Phase 4 — Packaging & Monetization Safety
 
 ## Thumbnail concepts (Cloudflare Worker)
-The Worker at `workers/thumbnail-worker` exposes `GET /health` and authenticated `POST /v1/concepts`. It returns three distinct 1280×720 SVG concept drafts (cinematic, editorial, bold contrast). It does not publish or silently select a winner. Deploy from that directory with Cloudflare Wrangler after creating a Worker and setting `API_TOKEN` as a Worker secret. Keep the token out of Git. Local generation and the existing thumbnail designer remain available if the Worker is not deployed.
+The Worker at `workers/thumbnail-worker` exposes `GET /health` and authenticated `POST /v1/concepts`. It returns three distinct 1280×720 SVG concept drafts (cinematic, editorial, bold contrast); the CLI rasterizes them to PNG with the existing Sharp dependency for YouTube-ready files. It does not publish or silently select a winner. Deploy from that directory with Cloudflare Wrangler after creating a Worker and setting `API_TOKEN` as a Worker secret. Keep the token out of Git. Local generation and the existing thumbnail designer remain available if the Worker is not deployed.
 
 Example request body: `{"title":"Why Memory Can Mislead You","subtitle":"Psychology Explained"}`.
 
