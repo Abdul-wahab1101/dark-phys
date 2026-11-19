@@ -7,6 +7,9 @@ Dark Phys is the channel workspace for research, scripting, production, review a
 - **OpenMontage** (AGPL-3.0): optional advanced production engine with pipeline manifests, stage skills, checkpoints and multiple composition runtimes.
 - **Dark Phys native assets**: `effects.py` and `keyframes.py` are retained as the lightweight FFmpeg effects/keyframe toolkit. The v6 Video Format Planner, upgraded thumbnail designer, and Universal Doctor Agent are integrated as separate modules.
 
+## Phase 1 — Channel Intelligence
+The multi-channel research foundation starts with separate English and Pakistani Roman Urdu profiles, a channel-isolated topic ledger, evidence references, a coverage-aware editorial score and duplicate/script fingerprint checks. See [PHASE-1-CHANNEL-INTELLIGENCE.md](PHASE-1-CHANNEL-INTELLIGENCE.md). Quick commands: `python scripts/channel-intelligence.py channels` and `python scripts/channel-intelligence.py check-duplicate --channel dark-phys-en --title "Topic title"`. The local SQLite database is created on first run and is not committed.
+
 ## Windows quick setup
 1. Install Git, Node.js 20 LTS (18.17+ minimum for the YouTube agent), Python 3.10+, and FFmpeg.
 2. Open PowerShell in this repository.
