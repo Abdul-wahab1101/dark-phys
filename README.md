@@ -17,6 +17,9 @@ A Pixabay Video API adapter now supports safe-search metadata discovery and expl
 
 This is a sourcing foundation, not yet an automatic scene editor. Each clip still requires human selection and license/restrictions review.
 
+## Phase 2 — Original Content Studio
+The source-traceable content studio builds bilingual documentary draft packages from researcher-supplied evidence and separate English/Roman Urdu narration. It includes claim references, fact-check review status, hooks, long-form structure, retention checkpoints, originality checklist and Shorts plans. See [PHASE-2-ORIGINAL-CONTENT-STUDIO.md](PHASE-2-ORIGINAL-CONTENT-STUDIO.md). Run `node scripts/content-studio.js research-package.json` and `node scripts/test-content-studio.js`. This is an offline editorial workflow, not autonomous web research or a finished AI writer; sources and narration must be supplied and verified by a human.
+
 ## Windows quick setup
 1. Install Git, Node.js 20 LTS (18.17+ minimum for the YouTube agent), Python 3.10+, and FFmpeg.
 2. Open PowerShell in this repository.
