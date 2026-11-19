@@ -1,0 +1,63 @@
+import importlib.util
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("channel_core", ROOT / "agents" / "channel-intelligence" / "core.py")
+core = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(core)
+
+class ChannelIntelligenceTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.intel = core.ChannelIntelligence(root / "test.sqlite3", root / "profiles.json")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_default_english_and_roman_urdu_profiles(self):
+        profiles = self.intel.list_channels()
+        self.assertEqual({p["language"] for p in profiles}, {"en", "ur-Latn"})
+        self.assertEqual(len({p["id"] for p in profiles}), 2)
+
+    def test_multi_channel_isolation_and_topic_persistence(self):
+        topic_id = self.intel.add_topic("dark-phys-en", "Why people manipulate others", "psychological manipulation")
+        self.assertEqual(self.intel.get_topic(topic_id)["channel_id"], "dark-phys-en")
+        self.assertEqual(self.intel.find_duplicates("dark-phys-ur", "Why people manipulate others"), [])
+
+    def test_score_weighting_and_incomplete_evidence(self):
+        result = core.score_topic({"audience_demand":5,"problem_value":4,"curiosity_hook":4,"competition_gap":3})
+        self.assertGreaterEqual(result["score"], 0)
+        self.assertLessEqual(result["score"], 100)
+        self.assertEqual(result["coverage"], 70)
+        self.assertEqual(result["label"], "STRONG_CANDIDATE")
+        self.assertEqual(core.score_topic({"audience_demand":5})["label"], "INSUFFICIENT_EVIDENCE")
+
+    def test_invalid_score_rejected(self):
+        with self.assertRaises(ValueError):
+            core.score_topic({"audience_demand":6})
+
+    def test_duplicate_title_and_core_topic_detection(self):
+        self.intel.add_topic("dark-phys-en","7 Signs of Emotional Manipulation","emotional manipulation signs")
+        matches = self.intel.find_duplicates("dark-phys-en","Seven Signs of Emotional Manipulation","emotional manipulation signs")
+        self.assertTrue(matches)
+
+    def test_script_fingerprint(self):
+        topic_id = self.intel.add_topic("dark-phys-en","Test topic")
+        script = "This is a sufficiently long example script that is used to verify the stable normalized fingerprint mechanism. " * 2
+        first = self.intel.set_script(topic_id, script)
+        self.assertEqual(first, self.intel.set_script(topic_id, script))
+        self.assertTrue(self.intel.find_duplicates("dark-phys-en","A different title",script=script))
+
+    def test_evidence_requires_source_url_and_known_type(self):
+        topic_id = self.intel.add_topic("dark-phys-en","Research test")
+        with self.assertRaises(ValueError):
+            self.intel.add_evidence(topic_id,"manual","not-a-url","note")
+        self.intel.add_evidence(topic_id,"academic","https://example.org/paper","Peer-reviewed source")
+        self.assertEqual(len(self.intel.get_topic(topic_id)["evidence"]),1)
+
+if __name__ == "__main__":
+    unittest.main()
