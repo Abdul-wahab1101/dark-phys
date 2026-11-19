@@ -5,10 +5,10 @@ const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documen
 assert(seo.title.length>10);assert.equal(seo.tags.length,2);assert.equal(checkChapters(seo.chapters,500).passed,true);
 assert.equal(checkChapters([{time:'00:20',title:'Late start'}],500).passed,false);
 const flagged=complianceReview({title:'How to poison someone'});assert(flagged.flags.length>0);assert.equal(flagged.requiresHumanReview,true);
-const rights=rightsLedger([{source:'Pixabay',sourceUrl:'https://example.test/a',creator:'Creator',license:'Pixabay Content License',licenseUrl:'https://pixabay.com/service/license-summary/',retrievedAt:'2026-11-19',commercialUseVerified:true}]);
+const rights=rightsLedger([{source:'Pixabay',sourceUrl:'https://example.test/a',creator:'Creator',license:'Pixabay Content License',licenseUrl:'https://pixabay.com/service/license-summary/',retrievedAt:'2026-11-19',commercialUseVerified:true,reviewStatus:'approved'}]);
 assert.equal(checkRights(rights).passed,true);assert.equal(checkRights([{source:'unknown'}]).passed,false);
 const pkg={finalVideo:'final.mp4',durationSeconds:500,seo,rightsLedger:rights,compliance:complianceReview({title:seo.title})};
-const approval=createApproval(pkg,'reviewer',{guidelines:true,advertiserSuitability:true,originality:true,claims:true,thumbnail:true});
+const approval=createApproval(pkg,'reviewer',{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true});
 assert.equal(verifyApproval(pkg,approval).valid,true);
 assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
 assert.equal(approval.automatedUploadAllowed,false);
