@@ -13,7 +13,7 @@ class PixabayPool {
     const errors=[];
     for(let i=0;i<this.clients.length;i++) {
       const index=(this.cursor+i)%this.clients.length;
-      try { const result=await this.clients[index].search(query,options); this.cursor=index; return {...result,keySlot:index+1}; }
+      try { const result=await this.clients[index].search(query,options); this.cursor=(index+1)%this.clients.length; return {...result,keySlot:index+1}; }
       catch(e) { errors.push(e.message); }
     }
     throw new Error('All configured Pixabay keys failed: '+errors.join(' | '));
@@ -23,7 +23,7 @@ class PixabayPool {
     const errors=[];
     for(let i=0;i<this.clients.length;i++) {
       const index=(this.cursor+i)%this.clients.length;
-      try { const result=await this.clients[index].download(item,options); this.cursor=index; return result; }
+      try { const result=await this.clients[index].download(item,options); this.cursor=(index+1)%this.clients.length; return result; }
       catch(e) { errors.push(e.message); }
     }
     throw new Error('Pixabay download failed with all configured keys: '+errors.join(' | '));
