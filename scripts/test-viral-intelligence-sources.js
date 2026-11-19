@@ -16,6 +16,7 @@ const fetchImpl=async url=>{
  const result=await api.discover({queries:['documentary storytelling'],maxResults:5});
  assert.equal(result.items.length,2);assert.ok(calls.every(x=>x.searchParams.get('key')==='test-key'));
  assert.ok(result.limitations.length>=3);
- const normalized=parseVideo({id:'x',snippet:{title:'<b>safe</b> title',publishedAt:'2026-11-19T00:00:00Z'},statistics:{viewCount:'500',likeCount:'20',commentCount:'5'}});\n assert.equal(normalized.title,'safe title');assert.equal(normalized.views,500);assert.equal(normalized.engagementRate,5);assert.ok(normalized.viewsPerDay>=500);
+ const normalized=parseVideo({id:'x',snippet:{title:'<b>safe</b> title',publishedAt:'2026-11-19T00:00:00Z'},statistics:{viewCount:'500',likeCount:'20',commentCount:'5'}});
+ assert.equal(normalized.title,'safe title');assert.equal(normalized.views,500);assert.equal(normalized.engagementRate,5);assert.ok(normalized.viewsPerDay>=500);
  console.log('PASS official YouTube trend source: API-key guard, popular/search requests, statistics normalization and safety notes');
 })().catch(e=>{console.error(e);process.exitCode=1;});
