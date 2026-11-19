@@ -16,9 +16,9 @@ async function main(){
   p.writeJson(file,pkg);console.log('Phase 4 package built:',file);console.log('Rights records:',pkg.rightsLedger.length,'; advisory flags:',pkg.compliance.flags.length);return;
  }
  if(command==='check'){
-  const pkg=p.loadJson(file),rights=p.checkRights(pkg.rightsLedger||[]),chapters=p.checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0)),compliance=pkg.compliance||p.complianceReview(pkg);
-  const report={rights,chapters,compliance,approval:p.verifyApproval(pkg,pkg.approval)};
-  console.log(JSON.stringify(report,null,2));if(!rights.passed||!chapters.passed)process.exitCode=2;return;
+  const pkg=p.loadJson(file),rights=p.checkRights(pkg.rightsLedger||[]),seo=p.checkSeo(pkg.seo||{}),chapters=p.checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0)),compliance=pkg.compliance||p.complianceReview(pkg);
+  const report={rights,seo,chapters,compliance,approval:p.verifyApproval(pkg,pkg.approval)};
+  console.log(JSON.stringify(report,null,2));if(!rights.passed||!seo.passed||!chapters.passed)process.exitCode=2;return;
  }
  if(command==='approve'){
   const pkg=p.loadJson(file),reviewer=arg('reviewer')||await ask('Human reviewer full name/handle: ');
