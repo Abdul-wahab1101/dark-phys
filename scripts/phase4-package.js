@@ -47,7 +47,12 @@ async function main(){
  }
  if(command==='build'){
   const input=p.loadJson(file);
-  const pkg={...input,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(input.assets||input.rightsLedger||[])};
+  const manifestPath=arg('manifest',input.assetManifestFile||'');
+  let assets=input.assets||input.rightsLedger||[];
+  if(manifestPath)assets=p.importAssetManifest(p.loadJson(path.resolve(manifestPath)));
+  else if(Array.isArray(input.assetManifest))assets=p.importAssetManifest(input.assetManifest);
+  const pkg={...input,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(assets)};
+  if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
   pkg.compliance=p.complianceReview({...input,...pkg.seo});
   p.writeJson(file,pkg);
   console.log('Phase 4 package built:',file);
@@ -92,6 +97,6 @@ async function main(){
   const pkg=p.loadJson(file),result=p.verifyApproval(pkg,pkg.approval);
   console.log(JSON.stringify(result,null,2));if(!result.valid)process.exitCode=2;return;
  }
- console.log('Usage: node scripts/phase4-package.js init|thumbnails|build|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
+ console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
 }
 main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
