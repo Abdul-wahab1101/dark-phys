@@ -28,8 +28,8 @@ Dark Phys is the channel workspace for research, scripting, production, review a
 ## YouTube Automation workflow
 The complete connected workflow and its verification boundary are documented in [YOUTUBE-AUTOMATION-INTEGRATION.md](YOUTUBE-AUTOMATION-INTEGRATION.md). The upstream agent remains the only top-level orchestrator: research → script → thumbnail → SEO → production → human review/approval → publishing → analytics/learning. The Dark Phys planner supplements pre-production; it does not create a second pipeline or bypass review.
 
-## OpenMontage
-The setup script clones OpenMontage separately and preserves its upstream AGPL-3.0 license. It does not silently install its full Python/Remotion/HyperFrames stack because that is a large install for modest PCs. Follow its own `AGENT_GUIDE.md` and setup instructions when you choose to enable it.
+## OpenMontage production engine
+OpenMontage is the optional advanced production workspace, connected through a handoff rather than a competing second YouTube orchestrator. See [OPENMONTAGE-INTEGRATION.md](OPENMONTAGE-INTEGRATION.md) for the 8–12 minute long-form workflow, five-Shorts workflow, runtime tradeoffs and test boundaries. After the standard clone, run `Set-ExecutionPolicy -Scope Process Bypass` then `./setup-openmontage.ps1` only when ready for the larger install. Export a long-form handoff with `node scripts/export-openmontage.js --title "Video title" --script uploads/approved-script.txt --mode long`, or Shorts from a rendered source with `node scripts/export-openmontage.js --title "Video title" --source-video uploads/final-video.mp4 --mode shorts`. OpenMontage stays optional and keeps its AGPL-3.0 license and notices intact.
 
 ## Safety and publishing
 - Nothing is uploaded or published automatically by Dark Phys.
