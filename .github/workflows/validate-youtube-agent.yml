@@ -5,6 +5,9 @@ on:
     paths:
       - '.github/workflows/validate-youtube-agent.yml'
       - 'README.md'
+      - 'COMPLETE-AUTOMATION-WORKFLOW.md'
+      - 'scripts/quality-check.js'
+      - 'scripts/test-quality-check.js'
       - 'setup-dark-phys.ps1'
       - 'scripts/**'
       - 'agents/**'
@@ -45,3 +48,5 @@ jobs:
         run: node scripts/test-video-planner.js
       - name: Validate Dark Phys thumbnail designer
         run: node scripts/test-thumbnail-designer.js
+      - name: Validate final video quality gate
+        run: node scripts/test-quality-check.js
