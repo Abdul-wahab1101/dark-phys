@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 from collections import Counter
-from .core import normalize_text, similarity_report
+from core import normalize_text, similarity_report
 
 STOP = set("""the and for with from that this what when where why how your you are was were have has had into about after before their them they then than can could would should will just very more most some such also only not but our out all its his her she him who whom""".split())
 UR_STOP = set("""hai hain tha thi thay aur ke ki ka ko se mein main par per ye yeh woh wo kya kyun kese kaise kab kahan agar magar aik ek is us in un apna apni apne hota hoti hotay karne karna kar ke liye""".split())
