@@ -9,7 +9,7 @@ Pinned upstream snapshot used for compatibility checks: `OpenMontageInc/OpenMont
 ## Windows setup (optional; not part of the lightweight YouTube setup)
 
 1. Run `Set-ExecutionPolicy -Scope Process Bypass` and then `./setup-dark-phys.ps1` if the engines have not been cloned.
-2. Run `.` setup-openmontage.ps1 to install OpenMontage Python requirements and Remotion composer dependencies. This is a large optional install; close other apps on the older 8 GB machine.
+2. Run `Set-ExecutionPolicy -Scope Process Bypass` then `./setup-openmontage.ps1` to install OpenMontage Python requirements and Remotion composer dependencies. This is a large optional install; close other apps on the older 8 GB machine.
 3. Confirm `ffmpeg -version` works.
 4. List zero-key Remotion demos:
    ```powershell
@@ -56,7 +56,7 @@ For this PC, start with FFmpeg for basic assembly and Remotion only when motion 
 
 - `node scripts/test-openmontage-handoff.js` validates both handoff profiles and required-input guards.
 - `validate-openmontage.yml` checks bridge behavior and runs OpenMontage's real FFmpeg vertical-compose tests against its pinned upstream snapshot.
-- Remotion render smoke test runs separately on Windows with `render_demo.py world-in-numbers`.
+- GitHub Actions run **44488259168** passed the handoff tests, OpenMontage FFmpeg vertical-render tests, and a real Remotion `world-in-numbers` demo render on the hosted Linux runner. Repeat the demo locally on Windows after optional setup to verify the owner's machine.
 - HyperFrames is reported unavailable unless its own runtime checks pass.
 
 CI cannot use the user's API keys, generate paid provider assets, access their YouTube channel, or validate a full 8–12 minute final film. Real long-form/Shorts end-to-end output remains pending until the local setup and credentials/provider choices are available. No publishing is triggered by this bridge.
