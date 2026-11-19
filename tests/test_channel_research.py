@@ -1,9 +1,9 @@
 import importlib.util, sys, unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT/"agents"))
-from channel_intelligence.analysis import semantic_similarity, competitor_gap
-from channel_intelligence import research
+sys.path.insert(0,str(ROOT/"agents"/"channel-intelligence"))
+from analysis import semantic_similarity, competitor_gap
+import research
 
 class ChannelResearchTests(unittest.TestCase):
     def test_semantic_duplicate_proxy(self):
