@@ -3,7 +3,16 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const {buildReport}=require('../agents/viral-intelligence-engine');
-function usage(){console.log('Dark Phys Viral Intelligence Engine\nUsage:\n  node scripts/viral-intelligence.js brief topic.json [--short] [--language=en|ur-Latn]\n  node scripts/viral-intelligence.js score topic.json\n  node scripts/viral-intelligence.js audit script.json\nInput topic JSON: {title,audience,language,researchAgeDays,factors:{...},evidence:[{title,url}],competitors:[{title,url,views,ageDays}],...}\nScores are editorial prioritisation only, never viral/view predictions.');}
+const {buildWriterPrompt}=require('../agents/original-content-studio');
+function usage(){console.log('Dark Phys Viral Intelligence Engine\nUsage:\n  node scripts/viral-intelligence.js brief topic.json [--short] [--language=en|ur-Latn]\n  node scripts/viral-intelligence.js score topic.json\n  node scripts/viral-intelligence.js audit script.json
+  node scripts/viral-intelligence.js prepare research-package.json [--short]\nInput topic JSON: {title,audience,language,researchAgeDays,factors:{...},evidence:[{title,url}],competitors:[{title,url,views,ageDays}],...}\nScores are editorial prioritisation only, never viral/view predictions.');}
+function prepareResearchPackage(input,format='long'){
+ if(!input||!input.topic||!Array.isArray(input.sources)||!Array.isArray(input.claims)||!input.narration)throw new Error('prepare requires a valid Original Content Studio research package');
+ if(!input.viralFactors||typeof input.viralFactors!=='object')throw new Error('Add researcher-rated viralFactors (0–5) to the package; the engine will not invent scores');
+ const evidence=input.sources.map(s=>({title:s.title,url:s.url,publishedAt:s.publishedAt,accessedAt:s.accessedAt}));
+ const brief=buildReport({title:input.topic,audience:input.audience,language:input.language||'en',researchAgeDays:input.researchAgeDays,factors:input.viralFactors,evidence,competitors:input.competitors||[]},{format}).brief;
+ return {schemaVersion:1,topic:input.topic,viralBrief:brief,writerPrompts:{en:buildWriterPrompt(input,'en',format==='short'?'short':'long-form'),'ur-Latn':buildWriterPrompt(input,'ur-Latn',format==='short'?'short':'long-form')},sourceClaims:input.claims,approval:{status:'draft_requires_review',autoPublish:false,requiredGates:['source verification','fact check','originality','native-language review','rights review','final human approval']}};
+}
 function main(argv=process.argv.slice(2)){
  const [cmd,file]=argv;if(!cmd||cmd==='--help'||cmd==='help'){usage();return 0;}
  if(!file)throw new Error('Input JSON path is required');
@@ -12,6 +21,7 @@ function main(argv=process.argv.slice(2)){
  if(cmd==='score'){result=buildReport(input).brief.editorialScore;}
  else if(cmd==='brief'){result=buildReport(input,{format:argv.includes('--short')?'short':'long',language:(argv.find(x=>x.startsWith('--language='))||'').split('=')[1]||undefined});}
  else if(cmd==='audit'){result=buildReport({title:input.topic||'Script audit',factors:{audience_fit:3}}, {script:input.script,claims:input.claims,sections:input.sections}).scriptAudit;}
+ else if(cmd==='prepare'){result=prepareResearchPackage(input,argv.includes('--short')?'short':'long');}
  else throw new Error('Unknown command: '+cmd);
  const out=path.resolve(input.output||path.join('uploads','viral-intelligence',(input.title||input.topic||'topic').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,60)+'-'+Date.now()+'.json'));
  fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
@@ -19,4 +29,4 @@ function main(argv=process.argv.slice(2)){
  return 0;
 }
 if(require.main===module){try{process.exitCode=main();}catch(e){console.error('Viral Intelligence error:',e.message);process.exitCode=1;}}
-module.exports={main};
+module.exports={main,prepareResearchPackage};
