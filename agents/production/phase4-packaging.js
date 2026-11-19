@@ -124,8 +124,23 @@ function complianceReview(input={}){
  ];
  return {automatedScreening:'advisory_only',flags,originality,checks,status:'human_review_required',passed:false,requiresHumanReview:true,disclaimer:'No automated keyword or similarity check can determine YouTube policy compliance or monetization eligibility.'};
 }
+function importAssetManifest(manifest=[]){
+ const rows=Array.isArray(manifest)?manifest:(Array.isArray(manifest?.assets)?manifest.assets:[]);
+ return rows.map((a,i)=>{
+  const provider=clean(a.provider||a.source);
+  const licenseUrl=clean(a.licenseUrl)||(provider.toLowerCase()==='pixabay'?'https://pixabay.com/service/license-summary/':'');
+  const commercialUseVerified=a.commercialUseVerified===true;
+  const attributionReviewed=a.attributionReviewed===true;
+  const reviewStatus=a.reviewStatus==='approved'&&commercialUseVerified&&attributionReviewed?'approved':'pending';
+  return {assetId:clean(a.assetId||a.id||'asset-'+(i+1)),kind:clean(a.kind||'video'),source:provider,sourceUrl:clean(a.sourceUrl||a.sourcePage),creator:clean(a.creator),license:clean(a.license),licenseUrl,retrievedAt:clean(a.retrievedAt),proofPath:clean(a.proofPath||a.licenseProofPath),commercialUseVerified,modifications:clean(a.modifications),attributionRequired:typeof a.attributionRequired==='boolean'?a.attributionRequired:false,attributionReviewed,attributionText:clean(a.attributionText),reviewStatus};
+ });
+}
 function rightsLedger(assets=[]){
- return assets.map((a,i)=>({assetId:clean(a.assetId||'asset-'+(i+1)),kind:clean(a.kind||'unknown'),source:clean(a.source),sourceUrl:clean(a.sourceUrl),creator:clean(a.creator),license:clean(a.license),licenseUrl:clean(a.licenseUrl),retrievedAt:clean(a.retrievedAt),proofPath:clean(a.proofPath),commercialUseVerified:a.commercialUseVerified===true,modifications:clean(a.modifications),attributionRequired:a.attributionRequired===true,attributionText:clean(a.attributionText),reviewStatus:a.reviewStatus==='approved'?'approved':'pending'}));
+ return (Array.isArray(assets)?assets:[]).map((a,i)=>{
+  a=a&&typeof a==='object'?a:{};
+  const commercialUseVerified=a.commercialUseVerified===true,attributionReviewed=a.attributionReviewed===true;
+  return {assetId:clean(a.assetId||'asset-'+(i+1)),kind:clean(a.kind||'unknown'),source:clean(a.source),sourceUrl:clean(a.sourceUrl),creator:clean(a.creator),license:clean(a.license),licenseUrl:clean(a.licenseUrl),retrievedAt:clean(a.retrievedAt),proofPath:clean(a.proofPath),commercialUseVerified,modifications:clean(a.modifications),attributionRequired:a.attributionRequired===true,attributionReviewed,attributionText:clean(a.attributionText),reviewStatus:a.reviewStatus==='approved'&&commercialUseVerified&&attributionReviewed?'approved':'pending'};
+ });
 }
 function isHttps(value){try{return new URL(String(value)).protocol==='https:';}catch(_){return false;}}
 function checkRights(assets=[]){
@@ -143,6 +158,7 @@ function checkRights(assets=[]){
   if(clean(a.proofPath)&&!isHttps(a.proofPath)&&!fs.existsSync(path.resolve(a.proofPath)))errors.push(label+' license proof file does not exist: '+a.proofPath);
   if(a.commercialUseVerified!==true)errors.push(label+' commercial-use permission not verified');
   if(a.reviewStatus!=='approved')errors.push(label+' rights review is not approved');
+  if(a.attributionReviewed!==true)errors.push(label+' attribution requirements have not been reviewed');
   if(a.attributionRequired===true&&!clean(a.attributionText))errors.push(label+' requires attribution text');
   if(!clean(a.modifications))errors.push(label+' must describe modifications or state "none"');
  });
@@ -200,4 +216,4 @@ function verifyApproval(pkg,approval){
 }
 function loadJson(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 function writeJson(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
-module.exports={buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters};
+module.exports={buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters};
