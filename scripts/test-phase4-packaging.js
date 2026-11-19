@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
-const {buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,checkRights,createApproval,verifyApproval,requestThumbnailConcepts,sha256}=require('../agents/production/phase4-packaging');
+const {buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,requestThumbnailConcepts,sha256}=require('../agents/production/phase4-packaging');
 const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documentary about memory, evidence, and the psychology behind everyday decisions.',tags:['memory','psychology'],durationSeconds:600,chapterBeats:['The central question','What research shows','Practical takeaway']});
 assert(seo.title.length>10);assert.equal(seo.titleOptions.length,3);assert.equal(seo.tags.length,2);assert.equal(checkSeo(seo).passed,true);assert.equal(checkSeo({title:'bad'}).passed,false);
 assert.equal(seo.chapters.length,3);assert.equal(seo.chapters[0].time,'00:00');assert.equal(checkChapters(seo.chapters,600).passed,true);
@@ -10,6 +10,7 @@ assert.equal(checkChapters([{time:'00:00',title:'Opening'},{time:'00:05',title:'
 const flagged=complianceReview({title:'How to poison someone'});assert(flagged.flags.length>0);assert.equal(flagged.requiresHumanReview,true);assert.equal(flagged.passed,false);
 const prior='This is a detailed explanation of how human memory can be distorted by stress and repeated suggestions in everyday situations.';
 const originality=originalityReview({script:prior,previousScripts:[prior]});assert(originality.flags.some(x=>x.code==='possible_reused_script_overlap'));
+const imported=importAssetManifest([{id:77,provider:'Pixabay',pageUrl:'https://pixabay.com/videos/example',creator:'Creator',license:'Pixabay Content License',retrievedAt:'2026-11-19T10:00:00Z'}]);assert.equal(imported.length,1);assert.equal(imported[0].source,'Pixabay');assert.equal(imported[0].licenseUrl,'https://pixabay.com/service/license-summary/');assert.equal(imported[0].commercialUseVerified,false);assert.equal(imported[0].reviewStatus,'pending');assert.equal(checkRights(imported).passed,false,'imported footage must remain pending until rights proof and human checks are added');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'phase4-evidence-'));const proof=path.join(temp,'license-proof.txt');fs.writeFileSync(proof,'Reviewed license terms and saved evidence.');
 const rights=rightsLedger([{assetId:'clip-01',kind:'video',source:'Pixabay',sourceUrl:'https://pixabay.com/videos/example',creator:'Creator',license:'Pixabay Content License',licenseUrl:'https://pixabay.com/service/license-summary/',retrievedAt:'2026-11-19T10:00:00Z',proofPath:proof,commercialUseVerified:true,modifications:'Trimmed and color graded',reviewStatus:'approved'}]);
 assert.equal(checkRights(rights).passed,true);assert.equal(checkRights([{source:'unknown'}]).passed,false);
