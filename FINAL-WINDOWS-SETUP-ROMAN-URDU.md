@@ -96,6 +96,8 @@ Repository root se:
 
 ~~~powershell
 python scripts/test-dashboard-launch.py
+# Main YouTube dashboard smoke test (upstream engine dependencies installed hon):
+node scripts/test-main-dashboard-launch.js
 python agents/universal-doctor/doctor.py selftest
 node scripts/test-openmontage-handoff.js
 node scripts/test-video-planner.js
@@ -119,4 +121,4 @@ Windows script syntax/config validation:
 
 ## Testing ki sachchi boundary
 
-GitHub Actions par Windows PowerShell scripts ki syntax/configuration validation, Doctor dashboard ka HTTP smoke test, aur synthetic 5-second MP4 encode/probe automated hain. Linux CI par OpenMontage Remotion demo render bhi test hota hai. Yeh checks tumhare apne PC par poora setup, tumhari API key, OAuth login, 8–12 minute final episode, ya real YouTube upload ko certify nahi karte. Pehli dafa apne PC par run karke agar error aaye to uska screenshot ya exact text bhejna.
+GitHub Actions par Windows PowerShell scripts ki syntax/configuration validation aur Windows par Doctor dashboard ka HTTP smoke test hota hai. Linux CI pinned YouTube automation dashboard ko setup-required mode mein launch karke HTML/health endpoint check karta hai. Synthetic 5-second MP4 encode/probe bhi automated hai. Linux CI par OpenMontage Remotion demo render bhi test hota hai. Yeh checks tumhare apne PC par poora setup, tumhari API key, OAuth login, 8–12 minute final episode, ya real YouTube upload ko certify nahi karte. Pehli dafa apne PC par run karke agar error aaye to uska screenshot ya exact text bhejna.
