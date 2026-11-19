@@ -21,7 +21,7 @@ async function main(){
   console.log(JSON.stringify(report,null,2));if(!rights.passed||!seo.passed||!chapters.passed)process.exitCode=2;return;
  }
  if(command==='approve'){
-  const pkg=p.loadJson(file),reviewer=arg('reviewer')||await ask('Human reviewer full name/handle: ');
+  const pkg=p.loadJson(file);if(!pkg.finalVideo)throw new Error('Package must include finalVideo path');pkg.finalVideo=path.resolve(pkg.finalVideo);if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file not found: '+pkg.finalVideo);pkg.finalVideoSha256=p.sha256(fs.readFileSync(pkg.finalVideo));const reviewer=arg('reviewer')||await ask('Human reviewer full name/handle: ');
   const confirm=await ask('Type APPROVE only after watching the final video and reviewing rights, originality, claims, guidelines, ad suitability and thumbnail: ');
   if(confirm!=='APPROVE')throw new Error('Approval cancelled; no approval record written');
   const items=[['guidelines','Have you checked the complete video against Community Guidelines?'],['advertiserSuitability','Have you checked advertiser suitability across video, title and thumbnail?'],['originality','Does this add meaningful original value and commentary?'],['reusedContent','Have you checked reused-content risks and rights separately?'],['inauthenticContent','Is this not mass-produced or repetitively templated?'],['claims','Are factual claims and sources verified?'],['thumbnail','Is the selected thumbnail accurate and non-misleading?'],['policyFlagsReviewed','Have all automated warning flags been reviewed in context?']];
