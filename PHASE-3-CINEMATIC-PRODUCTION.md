@@ -35,7 +35,7 @@ Keep this watcher running in a second terminal; it copies newly returned files i
 Files are copied to uploads/review-queue/openmontage-return. Existing files are never overwritten. Publishing remains disabled.
 
 ## Motion graphics and maps
-The FFmpeg renderer applies animated lower-thirds, fade/slide title treatments, timed callouts and schematic route-map cards when a scene includes at least two normalized map points (`x` and `y` from 0 to 1). OpenMontage remains the higher-fidelity option for full geographic maps, complex camera moves and layered compositions.
+The FFmpeg renderer uses libass subtitle overlays (not the optional `drawtext` filter) for animated lower-thirds, fade/slide title treatments and timed callouts, plus FFmpeg `drawbox` route-map cards when a scene includes at least two normalized map points (`x` and `y` from 0 to 1). OpenMontage remains the higher-fidelity option for full geographic maps, complex camera moves and layered compositions.
 
 ## Sound design
 Set `DARK_PHYS_SFX_FILE` to an approved local effects stem to add it to the master mix. Music is sidechain-ducked under processed narration; effects are gain-staged and included in the final loudness-normalized mix. Keep music/SFX rights records with the project.
