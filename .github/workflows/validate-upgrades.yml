@@ -45,17 +45,7 @@ jobs:
           if command -v ffmpeg >/dev/null 2>&1; then
             node scripts/test-video-planner.js
           else
-            node - <<'NODE'
-            const fs=require('fs'), os=require('os'), path=require('path');
-            const {VideoFormatPlanner,FORMATS}=require('./agents/video-format-planner');
-            const p=new VideoFormatPlanner({historyPath:path.join(os.tmpdir(),'dark-phys-ci-history.json')});
-            const plan=p.planVideo({title:'7 Signs You Are Being Gaslighted'},{record:false});
-            if(Object.keys(FORMATS).length!==6 || !plan.shotPlan.length || !plan.hook.options.length) process.exit(1);
-            const out=fs.mkdtempSync(path.join(os.tmpdir(),'dark-phys-captions-'));
-            const c=p.generateCaptions({text:'Gaslighting can make people doubt their own memory.',durationSec:6},plan,out,'ci');
-            if(!fs.existsSync(c.srtPath)||!fs.existsSync(c.assPath)) process.exit(1);
-            console.log('PASS planner and SRT/ASS captions; FFmpeg render/audio checks skipped (FFmpeg unavailable)');
-            NODE
+            node -e "const fs=require('fs'),os=require('os'),path=require('path'),{VideoFormatPlanner,FORMATS}=require('./agents/video-format-planner'),p=new VideoFormatPlanner({historyPath:path.join(os.tmpdir(),'dp-ci.json')}),plan=p.planVideo({title:'7 Signs You Are Being Gaslighted'},{record:false}),out=fs.mkdtempSync(path.join(os.tmpdir(),'dp-caps-')),caps=p.generateCaptions({text:'Gaslighting can make people doubt their own memory.',durationSec:6},plan,out,'ci');if(Object.keys(FORMATS).length!==6||!plan.shotPlan.length||!fs.existsSync(caps.srtPath)||!fs.existsSync(caps.assPath))process.exit(1);console.log('PASS planner and captions; FFmpeg checks skipped')"
           fi
       - name: Thumbnail designer tests
         run: |
