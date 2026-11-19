@@ -129,6 +129,8 @@ jobs:
           node --check scripts/content-studio.js
           node scripts/test-content-studio.js
           node scripts/content-studio.js --help
+          node --check scripts/research-content-studio.js
+          node scripts/research-content-studio.js --help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
