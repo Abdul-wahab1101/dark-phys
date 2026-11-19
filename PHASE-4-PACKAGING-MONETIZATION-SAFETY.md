@@ -9,7 +9,7 @@ Cloudflare deployment is intentionally owner-controlled because it requires the 
 The packaging module produces a primary SEO title, alternate title options, description, tags and a slug. It drafts chapter titles from supplied chapter beats/sections and generates approximate timestamps when actual timestamps are not supplied. Chapter timestamps must be checked against the final export; the validator requires at least three ascending chapters, a 00:00 first chapter, at least 10 seconds between chapters, and timestamps within the declared duration. Metadata remains a human-reviewed draft.
 
 ## Copyright and licensing ledger
-Every media asset must have a unique ID and record kind, source, HTTPS source URL, creator, exact license name and HTTPS license URL, retrieval date/time, a proof path (existing local evidence file or HTTPS evidence URL), commercial-use verification, modifications, attribution requirements/text and a human `reviewStatus: approved` decision. Missing evidence blocks readiness. A downloadable or “royalty-free” label is not proof that every use is permitted; review the actual license, restrictions and model/property releases.
+Every media asset must have a unique ID and record kind, source, HTTPS source URL, creator, exact license name and HTTPS license URL, retrieval date/time, a proof path (existing local evidence file or HTTPS evidence URL), commercial-use verification, modifications, an explicit attribution-review decision, attribution requirements/text and a human `reviewStatus: approved` decision. Missing evidence blocks readiness. A downloadable or “royalty-free” label is not proof that every use is permitted; review the actual license, restrictions and model/property releases.
 
 ## Reused and inauthentic content checks
 The advisory checker compares supplied narration/script text against prior scripts using five-word shingles and can flag high overlap. It can also flag repeated template IDs when recent template history is supplied. These are similarity signals, not YouTube decisions; a human must compare the finished video with the channel's back catalogue and assess meaningful original commentary, explanation, editing and viewer value. Copyright permission and monetization originality are separate questions.
@@ -19,8 +19,8 @@ Automated phrase screening is advisory only and cannot decide policy compliance.
 
 ## Final human approval gate
 1. Create a starter package: `node scripts/phase4-package.js init --file uploads/phase4-package.json`.
-2. Replace every example value; add a complete rights record for every third-party asset and save its proof file.
-3. Build metadata and advisory reports: `node scripts/phase4-package.js build --file uploads/phase4-package.json`.
+2. Replace every example value; add a complete rights record for every third-party asset and save its proof file. Set `attributionReviewed: true` only after checking the license's attribution terms.
+3. Import the Phase 3 Pixabay manifest and build metadata/advisory reports: `node scripts/phase4-package.js build --file uploads/phase4-package.json --manifest uploads/stock-footage/asset-manifest.json`. Imported records remain pending until you add license proof, verify commercial use, describe modifications and complete attribution review. For non-Pixabay assets, add the records manually.
 4. Review preflight: `node scripts/phase4-package.js check --file uploads/phase4-package.json`.
 5. Only after personally watching the final export and reviewing all rights, claims, originality, thumbnail, guidelines and ad suitability, run `node scripts/phase4-package.js approve --file uploads/phase4-package.json`. The CLI requires explicit typed confirmations for every human gate.
 6. Verify the package: `node scripts/phase4-package.js verify --file uploads/phase4-package.json`.
