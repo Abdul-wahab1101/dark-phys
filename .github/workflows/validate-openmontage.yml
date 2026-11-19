@@ -1,0 +1,45 @@
+name: Validate OpenMontage integration
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - '.github/workflows/validate-openmontage.yml'
+      - 'scripts/export-openmontage.js'
+      - 'scripts/test-openmontage-handoff.js'
+      - 'OPENMONTAGE-INTEGRATION.md'
+      - 'setup-openmontage.ps1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge-and-ffmpeg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test Dark Phys handoff bridge
+        run: node scripts/test-openmontage-handoff.js
+      - name: Checkout pinned OpenMontage
+        uses: actions/checkout@v4
+        with:
+          repository: OpenMontageInc/OpenMontage
+          ref: 2e003e65fa99a0f329478a2c1cdcf26bc481933a
+          path: engines/OpenMontage
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install OpenMontage test dependencies
+        working-directory: engines/OpenMontage
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Run real FFmpeg vertical-render tests
+        working-directory: engines/OpenMontage
+        run: pytest -q tests/tools/test_video_compose_vertical.py
