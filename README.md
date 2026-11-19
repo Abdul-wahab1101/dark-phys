@@ -23,6 +23,9 @@ Dual Pixabay key support, scene-by-scene real video-footage shortlists, explicit
 ## Phase 2 — Original Content Studio
 The source-traceable content studio builds bilingual documentary draft packages from researcher-supplied evidence and separate English/Roman Urdu narration. It includes claim references, fact-check review status, hooks, long-form structure, retention checkpoints, originality checklist and Shorts plans. See [PHASE-2-ORIGINAL-CONTENT-STUDIO.md](PHASE-2-ORIGINAL-CONTENT-STUDIO.md). Run `node scripts/research-content-studio.js "gaslighting psychology" --region=US --language=en` to collect public research leads, then `node scripts/content-studio.js research-package.json` to create source-bound bilingual writer prompts and review packages. Run `node scripts/test-content-studio.js` for regression tests. This is an offline editorial workflow, not autonomous web research or a finished AI writer; sources and narration must be supplied and verified by a human.
 
+## Phase 4 — Packaging & Monetization Safety
+Cloudflare Worker thumbnail concept endpoint (three 1280×720 directions), SEO metadata and chapter validation, a per-asset copyright/license evidence ledger, advisory reused/inauthentic-content and policy review gates, and a tamper-evident human approval step are implemented in [PHASE-4-PACKAGING-MONETIZATION-SAFETY.md](PHASE-4-PACKAGING-MONETIZATION-SAFETY.md). Run `node scripts/test-phase4-packaging.js`. Worker deployment is optional and requires the owner's Cloudflare account and secret; CI does not deploy it. The approval gate is manual-upload-only and does not authorize automated publishing.
+
 ## Windows quick setup
 1. Install Git, Node.js 20 LTS (18.17+ minimum for the YouTube agent), Python 3.10+, and FFmpeg.
 2. Open PowerShell in this repository.
