@@ -22,4 +22,5 @@ media/
 *.wav
 *.mp3
 *.sqlite
+*.sqlite3
 *.db
