@@ -7,6 +7,10 @@ function arg(name,fallback=''){const i=process.argv.indexOf('--'+name);return i<
 async function ask(question){const rl=readline.createInterface({input:process.stdin,output:process.stdout});return new Promise(resolve=>rl.question(question,a=>{rl.close();resolve(a.trim());}));}
 async function main(){
  const command=process.argv[2],file=path.resolve(arg('file','uploads/phase4-package.json'));
+ if(command==='thumbnails'){
+  const result=await p.requestThumbnailConcepts(arg('endpoint'),process.env.CLOUDFLARE_THUMBNAIL_TOKEN,arg('title'),arg('subtitle'));
+  const out=path.resolve(arg('output','uploads/thumbnail-concepts.json'));p.writeJson(out,result);console.log('Saved '+result.concepts.length+' thumbnail concepts:',out);return;
+ }
  if(command==='build'){
   const input=p.loadJson(file),pkg={...input,seo:p.buildSeo(input.seo||input),rightsLedger:p.rightsLedger(input.assets||input.rightsLedger||[]),compliance:p.complianceReview(input)};
   p.writeJson(file,pkg);console.log('Phase 4 package built:',file);console.log('Rights records:',pkg.rightsLedger.length,'; advisory flags:',pkg.compliance.flags.length);return;
@@ -26,6 +30,6 @@ async function main(){
  if(command==='verify'){
   const pkg=p.loadJson(file),result=p.verifyApproval(pkg,pkg.approval);console.log(JSON.stringify(result,null,2));if(!result.valid)process.exitCode=2;return;
  }
- console.log('Usage: node scripts/phase4-package.js build|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
+ console.log('Usage: node scripts/phase4-package.js thumbnails|build|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
 }
 main().catch(e=>{console.error('Phase 4:',e.message);process.exit(1);});
