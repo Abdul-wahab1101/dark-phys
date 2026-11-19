@@ -172,6 +172,12 @@ jobs:
         run: |
           node --check scripts/phase5-operator.js
           node scripts/test-phase5-operator.js
+      - name: Test Phase 6 Viral Intelligence Engine
+        run: |
+          node --check agents/viral-intelligence-engine.js
+          node --check scripts/viral-intelligence.js
+          node scripts/test-viral-intelligence.js
+          node scripts/viral-intelligence.js --help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
