@@ -23,8 +23,9 @@ async function render(file,voice,music,out){
  }
  if(rows.length)rows.push(rows[rows.length-2]);
  await fs.writeFile(list,rows.join('\n')+'\n');
- const silent=path.join(base,'footage','picture-track.mp4'),ff=process.env.FFMPEG_PATH||'ffmpeg',graphics=buildMotionFilters(p.scenes,{width:profile.width,height:profile.height});
- const videoFilters=['scale='+profile.width+':'+profile.height+':force_original_aspect_ratio=increase','crop='+profile.width+':'+profile.height,'fps='+profile.fps,'format=yuv420p',graphics.filter].filter(Boolean).join(',');
+ const silent=path.join(base,'footage','picture-track.mp4'),ff=process.env.FFMPEG_PATH||'ffmpeg',graphics=buildMotionFilters(p.scenes,{width:profile.width,height:profile.height}),assFile=path.join(base,'footage','motion-graphics.ass');
+ await fs.writeFile(assFile,graphics.ass,'utf8');const subtitlePath=assFile.replace(/\\\\/g,'/').replace(/:/g,'\\\\:').replace(/'/g,"\\\\'");
+ const videoFilters=['scale='+profile.width+':'+profile.height+':force_original_aspect_ratio=increase','crop='+profile.width+':'+profile.height,'fps='+profile.fps,'format=yuv420p',graphics.filter,"subtitles=filename='"+subtitlePath+"':charenc=UTF-8"].filter(Boolean).join(',');
  run(ff,['-y','-filter_threads',String(profile.filterThreads),'-f','concat','-safe','0','-i',list,'-t',String(totalDuration),'-vf',videoFilters,'-an','-c:v','libx264','-preset',profile.preset,'-crf',String(profile.crf),'-threads',String(profile.threads),silent]);
  const {ffmpegArgs,buildAudioFilter}=require('../agents/production/audio-mix'),sfxFile=process.env.DARK_PHYS_SFX_FILE,sfx=sfxFile?[{path:sfxFile,atSeconds:0,gainDb:-12}]:[];
  run(ff,ffmpegArgs({video:silent,voice,music,output:out,sfx,profile,filter:buildAudioFilter({sfx}).filter}));
