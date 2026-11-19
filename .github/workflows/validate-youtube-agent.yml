@@ -29,8 +29,8 @@ jobs:
           node-version: '20'
           cache: npm
           cache-dependency-path: engines/youtube-automation-agent/package-lock.json
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Verify FFmpeg on runner
+        run: ffmpeg -version
       - name: Install upstream dependencies
         working-directory: engines/youtube-automation-agent
         run: npm ci
