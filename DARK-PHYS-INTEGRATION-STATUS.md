@@ -1,19 +1,25 @@
 # Dark Phys integration status
 
-## Added on integration branch
-- Windows PowerShell setup and launcher for a single YouTube Automation Agent runtime.
-- OpenMontage cloned as a separate optional production engine, preserving its AGPL-3.0 source and license boundary.
-- Project setup, hardware, API-key, OAuth and publishing-safety documentation.
-- Secret/dependency/generated-media ignore rules.
+## ZIP upgrade integration — complete
+- Both repository ZIP archives were extracted and integrity-checked by GitHub Actions.
+- YouTube Agent v6 Video Format Planner integrated at `agents/video-format-planner.js`, with plan CLI and tests under `scripts/`.
+- YouTube Agent v6 thumbnail designer integrated at `agents/thumbnail-designer-agent.js`; added the missing shared `utils/logger.js`. Removed the duplicate legacy root-level thumbnail file.
+- Universal Doctor Agent integrated under `agents/universal-doctor/`, including all core modules, recovery, integrity manifest, README and unit tests.
+- Kept Doctor as a separate tool instead of merging it into the YouTube agent's orchestration. Its default diagnostic mode does not modify the target project; repairs remain approval-gated according to its documented modes.
+- Original ZIPs and the extracted audit copy are retained for traceability.
 
-## Why engines are separate
-The YouTube agent is a Node.js application (Node >=18.17) with a local dashboard, SQLite state, Playwright/Chromium and FFmpeg-based slideshow rendering. OpenMontage is a separate instruction-driven Python production system (Python >=3.10) with optional Remotion and HyperFrames runtimes. Combining their internal orchestration would duplicate pipeline ownership and make the install much heavier. Dark Phys therefore uses the YouTube agent as the channel operator and OpenMontage as an opt-in advanced production workspace.
+## Verification
+- GitHub Actions run **44485685222**: success.
+- Doctor Python compile check: passed.
+- Doctor unit tests: passed.
+- Doctor safety self-test: passed.
+- Video planner syntax and core planner/caption checks: passed.
+- Thumbnail designer syntax, module load and design-family checks: passed.
+- FFmpeg-specific video burn-in/audio-mix render checks were skipped because FFmpeg is not installed on the hosted runner. Run those locally after FFmpeg setup for full render verification.
 
-## Not yet verified / not claimed complete
-- ZIP upgrade package extraction and tests.
-- Thumbnail agent's missing logger dependency and compatibility repair.
+## Still outside this ZIP task
 - Full OpenMontage dependency installation/render smoke test.
 - Live provider API credentials, Google OAuth and real YouTube upload.
 - Windows execution on the owner's machine.
 
-Do not mark the project production-ready until these checks pass. No credentials are stored in this repository.
+No credentials are stored in this repository. Do not describe live publishing or a full OpenMontage render as verified until those checks pass.
