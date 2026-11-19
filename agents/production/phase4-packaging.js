@@ -55,6 +55,7 @@ function rightsLedger(assets=[]){
 }
 function checkRights(assets=[]){
  const missing=[];
+ if(!Array.isArray(assets)||assets.length===0)missing.push('At least one media asset must have a rights record');
  (assets||[]).forEach((a,i)=>{
   ['source','sourceUrl','creator','license','licenseUrl','retrievedAt'].forEach(k=>{if(!clean(a[k]))missing.push('Asset '+(i+1)+' missing '+k);});
   if(a.commercialUseVerified!==true)missing.push('Asset '+(i+1)+' commercial-use permission not verified');
