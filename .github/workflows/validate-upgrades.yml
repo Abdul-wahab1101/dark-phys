@@ -1,0 +1,49 @@
+name: Validate Dark Phys ZIP integrations
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - 'agents/**'
+      - 'scripts/**'
+      - 'thumbnail-designer-agent (1).js'
+      - 'utils/**'
+      - '.github/workflows/validate-upgrades.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  python-doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Doctor modules
+        run: python -m compileall -q agents/universal-doctor
+      - name: Doctor unit tests
+        run: python -m unittest discover -s agents/universal-doctor/tests -v
+      - name: Doctor safety self-test
+        run: python agents/universal-doctor/doctor.py selftest
+  node-upgrades:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install FFmpeg and thumbnail dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          npm install --no-save sharp
+      - name: Syntax checks
+        run: |
+          node --check agents/video-format-planner.js
+          node --check scripts/plan-video.js
+          node --check scripts/test-video-planner.js
+          node --check 'thumbnail-designer-agent (1).js'
+      - name: Video planner tests
+        run: node scripts/test-video-planner.js
+      - name: Thumbnail designer tests
+        run: node scripts/test-thumbnail-designer.js
