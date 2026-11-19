@@ -34,13 +34,14 @@ Run:
 - `node scripts/viral-intelligence.js brief topic.json`
 - `node scripts/viral-intelligence.js brief topic.json --short --language=ur-Latn`
 - `node scripts/viral-intelligence.js audit script-review.json`
+- Add researcher-rated `viralFactors` (0–5) to a valid Original Content Studio research package, then run `node scripts/viral-intelligence.js prepare research-package.json` to create the viral brief plus separate English and Roman Urdu writer prompts.
 
 For `audit`, input JSON includes `script`, `claims` with sourceIds, and optional timed `sections` with visualChange notes. Output is an editorial warning report, not a pass certificate.
 
 ## Scoring and limitations
 The score is a weighted editorial ranking of supplied inputs. It is not a prediction of YouTube recommendation distribution, views, CTR, retention, subscribers or revenue. A high score cannot compensate for weak research. Scores are not inferred from competitor view counts alone. Trend discovery and competitor observations must be supplied by a permitted, current data source; this offline module makes no implicit network requests or scraping calls.
 
-The brief is a structured writer/editor handoff, not a magically completed factual script. The original-content studio remains responsible for claim-to-source traceability and bilingual drafts. The cinematic production engine/OpenMontage remain responsible for footage, scene planning, narration and rendering. Phase 4 packaging/rights checks and Phase 5 publishing approvals remain mandatory.
+The `prepare` command hands a validated research package into the existing Original Content Studio writer-prompt builder and keeps English/Roman Urdu prompts separate. The brief is a structured writer/editor handoff, not a magically completed factual script. The original-content studio remains responsible for claim-to-source traceability and bilingual drafts. The cinematic production engine/OpenMontage remain responsible for footage, scene planning, narration and rendering. Phase 4 packaging/rights checks and Phase 5 publishing approvals remain mandatory.
 
 ## Learning loop
 After publishing, collect actual channel analytics through the existing OAuth-connected YouTube analytics agent. Compare similar traffic sources and observation windows; require enough impressions and guardrails before adopting a title/thumbnail experiment. Record qualitative audience questions. Use the results to propose—not silently publish—the next topic and angle.
