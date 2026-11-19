@@ -53,7 +53,7 @@ try {
  const badFile=path.join(temp,'bad.json');
  fs.writeFileSync(badFile,JSON.stringify({...research,narration:{en:'English only'},output:path.join(temp,'bad-out.json')}));
  const badRun=spawnSync(process.execPath,[cli,'prepare',badFile],{encoding:'utf8'});
- assert.notEqual(badRun.status,0);assert.match(badRun.stderr,/Roman Urdu/);assert.ok(!fs.existsSync(path.join(temp,'bad-out.json')));
+ assert.notEqual(badRun.status,0);assert.match(badRun.stderr,/ur-Latn/);assert.ok(!fs.existsSync(path.join(temp,'bad-out.json')));
 } finally { fs.rmSync(temp,{recursive:true,force:true}); }
 console.log('PASS CLI end-to-end: help, brief generation, bilingual prepare, validation failure and safe output');
 
