@@ -685,13 +685,25 @@ def find_ffmpeg() -> Tuple[str, str]:
 class Comp:
     def __init__(self, tl: dict, workdir: Path, base_dir: Optional[Path] = None,
                  out_size: Optional[Tuple[int, int]] = None):
+        if not isinstance(tl, dict):
+            raise ValueError("timeline must be a JSON object/dict")
         self.tl = tl
         self.dW, self.dH = int(tl.get("width", 1080)), int(tl.get("height", 1920))
         self.W, self.H = (int(out_size[0]), int(out_size[1])) if out_size else (self.dW, self.dH)
-        self.k = self.W / self.dW                       # design px -> output px
+        for label, width, height in (("design", self.dW, self.dH), ("output", self.W, self.H)):
+            if width < 2 or height < 2 or width % 2 or height % 2:
+                raise ValueError(f"{label} width and height must be positive even integers (yuv420p-safe)")
         self.fps = int(tl.get("fps", 24))
-        self.dur = float(tl["duration"])
+        if not 1 <= self.fps <= 240:
+            raise ValueError("timeline fps must be between 1 and 240")
+        self.dur = float(tl.get("duration", 0))
+        if not math.isfinite(self.dur) or self.dur <= 0:
+            raise ValueError("timeline duration must be a finite number greater than zero")
         self.N = int(round(self.dur * self.fps))
+        if self.N < 1:
+            raise ValueError("timeline duration and fps must produce at least one frame")
+        if not isinstance(tl.get("layers", []), list):
+            raise ValueError("timeline layers must be an array/list")
         self.wd = Path(workdir)
         self.assets = self.wd / "assets"
         self.assets.mkdir(parents=True, exist_ok=True)
@@ -1134,6 +1146,10 @@ def render(tl: dict, out: str, *, quality: str = "final", out_size: Optional[Tup
            base_dir: Optional[str] = None, workdir: Optional[str] = None, keep: bool = False,
            ffmpeg: Optional[str] = None) -> dict:
     """Render a composition to a video-only H.264 mp4 (exactly round(duration*fps) frames)."""
+    if quality not in QUALITY:
+        raise ValueError(f"unknown quality '{quality}'. choose from: {', '.join(QUALITY)}")
+    if out_size is not None and (not isinstance(out_size, (tuple, list)) or len(out_size) != 2):
+        raise ValueError("out_size must be a (width, height) pair")
     ff, _ = find_ffmpeg() if ffmpeg is None else (ffmpeg, "")
     out = str(Path(out).resolve())          # ffmpeg runs with cwd=workdir, so the output path must be absolute
     Path(out).parent.mkdir(parents=True, exist_ok=True)
