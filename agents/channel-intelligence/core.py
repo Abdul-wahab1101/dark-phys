@@ -37,9 +37,9 @@ def utc_now() -> str:
 
 def normalize_text(value: str) -> str:
     value = unicodedata.normalize("NFKC", str(value or "")).casefold()
-    value = re.sub(r"https?://\\S+", " ", value)
-    value = re.sub(r"[^\\w\\s]", " ", value, flags=re.UNICODE)
-    return re.sub(r"\\s+", " ", value).strip()
+    value = re.sub(r"https?://\S+", " ", value)
+    value = re.sub(r"[^\w\s]", " ", value, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def token_set(value: str) -> set[str]:
@@ -154,7 +154,7 @@ class ChannelIntelligence:
             {"id":"dark-phys-ur","name":"Dark Phys Urdu","language":"ur-Latn","locale":"ur-PK","region":"PK","niche":"Dark Psychology & Human Behavior","audience":"Roman Urdu-speaking viewers in Pakistan and diaspora seeking practical, understandable psychology","voice":"Natural Pakistani Roman Urdu; not literal English translation","enabled":True,"content_pillars":["psychology asaan alfaaz mein","manipulation ko samajhna aur bachao","insani rawaiye","real-life misaalein"],"style":{"format":"cinematic documentary explainer","spelling":"consistent Roman Urdu","examples":"Pakistan-relevant where useful"}}
           ]
         }
-        self.profiles_path.write_text(json.dumps(profiles, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        self.profiles_path.write_text(json.dumps(profiles, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     def list_channels(self) -> list[dict[str, Any]]:
         data = json.loads(self.profiles_path.read_text(encoding="utf-8"))
@@ -179,7 +179,7 @@ class ChannelIntelligence:
         else:
             channels.append(profile)
         data["channels"] = channels
-        self.profiles_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        self.profiles_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     def add_topic(self, channel_id: str, title: str, core_topic: str = "", language: str | None = None,
                   factors: dict[str, Any] | None = None, research: dict[str, Any] | None = None,
