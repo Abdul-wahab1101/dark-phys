@@ -693,6 +693,7 @@ class Comp:
         for label, width, height in (("design", self.dW, self.dH), ("output", self.W, self.H)):
             if width < 2 or height < 2 or width % 2 or height % 2:
                 raise ValueError(f"{label} width and height must be positive even integers (yuv420p-safe)")
+        self.k = self.W / self.dW                       # design px -> output px
         self.fps = int(tl.get("fps", 24))
         if not 1 <= self.fps <= 240:
             raise ValueError("timeline fps must be between 1 and 240")
