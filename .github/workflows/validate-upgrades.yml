@@ -39,7 +39,7 @@ jobs:
           node --check agents/video-format-planner.js
           node --check scripts/plan-video.js
           node --check scripts/test-video-planner.js
-          node --check 'thumbnail-designer-agent (1).js'
+          node --check agents/thumbnail-designer-agent.js
       - name: Video planner tests
         run: |
           if command -v ffmpeg >/dev/null 2>&1; then
@@ -52,5 +52,5 @@ jobs:
           if command -v ffmpeg >/dev/null 2>&1; then
             node scripts/test-thumbnail-designer.js
           else
-            node -e "const m=require('./thumbnail-designer-agent (1).js'); if(!m.ThumbnailDesignerAgent || m.DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS thumbnail module load and design family registry; render checks skipped (FFmpeg unavailable)')"
+            node -e "const m=require('./agents/thumbnail-designer-agent.js'); if(!m.ThumbnailDesignerAgent || m.DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS thumbnail module load and design family registry; render checks skipped (FFmpeg unavailable)')"
           fi
