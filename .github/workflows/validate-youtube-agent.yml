@@ -40,7 +40,7 @@ jobs:
         working-directory: engines/youtube-automation-agent
         run: npm test
       - name: Install thumbnail test dependency
-        run: npm install --no-save sharp
+        run: npm install --no-save sharp ffprobe-static
       - name: Validate Dark Phys format planner
         run: node scripts/test-video-planner.js
       - name: Validate Dark Phys thumbnail designer
