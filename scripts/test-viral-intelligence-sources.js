@@ -10,7 +10,7 @@ const fetchImpl=async url=>{
  return {ok:true,json:async()=>({items:[]})};
 };
 (async()=>{
- assert.throws(()=>new YouTubeTrendSource({apiKey:''}).mostPopular(),/not configured/);
+ await assert.rejects(()=>new YouTubeTrendSource({apiKey:''}).mostPopular(),/not configured/);
  const api=new YouTubeTrendSource({apiKey:'test-key',regionCode:'PK',fetchImpl});
  const popular=await api.mostPopular({maxResults:4});assert.equal(popular.items[0].views,1200);
  const result=await api.discover({queries:['documentary storytelling'],maxResults:5});
