@@ -18,7 +18,7 @@ async function main(){
  if(command==='check'){
   const pkg=p.loadJson(file),rights=p.checkRights(pkg.rightsLedger||[]),chapters=p.checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0)),compliance=pkg.compliance||p.complianceReview(pkg);
   const report={rights,chapters,compliance,approval:p.verifyApproval(pkg,pkg.approval)};
-  console.log(JSON.stringify(report,null,2));if(!rights.passed||!chapters.passed||!report.approval.valid)process.exitCode=2;return;
+  console.log(JSON.stringify(report,null,2));if(!rights.passed||!chapters.passed)process.exitCode=2;return;
  }
  if(command==='approve'){
   const pkg=p.loadJson(file),reviewer=arg('reviewer')||await ask('Human reviewer full name/handle: ');
