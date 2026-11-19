@@ -9,8 +9,8 @@ try{
  for(const [file,freq] of [[voice,520],[music,180],[sfx,880]])run(['-y','-f','lavfi','-i','sine=frequency='+freq+':sample_rate=44100','-t','3','-c:a','pcm_s16le',file]);
  const graphics=buildMotionFilters([{title:'Cinematic opener',visual:'Night city skyline',durationSeconds:3,overlays:[{text:'A hidden pattern'}],map:{title:'MOVEMENT',points:[{x:.1,y:.2,label:'START'},{x:.8,y:.7,label:'END'}]}}],{width:640,height:360});
  assert(graphics.ass.includes('Cinematic opener')&&graphics.ass.includes('A hidden pattern')&&graphics.filter.includes('drawbox'));
- const assFile=path.join(dir,'graphics.ass');fs.writeFileSync(assFile,graphics.ass);const assPath=assFile.replace(/\\\\/g,'/').replace(/:/g,'\\\\:');
- run(['-y','-f','lavfi','-i','testsrc=size=640x360:rate=24','-t','3','-vf',graphics.filter+',subtitles=filename=\\''+assPath+'\\':charenc=UTF-8','-an','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',picture]);
+ const assFile=path.join(dir,'graphics.ass');fs.writeFileSync(assFile,graphics.ass);const assPath=assFile.replace(/\\/g,'/').replace(/:/g,'\\:');const subtitleFilter="subtitles=filename='"+assPath+"':charenc=UTF-8";
+ run(['-y','-f','lavfi','-i','testsrc=size=640x360:rate=24','-t','3','-vf',graphics.filter+','+subtitleFilter,'-an','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',picture]);
  const sfxTracks=[{path:sfx,atSeconds:.6,gainDb:-12}],mix=buildAudioFilter({sfx:sfxTracks});
  run(ffmpegArgs({video:picture,voice,music,sfx:sfxTracks,output,filter:mix.filter,profile:{preset:'ultrafast',crf:28,threads:2}}));
  assert(fs.statSync(output).size>10000,'rendered master MP4 should not be empty');
