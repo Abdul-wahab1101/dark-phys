@@ -123,6 +123,12 @@ jobs:
           node --check scripts/stock-footage.js
           node scripts/test-stock-footage.js
           node scripts/stock-footage.js help
+      - name: Test Original Content Studio
+        run: |
+          node --check agents/original-content-studio.js
+          node --check scripts/content-studio.js
+          node scripts/test-content-studio.js
+          node scripts/content-studio.js --help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
