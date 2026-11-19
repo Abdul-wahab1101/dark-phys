@@ -1208,6 +1208,8 @@ class ThumbnailDesignerAgent {
       let score = (profile.fam?.[id] || 0.8) * 3;
       if (fam.emotionFit.includes(analysis.emotionalAngle)) score += 1.5;
       score += rng() * 1.6;
+      const preferred = (script.formatPlan && script.formatPlan.thumbnailFamilies) || (script.metadata && script.metadata.formatPlan && script.metadata.formatPlan.thumbnailFamilies) || [];
+      if (preferred.includes(id)) score += 1.2;
       const recentIdx = recent.findIndex(r => r.includes(id));
       if (recentIdx >= 0) score -= Math.max(0.8, 3.2 - recentIdx * 0.7);
       return { id, score };
