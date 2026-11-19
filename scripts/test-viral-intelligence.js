@@ -1,6 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const {scoreTopic,makeBrief,auditScript,WEIGHTS}=require('../agents/viral-intelligence-engine');
+const {prepareResearchPackage}=require('./viral-intelligence');
 const base={title:'Why people doubt their own memory',audience:'Psychology documentary viewers',language:'en',researchAgeDays:5,
  factors:{audience_fit:5,demand_evidence:4,freshness:4,curiosity:5,story_depth:4,visual_potential:4,differentiation:4,evidence_quality:5,series_potential:3},
  evidence:[{title:'Peer-reviewed research',url:'https://example.org/research'}],
@@ -17,4 +18,10 @@ const short=makeBrief(base,{format:'short'});assert.equal(short.durationSec,45);
 const audit=auditScript({script:'What if memory is not a perfect recording? '.repeat(35),claims:[{text:'A claim',sourceIds:[]}],sections:[]});
 assert.equal(audit.readiness,'BLOCKED');assert.ok(audit.flags.some(x=>x.code==='UNSOURCED_CLAIMS'));
 assert.ok(Object.keys(WEIGHTS).length>=8);
+const research={topic:'Memory and human behavior',audience:'Psychology viewers',sources:[{id:'s1',title:'Research',url:'https://example.org/paper'}],claims:[{id:'c1',text:'Memory is reconstructive.',sourceIds:['s1']}],narration:{en:'A memory is not a perfect recording. Evidence suggests recall can be influenced by context.', 'ur-Latn':'Yaad-dasht aik perfect recording nahi hoti. Research ke mutabiq context yaad par asar dal sakta hai.'},viralFactors:{audience_fit:4,demand_evidence:3,freshness:4,curiosity:5,story_depth:4,visual_potential:4,differentiation:4,evidence_quality:5,series_potential:3}};
+const integrated=prepareResearchPackage(research);
+assert.ok(integrated.viralBrief && integrated.writerPrompts.en && integrated.writerPrompts['ur-Latn']);
+assert.equal(integrated.approval.autoPublish,false);
+assert.throws(()=>prepareResearchPackage({...research,viralFactors:undefined}),/will not invent scores/);
+console.log('PASS Original Content Studio handoff, bilingual writer prompts and human approval gate');
 console.log('PASS Viral Intelligence: evidence scoring, confidence, briefs, Shorts, script audit and safety gates');
