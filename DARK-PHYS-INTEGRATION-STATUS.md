@@ -22,11 +22,13 @@
 - Added a tested handoff exporter for the `animated-explainer` 8–12 minute 16:9 pipeline and the `clip-factory` five-Shorts 9:16 pipeline.
 - Added Windows optional setup for OpenMontage Python requirements and Remotion dependencies; standard setup remains lightweight.
 - Added a CI workflow to test handoff validation and OpenMontage's actual FFmpeg vertical-composition path against a pinned upstream revision.
-- Runtime options documented: FFmpeg, Remotion and HyperFrames. Full Remotion render and HyperFrames availability still require local runtime checks; do not claim these are verified until they pass.
+- GitHub Actions run **44488259168** passed the bridge tests, actual FFmpeg vertical-render tests, and a real Remotion `world-in-numbers` demo render on hosted Linux.
+- HyperFrames remains optional and unverified; the Windows PC's local runtime is also not yet verified.
 
-## Still outside this ZIP task
-- Full OpenMontage dependency installation/render smoke test.
-- Live provider API credentials, Google OAuth and real YouTube upload.
-- Windows execution on the owner's machine.
+## Remaining owner-side activation checks
+- Run the optional OpenMontage setup and repeat the small Remotion smoke render on the Windows PC; hosted Linux CI does not prove local compatibility or performance.
+- Configure a text-provider key and Google OAuth Desktop credentials locally if live generation/publishing is wanted.
+- Run a real sample project through research → approved script → render → review; no complete 8–12 minute episode or Shorts batch has been rendered from the owner's assets yet.
+- Real YouTube upload and analytics require the owner's channel authorization and explicit approval.
 
 No credentials are stored in this repository. Do not describe live publishing or a full OpenMontage render as verified until those checks pass.
