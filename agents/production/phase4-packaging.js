@@ -94,10 +94,13 @@ function createApproval(pkg,reviewer,checks={}){
  if(checks.guidelines!==true||checks.advertiserSuitability!==true||checks.originality!==true||checks.reusedContent!==true||checks.inauthenticContent!==true||checks.claims!==true||checks.thumbnail!==true||checks.policyFlagsReviewed!==true)
   throw new Error('Every human review confirmation must be true');
  if((compliance.flags||[]).length&&!checks.policyFlagsReviewed)throw new Error('Policy screening flags need human review');
- if(!pkg.finalVideo||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video and SEO metadata are required');
+ if(!pkg.finalVideo||!pkg.finalVideoSha256||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video file hash and SEO metadata are required');
+ if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file does not exist');
+ if(sha256(fs.readFileSync(pkg.finalVideo))!==pkg.finalVideoSha256)throw new Error('Final video changed before approval');
  return {status:'approved_for_manual_upload_only',reviewer:clean(reviewer),approvedAt:new Date().toISOString(),packageHash:sha256(JSON.stringify({...pkg,approval:undefined})),checks:{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,rights:true,chapters:true},publishingPermission:false,automatedUploadAllowed:false};
 }
 function verifyApproval(pkg,approval){
+ if(pkg.finalVideoSha256){if(!pkg.finalVideo||!fs.existsSync(pkg.finalVideo))return {valid:false,reason:'Approved final video file is missing'};if(sha256(fs.readFileSync(pkg.finalVideo))!==pkg.finalVideoSha256)return {valid:false,reason:'Final video file changed after approval'};}
  if(!approval||approval.status!=='approved_for_manual_upload_only'||approval.publishingPermission!==false)return {valid:false,reason:'No valid manual-upload approval'};
  const hash=sha256(JSON.stringify({...pkg,approval:undefined}));
  return {valid:hash===approval.packageHash,reason:hash===approval.packageHash?'Approval matches current package':'Package changed after approval; re-review required'};
