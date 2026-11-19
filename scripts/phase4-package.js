@@ -24,7 +24,8 @@ async function main(){
   const pkg=p.loadJson(file),reviewer=arg('reviewer')||await ask('Human reviewer full name/handle: ');
   const confirm=await ask('Type APPROVE only after watching the final video and reviewing rights, originality, claims, guidelines, ad suitability and thumbnail: ');
   if(confirm!=='APPROVE')throw new Error('Approval cancelled; no approval record written');
-  const checks={guidelines:true,advertiserSuitability:true,originality:true,claims:true,thumbnail:true};
+  const items=[['guidelines','Have you checked the complete video against Community Guidelines?'],['advertiserSuitability','Have you checked advertiser suitability across video, title and thumbnail?'],['originality','Does this add meaningful original value and commentary?'],['reusedContent','Have you checked reused-content risks and rights separately?'],['inauthenticContent','Is this not mass-produced or repetitively templated?'],['claims','Are factual claims and sources verified?'],['thumbnail','Is the selected thumbnail accurate and non-misleading?'],['policyFlagsReviewed','Have all automated warning flags been reviewed in context?']];
+  const checks={};for(const [key,question] of items){checks[key]=(await ask(question+' Type YES to confirm: '))==='YES';if(!checks[key])throw new Error('Approval stopped: '+key+' was not confirmed');}
   pkg.approval=p.createApproval(pkg,reviewer,checks);p.writeJson(file,pkg);console.log('Approved for manual upload only. Automated publishing remains disabled.');return;
  }
  if(command==='verify'){
