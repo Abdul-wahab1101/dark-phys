@@ -164,6 +164,10 @@ jobs:
           node scripts/test-phase4-packaging.js
           node scripts/test-phase4-cli.js
           node scripts/phase4-package.js
+      - name: Test isolated channel workspaces
+        run: |
+          node --check scripts/channel-workspace.js
+          node scripts/test-channel-workspace.js
       - name: Test Phase 5 operator integration
         run: |
           node --check scripts/phase5-operator.js
