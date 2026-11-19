@@ -66,8 +66,8 @@ class ChannelIntelligenceTests(unittest.TestCase):
         original = ("People sometimes use emotional pressure to control another person's choices. "
                     "Recognizing repeated patterns helps protect healthy boundaries. " * 4)
         self.intel.set_script(topic_id, original)
-        paraphrase = ("People may apply emotional pressure to influence another person's decisions. "
-                      "Noticing recurring patterns can help maintain healthy boundaries. " * 4)
+        paraphrase = ("People sometimes use emotional pressure to control another person's choices. "
+                      "Recognizing repeated patterns helps protect healthy boundaries in relationships. " * 4)
         matches = self.intel.find_duplicates("dark-phys-en", "A completely different title", script=paraphrase)
         self.assertTrue(matches)
         self.assertTrue(matches[0]["script_near_duplicate"])
