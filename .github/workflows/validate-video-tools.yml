@@ -1,0 +1,45 @@
+name: Validate existing video tools
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - 'effects.py'
+      - 'keyframes.py'
+      - 'agents/thumbnail-designer-agent.js'
+      - 'scripts/test-thumbnail-designer.js'
+      - 'utils/logger.js'
+      - '.github/workflows/validate-video-tools.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ffmpeg-tool-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install FFmpeg and Python imaging dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip pillow
+      - name: Compile Python tools
+        run: python -m py_compile effects.py keyframes.py
+      - name: Run Effects FFmpeg regression suite
+        run: python effects.py selftest --size 320x180
+      - name: Run Keyframes rendering and geometry regression suite
+        run: python keyframes.py selftest
+      - name: Install thumbnail renderer dependency
+        run: npm install --no-save sharp
+      - name: Verify logger wiring and thumbnail designer module
+        run: |
+          node --check agents/thumbnail-designer-agent.js
+          node -e "const {Logger}=require('./utils/logger'); const {ThumbnailDesignerAgent,DESIGN_FAMILIES}=require('./agents/thumbnail-designer-agent'); const a=new ThumbnailDesignerAgent(null,{}); if(!(a.logger instanceof Logger)||DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS logger injection and '+DESIGN_FAMILIES.length+' design families')"
+      - name: Run thumbnail planning and visual-layout regression suite
+        run: node scripts/test-thumbnail-designer.js
