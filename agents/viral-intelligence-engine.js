@@ -118,6 +118,6 @@ function auditScript(input={}) {
 
 function buildReport(topic,opts={}) {
   const brief=makeBrief(topic,opts);
-  return {brief,scriptAudit:opts.script?auditScript({script:opts.script,claims:opts.claims,sections:opts.sections}):null};
+  return {brief,scriptAudit:opts.script?auditScript({script:opts.script,claims:opts.claims,sources:opts.sources,sections:opts.sections}):null};
 }
 module.exports={WEIGHTS,scoreTopic,makeBrief,auditScript,buildReport};
