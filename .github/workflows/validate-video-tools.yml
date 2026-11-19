@@ -5,6 +5,7 @@ on:
     paths:
       - 'effects.py'
       - 'keyframes.py'
+      - 'tests/test_video_tool_validation.py'
       - 'agents/thumbnail-designer-agent.js'
       - 'scripts/test-thumbnail-designer.js'
       - 'utils/logger.js'
