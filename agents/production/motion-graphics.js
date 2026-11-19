@@ -30,7 +30,7 @@ function buildMotionFilters(scenes,options={}) {
     const reveal=start+Math.min(duration*.7,i*.55);
     filters.push("drawbox=x="+(p.x-6)+":y="+(p.y-6)+":w=12:h=12:color=0x22d3ee:t=fill:enable='between(t,"+time(reveal)+","+time(end)+")'");
     if(p.label)filters.push("drawtext=text='"+esc(p.label)+"':x="+(p.x+10)+":y="+(p.y-10)+":fontsize="+Math.round(height*.017)+":fontcolor=white:enable='between(t,"+time(reveal)+","+time(end)+")'");
-    if(i>0){const prev=pts[i-1];filters.push("drawbox=x="+Math.min(prev.x,p.x)+":y="+(prev.y-2)+":w="+Math.abs(p.x-prev.x)+":h=4:color=0x22d3ee:t=fill:enable='between(t,"+time(reveal)+","+time(end)+")'");filters.push("drawbox=x="+(p.x-2)+":y="+Math.min(prev.y,p.y)+":w=4:h="+Math.abs(p.y-prev.y)+":color=0x22d3ee:t=fill:enable='between(t,"+time(reveal)+","+time(end)+")'");}
+    if(i>0){const prev=pts[i-1];filters.push("drawbox=x="+Math.min(prev.x,p.x)+":y="+(prev.y-2)+":w="+Math.max(1,Math.abs(p.x-prev.x))+":h=4:color=0x22d3ee:t=fill:enable='between(t,"+time(reveal)+","+time(end)+")'");filters.push("drawbox=x="+(p.x-2)+":y="+Math.min(prev.y,p.y)+":w=4:h="+Math.max(1,Math.abs(p.y-prev.y))+":color=0x22d3ee:t=fill:enable='between(t,"+time(reveal)+","+time(end)+")'");}
    });
   }
   cursor=end;
