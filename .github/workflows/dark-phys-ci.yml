@@ -89,6 +89,8 @@ jobs:
       - name: Install upstream dependencies
         working-directory: engines/youtube-automation-agent
         run: npm ci
+      - name: Smoke-test main automation dashboard launch
+        run: node scripts/test-main-dashboard-launch.js
       - name: Configure bundled FFmpeg
         working-directory: engines/youtube-automation-agent
         run: |
