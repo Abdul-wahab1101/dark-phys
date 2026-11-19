@@ -17,6 +17,13 @@
 - Thumbnail designer syntax, module load and design-family checks: passed.
 - FFmpeg-specific video burn-in/audio-mix render checks were skipped because FFmpeg is not installed on the hosted runner. Run those locally after FFmpeg setup for full render verification.
 
+## OpenMontage production integration
+- OpenMontage remains a separate, optional AGPL-3.0 engine; it is not duplicated or folded into the YouTube Agent's orchestration.
+- Added a tested handoff exporter for the `animated-explainer` 8–12 minute 16:9 pipeline and the `clip-factory` five-Shorts 9:16 pipeline.
+- Added Windows optional setup for OpenMontage Python requirements and Remotion dependencies; standard setup remains lightweight.
+- Added a CI workflow to test handoff validation and OpenMontage's actual FFmpeg vertical-composition path against a pinned upstream revision.
+- Runtime options documented: FFmpeg, Remotion and HyperFrames. Full Remotion render and HyperFrames availability still require local runtime checks; do not claim these are verified until they pass.
+
 ## Still outside this ZIP task
 - Full OpenMontage dependency installation/render smoke test.
 - Live provider API credentials, Google OAuth and real YouTube upload.
