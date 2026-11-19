@@ -119,7 +119,8 @@ function generatePackage(pkg, opts = {}) {
 function buildWriterPrompt(pkg, lang, format = 'long-form') {
   const isUr = lang === 'ur-Latn';
   const target = format === 'short' ? '110–150 words for a 45–60 second Short' : '1,250–1,650 words for an 8–12 minute documentary';
-  const claims = (pkg.claims || []).map((x, i) => '[' + (x.id || 'claim-' + (i + 1)) + '] ' + x.text + ' (source IDs: ' + (x.sourceIds || []).join(', ') + ')').join('\\n');
+  const claimList = Array.isArray(pkg.claims) ? pkg.claims : (pkg.claims && Array.isArray(pkg.claims.claims) ? pkg.claims.claims : []);
+  const claims = claimList.map((x, i) => '[' + (x.id || 'claim-' + (i + 1)) + '] ' + x.text + ' (source IDs: ' + (x.sourceIds || []).join(', ') + ')').join('\\n');
   const sources = (pkg.sources || []).map(s => '[' + s.id + '] ' + s.title + ' — ' + s.url).join('\\n');
   return [
     'ROLE: Senior documentary writer and evidence-led editorial researcher for Dark Phys.',
