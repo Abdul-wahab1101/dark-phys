@@ -32,3 +32,13 @@
 - Real YouTube upload and analytics require the owner's channel authorization and explicit approval.
 
 No credentials are stored in this repository. Do not describe live publishing or a full OpenMontage render as verified until those checks pass.
+
+
+## Existing video tools — regression and hardening
+- `effects.py`: added early validation for even, yuv420p-safe frame dimensions and supported FPS.
+- `keyframes.py`: added timeline validation for dimensions, output size, FPS, finite positive duration, layer-array shape, and quality selection; retained design-to-output scaling.
+- Added `tests/test_video_tool_validation.py` for eight invalid-input/valid-profile regression cases.
+- Added `validate-video-tools.yml` to compile both engines, run the input-validation tests, execute the actual FFmpeg self-tests, and test the thumbnail designer.
+- `effects.py selftest` passed all **91/91** FFmpeg checks on the hosted runner.
+- Thumbnail Designer logger import and instance wiring passed; upgraded module loads and exposes its 18+ design families. The ZIP-extracted upgrade copy matches the integrated module's Git blob; the older main-branch copy is retained only as historical comparison.
+- Keyframes self-test initially exposed a regression from the new validation guard (missing design-to-output scale assignment); fixed that and reran the full suite. Latest validation run is in progress; do not mark the full keyframes regression suite complete until its latest run passes.
