@@ -27,7 +27,7 @@ async function render(file,voice,music,out){
  const videoFilters=['scale='+profile.width+':'+profile.height+':force_original_aspect_ratio=increase','crop='+profile.width+':'+profile.height,'fps='+profile.fps,'format=yuv420p',graphics.filter].filter(Boolean).join(',');
  run(ff,['-y','-filter_threads',String(profile.filterThreads),'-f','concat','-safe','0','-i',list,'-t',String(totalDuration),'-vf',videoFilters,'-an','-c:v','libx264','-preset',profile.preset,'-crf',String(profile.crf),'-threads',String(profile.threads),silent]);
  const {ffmpegArgs,buildAudioFilter}=require('../agents/production/audio-mix'),sfxFile=process.env.DARK_PHYS_SFX_FILE,sfx=sfxFile?[{path:sfxFile,atSeconds:0,gainDb:-12}]:[];
- run(ff,ffmpegArgs({video:silent,voice,music,output:out,sfx,filter:buildAudioFilter({sfx}).filter}));
+ run(ff,ffmpegArgs({video:silent,voice,music,output:out,sfx,profile,filter:buildAudioFilter({sfx}).filter}));
  console.log('Draft rendered:',out,'|',profile.mode,profile.width+'x'+profile.height,'|',totalDuration+'s — human review required.');
 }
 (async()=>{const [cmd,...a]=process.argv.slice(2);if(cmd==='discover')await discover(a[0]);else if(cmd==='download-approved')await download(a[0]);else if(cmd==='render')await render(a[0],a[1],a[2],a[3]);else console.log('Usage: cinematic-production.js discover scene-plan.json | download-approved asset-selection.json | render asset-selection.json narration.wav music.mp3 output.mp4');})().catch(e=>{console.error(e.message);process.exit(1);});
