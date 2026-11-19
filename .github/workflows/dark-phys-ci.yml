@@ -164,6 +164,10 @@ jobs:
           node scripts/test-phase4-packaging.js
           node scripts/test-phase4-cli.js
           node scripts/phase4-package.js
+      - name: Test Phase 5 operator integration
+        run: |
+          node --check scripts/phase5-operator.js
+          node scripts/test-phase5-operator.js
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
       - name: Test agent coordination and recovery
