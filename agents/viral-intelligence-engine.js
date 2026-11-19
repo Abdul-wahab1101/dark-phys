@@ -38,7 +38,7 @@ function scoreTopic(topic={}) {
   const confidence = Math.round(Math.min(100, coverage * (validEvidence.length ? 1 : .55) * (evidenceFresh ? 1 : .8)));
   return {
     score, coverage, confidence,
-    label: coverage < 60 || !validEvidence.length ? 'NEEDS_MORE_EVIDENCE' : score >= 80 ? 'PRIORITY_CANDIDATE' : score >= 65 ? 'PROMISING' : score >= 50 ? 'REFRAME_ANGLE' : 'LOW_PRIORITY',
+    label: coverage < 60 || !validEvidence.length ? 'NEEDS_MORE_EVIDENCE' : !evidenceFresh ? 'RESEARCH_REFRESH_REQUIRED' : score >= 80 ? 'PRIORITY_CANDIDATE' : score >= 65 ? 'PROMISING' : score >= 50 ? 'REFRAME_ANGLE' : 'LOW_PRIORITY',
     factorScores: used, missingFactors: missing, evidenceCount: validEvidence.length,
     evidenceFreshWithin30Days: evidenceFresh,
     scoringVersion: '1.0.0',
@@ -107,8 +107,9 @@ function auditScript(input={}) {
   if(!/(\?|what if|why|how|question)/i.test(script.slice(0,Math.min(600,script.length))) ) flags.push({severity:'info',code:'WEAK_OPENING_QUESTION',message:'Opening may benefit from a clear viewer-relevant question or tension.'});
   if(/subscribe|like and subscribe/i.test(script.slice(0,Math.min(350,script.length)))) flags.push({severity:'warning',code:'EARLY_CTA',message:'Move generic CTA out of the opening; earn attention first.'});
   if(!Array.isArray(input.claims)||!input.claims.length) flags.push({severity:'blocker',code:'NO_CLAIM_LEDGER',message:'No claim-to-source ledger supplied; factual review cannot be completed.'});
-  const unsupported=(input.claims||[]).filter(c=>!Array.isArray(c.sourceIds)||!c.sourceIds.length);
-  if(unsupported.length) flags.push({severity:'blocker',code:'UNSOURCED_CLAIMS',message:unsupported.length+' claim(s) have no source IDs.'});
+  const sourceIds=new Set((input.sources||[]).map(s=>String(s.id)));
+  const unsupported=(input.claims||[]).filter(c=>!Array.isArray(c.sourceIds)||!c.sourceIds.length||c.sourceIds.some(id=>!sourceIds.has(String(id))));
+  if(unsupported.length) flags.push({severity:'blocker',code:'UNSOURCED_CLAIMS',message:unsupported.length+' claim(s) have missing or unknown source IDs.'});
   if(!sections.length) flags.push({severity:'info',code:'NO_BEAT_MAP',message:'Add timed story beats to assess pacing and progression.'});
   if(sections.length>1 && sections.every(s=>!clean(s.visualChange))) flags.push({severity:'info',code:'VISUAL_PLAN_MISSING',message:'No planned visual changes; coordinate with the cinematic scene planner.'});
   const blockers=flags.filter(f=>f.severity==='blocker').length;
