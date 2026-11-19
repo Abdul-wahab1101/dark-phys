@@ -12,7 +12,7 @@ Require-Command git "Install Git for Windows: https://git-scm.com/download/win"
 Require-Command node "Install Node.js 20 LTS: https://nodejs.org/"
 Require-Command npm "Install Node.js with npm."
 Require-Command python "Install Python 3.10+: https://www.python.org/downloads/"
-$NodeMajor = [int]((node -p "process.versions.node.Split('.')[0]"))
+$NodeMajor = [int]((node -p "process.versions.node.split('.')[0]"))
 if ($NodeMajor -lt 18) { throw "Node.js 18.17+ is required by the YouTube agent. Install Node 20 LTS." }
 $Py = python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
 $Parts = $Py.Split('.')
@@ -26,7 +26,10 @@ Push-Location $Youtube
 try {
   npm install
   npx playwright install chromium
-  if (-not (Test-Path ".env")) { Copy-Item ".env.example" ".env" }
+  if (-not (Test-Path ".env")) {
+    if (Test-Path ".env.example") { Copy-Item ".env.example" ".env" }
+    else { throw "Upstream .env.example is missing; check the YouTube agent checkout." }
+  }
   New-Item -ItemType Directory -Force -Path "config" | Out-Null
 } finally { Pop-Location }
 
