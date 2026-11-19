@@ -26,6 +26,9 @@ The source-traceable content studio builds bilingual documentary draft packages 
 ## Phase 4 — Packaging & Monetization Safety
 Cloudflare Worker thumbnail concepts (three distinct 1280×720 directions), SEO title/description/chapter drafts, per-asset license evidence, advisory reused/inauthentic-content checks, Community Guidelines and advertiser-suitability review gates, and tamper-evident final human approval are implemented in [PHASE-4-PACKAGING-MONETIZATION-SAFETY.md](PHASE-4-PACKAGING-MONETIZATION-SAFETY.md). Start with `node scripts/phase4-package.js init --file uploads/phase4-package.json`. Cloudflare deployment requires the owner's account and secret; see [the Worker guide](workers/thumbnail-worker/README.md). Approval is manual-upload-only and never enables automated publishing.
 
+## Phase 5 — Automation, Publishing & Growth
+The pinned YouTube Automation Agent provides the single production dashboard, channel setup/OAuth, approval-gated publishing, Shorts scheduling, real analytics/retention and controlled thumbnail experiments. See [the Phase 5 runbook](PHASE-5-AUTOMATION-PUBLISHING-GROWTH.md). Start with `./start-dark-phys.ps1`; run `node scripts/phase5-operator.js status` for read-only checks or `node scripts/phase5-operator.js open` to open the dashboard. Universal Doctor health, backup and rollback remain available separately. Live OAuth, real uploads and channel analytics require the owner's local credentials and explicit review.
+
 ## Windows quick setup
 1. Install Git, Node.js 20 LTS (18.17+ minimum for the YouTube agent), Python 3.10+, and FFmpeg.
 2. Open PowerShell in this repository.
