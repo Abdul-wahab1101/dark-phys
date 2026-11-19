@@ -1,5 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs');const os=require('node:os');const path=require('node:path');
 const {buildSeo,checkSeo,checkChapters,complianceReview,rightsLedger,checkRights,createApproval,verifyApproval,requestThumbnailConcepts}=require('../agents/production/phase4-packaging');
 const seo=buildSeo({title:'Why People Trust Their Memory',description:'A documentary about memory, evidence, and the psychology behind everyday decisions.',tags:['memory','psychology'],chapters:[{time:'00:00',title:'The question'},{time:'02:10',title:'What research shows'},{time:'05:20',title:'Practical takeaway'}]});
 assert(seo.title.length>10);assert.equal(seo.tags.length,2);assert.equal(checkSeo(seo).passed,true);assert.equal(checkSeo({title:'bad'}).passed,false);assert.equal(checkChapters(seo.chapters,500).passed,true);
@@ -7,9 +8,10 @@ assert.equal(checkChapters([{time:'00:20',title:'Late start'}],500).passed,false
 const flagged=complianceReview({title:'How to poison someone'});assert(flagged.flags.length>0);assert.equal(flagged.requiresHumanReview,true);
 const rights=rightsLedger([{source:'Pixabay',sourceUrl:'https://example.test/a',creator:'Creator',license:'Pixabay Content License',licenseUrl:'https://pixabay.com/service/license-summary/',retrievedAt:'2026-11-19',commercialUseVerified:true,reviewStatus:'approved'}]);
 assert.equal(checkRights(rights).passed,true);assert.equal(checkRights([{source:'unknown'}]).passed,false);
-const pkg={finalVideo:'final.mp4',durationSeconds:500,seo,rightsLedger:rights,compliance:complianceReview({title:seo.title})};
+const videoPath=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'phase4-')),'final.mp4');fs.writeFileSync(videoPath,'mock final video bytes');
+const {sha256}=require('../agents/production/phase4-packaging');const pkg={finalVideo:videoPath,finalVideoSha256:sha256(fs.readFileSync(videoPath)),durationSeconds:500,seo,rightsLedger:rights,compliance:complianceReview({title:seo.title})};
 const approval=createApproval(pkg,'reviewer',{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true});
 assert.equal(verifyApproval(pkg,approval).valid,true);
-assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
+assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);fs.writeFileSync(videoPath,'tampered video bytes');assert.equal(verifyApproval(pkg,approval).valid,false);fs.rmSync(path.dirname(videoPath),{recursive:true,force:true});
 assert.equal(approval.automatedUploadAllowed,false);
 (async()=>{const data=await requestThumbnailConcepts('https://worker.example.test','secret','Memory and the Mind','Psychology Explained',async(url,opts)=>({ok:true,json:async()=>({concepts:[{id:'cinematic',width:1280,height:720,svg:'<svg/>'},{id:'editorial',width:1280,height:720,svg:'<svg/>'},{id:'bold',width:1280,height:720,svg:'<svg/>'}]})}));assert.equal(data.concepts.length,3);await assert.rejects(()=>requestThumbnailConcepts('http://unsafe.test','x','Title'));console.log('PASS Phase 4 SEO, chapters, rights, advisory policy, Worker adapter and tamper-evident approval');})().catch(e=>{console.error(e);process.exit(1);});
