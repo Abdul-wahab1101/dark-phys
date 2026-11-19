@@ -19,6 +19,21 @@ Dark Phys is the channel workspace for research, scripting, production, review a
 5. Add YouTube OAuth Desktop credentials only if you want to connect/publish to your channel; follow the upstream walkthrough rather than creating credentials by guesswork.
 6. Run `.\start-dark-phys.ps1` and open http://localhost:3456.
 
+## Validation and sample render
+The unified GitHub Actions workflow checks the PowerShell setup/launch scripts on a Windows runner, starts the real Universal Doctor dashboard and verifies its localhost API/token guard, and creates/probes a short H.264/AAC sample MP4. These are hosted-runner checks, not proof that setup has completed on your personal PC. The full upstream engine installation still requires downloading dependencies and configuring your own provider credentials.
+
+Run the lightweight local checks from the repository root:
+```powershell
+python scripts/test-dashboard-launch.py
+python agents/universal-doctor/doctor.py selftest
+node scripts/test-openmontage-handoff.js
+```
+PowerShell syntax/configuration validation (Windows PowerShell 7 or compatible):
+```powershell
+./scripts/test-windows-setup.ps1
+```
+See [FINAL-WINDOWS-SETUP-ROMAN-URDU.md](FINAL-WINDOWS-SETUP-ROMAN-URDU.md) for the step-by-step guide.
+
 ## Integrated ZIP upgrades
 - `agents/video-format-planner.js` creates a six-format video plan, hook/title options, shot list, chapters, SRT/ASS captions and audio-mix instructions.
 - `agents/thumbnail-designer-agent.js` is the upgraded v6 thumbnail designer; `utils/logger.js` supplies its shared logger dependency.
