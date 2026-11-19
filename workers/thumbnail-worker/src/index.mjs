@@ -18,6 +18,7 @@ export default {
   if(!env.API_TOKEN)return new Response('Worker secret API_TOKEN is not configured',{status:503});
   if(request.headers.get('Authorization')!=='Bearer '+env.API_TOKEN)return new Response('Unauthorized',{status:401});
   let body;try{body=await request.json();}catch{return Response.json({error:'Expected JSON body'},{status:400});}
+  if(!body||typeof body!=='object'||Array.isArray(body))return Response.json({error:'Expected a JSON object'},{status:400});
   const title=String(body.title||'').trim(),subtitle=String(body.subtitle||'').trim();
   if(title.length<4||title.length>90||subtitle.length>90)return Response.json({error:'title must be 4-90 chars; subtitle max 90'},{status:400});
   const concepts=THEMES.map((theme,index)=>({id:theme.id,width:1280,height:720,format:'svg',svg:render(title,subtitle,theme,index)}));
