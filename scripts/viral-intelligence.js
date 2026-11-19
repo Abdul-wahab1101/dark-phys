@@ -20,7 +20,7 @@ function main(argv=process.argv.slice(2)){
  let result;
  if(cmd==='score'){result=buildReport(input).brief.editorialScore;}
  else if(cmd==='brief'){result=buildReport(input,{format:argv.includes('--short')?'short':'long',language:(argv.find(x=>x.startsWith('--language='))||'').split('=')[1]||undefined});}
- else if(cmd==='audit'){result=buildReport({title:input.topic||'Script audit',factors:{audience_fit:3}}, {script:input.script,claims:input.claims,sections:input.sections}).scriptAudit;}
+ else if(cmd==='audit'){result=buildReport({title:input.topic||'Script audit',factors:{audience_fit:3}}, {script:input.script,claims:input.claims,sources:input.sources,sections:input.sections}).scriptAudit;}
  else if(cmd==='prepare'){result=prepareResearchPackage(input,argv.includes('--short')?'short':'long');}
  else throw new Error('Unknown command: '+cmd);
  const out=path.resolve(input.output||path.join('uploads','viral-intelligence',(input.title||input.topic||'topic').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,60)+'-'+Date.now()+'.json'));
