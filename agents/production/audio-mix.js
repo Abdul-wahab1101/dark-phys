@@ -10,11 +10,11 @@ function buildAudioFilter(options={}) {
  chains.push(inputs.join('')+'amix=inputs='+inputs.length+':duration=first:dropout_transition=2,loudnorm=I=-16:TP=-1.5:LRA=11[aout]');
  return {filter:chains.join(';'),output:'[aout]'};
 }
-function ffmpegArgs({video,voice,music,output,filter,sfx=[]}) {
+function ffmpegArgs({video,voice,music,output,filter,sfx=[],profile={}}) {
  if(!video||!voice||!music||!output)throw new Error('video, voice, music and output paths are required');
  const args=['-y','-i',video,'-i',voice,'-stream_loop','-1','-i',music];
  for(const item of sfx){if(!item||!item.path)throw new Error('Every sound effect needs a path');args.push('-i',item.path);}
- args.push('-filter_complex',filter||buildAudioFilter({sfx}).filter,'-map','0:v:0','-map','[aout]','-c:v','libx264','-preset','veryfast','-crf','23','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-shortest',output);
+ args.push('-filter_complex',filter||buildAudioFilter({sfx}).filter,'-map','0:v:0','-map','[aout]','-c:v','libx264','-preset',profile.preset||'ultrafast','-crf',String(profile.crf==null?26:profile.crf),'-threads',String(profile.threads||2),'-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-shortest',output);
  return args;
 }
 module.exports={buildAudioFilter,ffmpegArgs};
