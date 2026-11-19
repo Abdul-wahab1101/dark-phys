@@ -1,0 +1,75 @@
+Universal Doctor Agent self-test (controlled scenarios, real execution)
+  ... discovery + detection (0.4s)
+  ... diagnostic mode read-only (0.8s)
+  ... supervised mode (0.4s)
+  ... autonomous safe repair (3.7s)
+  ... rollback + memory (0.7s)
+  ... safety controller (0.3s)
+  ... recovery engines (0.0s)
+  ... monitor + dashboard (3.1s)
+  ... other stacks + dogfooding (1.7s)
+  ... self health (0.0s)
+
+PASS  S1 discovery: languages/tests/entry/graph
+PASS  S2 detection recall: every seeded bug class found
+PASS  S2 precision: clean module has zero findings (no false positives)
+PASS  S2 precision: no bogus undefined-name/syntax findings elsewhere
+PASS  S3 test engine: baseline = 3 FAIL + 1 ERROR of 7 (unittest)
+PASS  S3 root cause: failing test traced to app/calc.py::average
+PASS  S11 secrets are masked in findings
+PASS  S16 performance: static smells + measured scan/test durations
+PASS  S17 multi-agent: agents + orchestrator call order discovered
+PASS  health score is explainable and CRITICAL for the buggy sample
+PASS  S4 diagnostic mode: target project is byte-identical after scan + repair attempt
+PASS  S4 diagnostic mode: only PROPOSED / MANUAL / NO FIX FOUND - never an applied change
+PASS  S4 diagnostic mode blocks writes even when 'approved'
+PASS  S5 supervised: nothing changes without approval
+PASS  S5 supervised: approved patch applied, backed up and VERIFIED by tests
+PASS  S5 only the approved file changed
+PASS  S18 existing tests still pass after repair (isolated-bucket test now passes)
+PASS  backup integrity verified (SHA-256)
+PASS  S8 manual rollback restores the original bytes
+PASS  S6 autonomous: all low-risk fixes applied automatically with verification
+PASS  S6 autonomous: medium-risk fixes (timeout/typo/import name) wait for approval
+PASS  S6 autonomous: hardcoded-success and secrets are NOT auto-edited (manual)
+PASS  S6 logic bugs (failing tests) need approval in autonomous mode
+PASS  S6 credentials file not modified by the Doctor
+PASS  S6 mutation repair (test-guided) fixes both logic bugs after approval
+PASS  S6 the fixes are minimal single edits
+PASS  S18 after all repairs: every test passes and nothing that passed before regressed
+PASS  S9 regression guards generated and passing
+PASS  S9 reintroduced bug is caught by a regression guard
+PASS  S10 knowledge persists across Doctor instances
+PASS  S11 raw secret never written to knowledge base / reports / proposals
+PASS  reports written (json/md/html)
+PASS  S7 failed verification => automatic ROLLBACK, bytes restored
+PASS  S7 the exact failed strategy is not repeated blindly
+PASS  S7 shadow verification rejects a patch that breaks a passing test (project untouched)
+PASS  S7 apply-then-verify path: regression detected => ROLLED BACK, bytes restored
+PASS  S12 path traversal outside the project is blocked
+PASS  S12 credential files need explicit approval
+PASS  S12 destructive / external / paid operations always need approval
+PASS  S12 mode switch takes effect immediately
+PASS  S12 self-protection: safety modules match the integrity manifest
+PASS  S12 tampering with a safety module is detected
+PASS  S12 Doctor refuses to edit its own files
+PASS  S13 circuit breaker: opens, blocks, half-opens, closes
+PASS  S13 bounded retries (succeeds on 3rd try; gives up instead of looping forever)
+PASS  S13 a failing engine degrades gracefully and the failure is recorded
+PASS  S13 controlled restarts: at most N per window
+PASS  S14 monitor: heartbeat shows ACTIVE only while running, honest afterwards
+PASS  S14 monitor: file change triggers a scan
+PASS  S14 monitor: never started => reported as not active
+PASS  S15 dashboard serves the page with status labels and controls
+PASS  S15 dashboard state: health, counts, components, tests, monitoring
+PASS  S15 mutating call without session token is refused (403)
+PASS  S15 foreign Host header refused (DNS-rebinding guard)
+PASS  S15 mode switch from the dashboard works with the token
+PASS  S15 invalid mode rejected
+PASS  S15 scan from the dashboard runs as a background job
+PASS  S19 non-Python project: detected (JavaScript/Java, Express) and analysed without crashing
+PASS  S19 JS: syntax problem + eval flagged
+PASS  S20 dogfooding: Doctor scanning itself finds no confirmed critical/high bugs
+PASS  S21 Doctor self-health: all engines + safety + backup + knowledge OK
+
+61/61 checks passed
