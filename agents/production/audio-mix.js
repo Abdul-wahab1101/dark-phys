@@ -3,9 +3,16 @@ function buildAudioFilter(options={}) {
  const voiceGain=Number.isFinite(Number(options.voiceGainDb))?Number(options.voiceGainDb):0;
  const musicGain=Number.isFinite(Number(options.musicGainDb))?Number(options.musicGainDb):-24;
  const sfx=Array.isArray(options.sfx)?options.sfx:[];
- const chains=['[1:a]volume='+voiceGain+'dB,highpass=f=75,acompressor=threshold=0.12:ratio=2.5:attack=15:release=180[voice]'];
- chains.push(options.duckMusic===false?'[2:a]volume='+musicGain+'dB[musicduck]':'[2:a]volume='+musicGain+'dB[musicbase];[musicbase][voice]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450[musicduck]');
- const inputs=['[voice]','[musicduck]'];
+ const chains=[];
+ if(options.duckMusic===false){
+  chains.push('[1:a]volume='+voiceGain+'dB,highpass=f=75,acompressor=threshold=0.12:ratio=2.5:attack=15:release=180[voicemix]');
+  chains.push('[2:a]volume='+musicGain+'dB[musicduck]');
+ }else{
+  chains.push('[1:a]volume='+voiceGain+'dB,highpass=f=75,acompressor=threshold=0.12:ratio=2.5:attack=15:release=180,asplit=2[voicekey][voicemix]');
+  chains.push('[2:a]volume='+musicGain+'dB[musicbase]');
+  chains.push('[musicbase][voicekey]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450[musicduck]');
+ }
+ const inputs=['[voicemix]','[musicduck]'];
  sfx.forEach((item,i)=>{const index=i+3,gain=Number.isFinite(Number(item.gainDb))?Number(item.gainDb):-8,delay=Math.max(0,Math.round((Number(item.atSeconds)||0)*1000)),label='sfx'+i;chains.push('['+index+':a]volume='+gain+'dB,adelay='+delay+'|'+delay+'['+label+']');inputs.push('['+label+']');});
  chains.push(inputs.join('')+'amix=inputs='+inputs.length+':duration=first:dropout_transition=2,loudnorm=I=-16:TP=-1.5:LRA=11[aout]');
  return {filter:chains.join(';'),output:'[aout]'};
