@@ -11,11 +11,11 @@ function parseJson(text){
  const raw=String(text||'').trim().replace(/^\x60\x60\x60(?:json)?\s*/i,'').replace(/\s*\x60\x60\x60$/,'');
  try{return JSON.parse(raw);}catch(e){throw new Error('LLM response was not valid JSON: '+e.message);}
 }
-function validateDraft(draft,knownSourceIds){
+function validateDraft(draft,knownSourceIds,knownClaimIds=new Set()){
  const errors=[];
  if(!draft||typeof draft!=='object')return {ok:false,errors:['Draft must be a JSON object']};
- if(!Array.isArray(draft.titleOptions)||draft.titleOptions.length<3)errors.push('At least three titleOptions are required');
- if(!Array.isArray(draft.hooks)||draft.hooks.length<3)errors.push('At least three hooks are required');
+ if(!Array.isArray(draft.titleOptions)||draft.titleOptions.filter(x=>typeof x==='string'&&x.trim()).length<3)errors.push('At least three non-empty titleOptions are required');
+ if(!Array.isArray(draft.hooks)||draft.hooks.filter(x=>typeof x==='string'&&x.trim()).length<3)errors.push('At least three non-empty hooks are required');
  if(typeof draft.narration!=='string'||draft.narration.trim().length<200)errors.push('Narration is missing or too short');
  if(!Array.isArray(draft.chapters)||!draft.chapters.length)errors.push('Chapter/beat plan is required');
  if(!Array.isArray(draft.visualPlan)||!draft.visualPlan.length)errors.push('Visual plan is required');
@@ -55,7 +55,7 @@ class ViralScriptGenerator{
   for(const lang of LANGS){
    const prompt=buildWriterPrompt(pkg,lang,format==='short'?'short':'long-form')+'\n\nVIRAL EDITORIAL BRIEF:\n'+JSON.stringify(brief)+'\n\nAUDIENCE: '+(pkg.audience||'channel audience')+'\nFORMAT: '+format+'; target duration '+(format==='short'?45:durationSec)+' seconds.\nWrite for strong viewer value and retention without misleading clickbait. Deliver all requested JSON fields.';
    const draft=await this.request(prompt,lang);
-   const checked=validateDraft(draft,known);
+   const claimIds=new Set(pkg.claims.map((x,i)=>String(x.id||'claim-'+(i+1))));\n   const checked=validateDraft(draft,known,claimIds);
    results[lang]={...draft,validation:checked,status:checked.ok?'draft_requires_human_review':'draft_blocked_for_revision'};
   }
   return {schemaVersion:1,engine:'Dark Phys Viral Intelligence Engine',topic:pkg.topic,format,createdAt:new Date().toISOString(),editorialBrief:brief,scripts:results,approval:{autoPublish:false,status:'human_review_required',requiredGates:['verify every factual claim against source context','review source-reference mapping','native-language editorial review','originality and reused-content review','media rights and policy review','approve final rendered video']},disclaimer:'AI-generated drafts and editorial scores do not predict virality or guarantee factual accuracy, retention, views or monetization.'};
