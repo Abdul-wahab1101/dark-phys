@@ -18,7 +18,7 @@ function starterPackage(){
    assetId:'replace-with-unique-asset-id',kind:'video or audio',source:'Provider or creator',sourceUrl:'https://example.com/source-page',
    creator:'Creator name or account',license:'Exact license name',licenseUrl:'https://example.com/license-terms',
    retrievedAt:new Date().toISOString(),proofPath:'uploads/rights-evidence/replace-with-proof.txt',
-   commercialUseVerified:false,modifications:'Describe edits or state none',attributionRequired:false,attributionText:'',reviewStatus:'pending'
+   commercialUseVerified:false,modifications:'Describe edits or state none',attributionRequired:false,attributionReviewed:false,attributionText:'',reviewStatus:'pending'
   }],
   script:'Paste the complete final narration/script for advisory screening and originality comparison.',
   previousScripts:[],recentTemplateIds:[],templateId:'documentary-v1',
