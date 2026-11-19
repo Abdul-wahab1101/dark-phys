@@ -1,0 +1,43 @@
+name: Validate YouTube Automation integration
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - '.github/workflows/validate-youtube-agent.yml'
+      - 'README.md'
+      - 'setup-dark-phys.ps1'
+      - 'scripts/**'
+      - 'agents/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upstream-system:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Checkout pinned YouTube Automation Agent
+        uses: actions/checkout@v4
+        with:
+          repository: darkzOGx/youtube-automation-agent
+          ref: e973d515aef90c467da2289144df737a3bd03859
+          path: engines/youtube-automation-agent
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: engines/youtube-automation-agent/package-lock.json
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install upstream dependencies
+        working-directory: engines/youtube-automation-agent
+        run: npm ci
+      - name: Run upstream system regression suite
+        working-directory: engines/youtube-automation-agent
+        run: npm test
+      - name: Validate Dark Phys format planner
+        run: node scripts/test-video-planner.js
+      - name: Validate Dark Phys thumbnail designer
+        run: node scripts/test-thumbnail-designer.js
