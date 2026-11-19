@@ -71,9 +71,9 @@ function audio() {
     const ln = spawnSync(ff, ['-hide_banner', '-i', out, '-af', 'ebur128=peak=true', '-f', 'null', '-'], { encoding: 'utf8' });
     const m = /I:\s+(-?[\d.]+) LUFS/g; let last; let x; while ((x = m.exec(ln.stderr))) last = parseFloat(x[1]);
     ok(last !== undefined && Math.abs(last + 14) < 4, `loudness near -14 LUFS (measured ${last} LUFS)`);
-    const probe = spawnSync(ff, ['-hide_banner', '-i', out], { encoding: 'utf8' });
-    const durationMatch = (probe.stderr || '').match(/Duration:\\s*(\\d+):(\\d+):(\\d+(?:\\.\\d+)?)/);
-    const duration = durationMatch ? Number(durationMatch[1]) * 3600 + Number(durationMatch[2]) * 60 + Number(durationMatch[3]) : NaN;
+    const ffprobe = require('ffprobe-static').path;
+    const probe = spawnSync(ffprobe, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', out], { encoding: 'utf8' });
+    const duration = parseFloat(probe.stdout);
     ok(Number.isFinite(duration) && Math.abs(duration - 10) < 1, 'mix length follows narration (music looped), duration ' + (Number.isFinite(duration) ? duration.toFixed(1) : 'unavailable') + 's');
   } catch (e) { ok(false, 'audio mix: ' + e.message); }
   console.log(fails ? `\n${fails} FAILURE(S)` : '\nALL CHECKS PASSED');
