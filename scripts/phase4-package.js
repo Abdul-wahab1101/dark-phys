@@ -4,7 +4,8 @@ const fs=require('node:fs');
 const readline=require('node:readline');
 const p=require('../agents/production/phase4-packaging');
 function arg(name,fallback=''){const i=process.argv.indexOf('--'+name);return i<0?fallback:process.argv[i+1];}
-async function ask(question){const rl=readline.createInterface({input:process.stdin,output:process.stdout});return new Promise(resolve=>rl.question(question,a=>{rl.close();resolve(a.trim());}));}
+let approvalReadline=null,approvalLines=null;
+async function ask(question){if(!approvalReadline){approvalReadline=readline.createInterface({input:process.stdin,output:process.stdout});approvalLines=approvalReadline[Symbol.asyncIterator]();}process.stdout.write(question);const next=await approvalLines.next();if(next.done)throw new Error('Approval input ended before all confirmations were answered');return next.value.trim();}
 function starterPackage(){
  return {
   topic:'Replace with the video topic',
@@ -93,4 +94,4 @@ async function main(){
  }
  console.log('Usage: node scripts/phase4-package.js init|thumbnails|build|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
 }
-main().catch(e=>{console.error('Phase 4:',e.message);process.exit(1);});
+main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
