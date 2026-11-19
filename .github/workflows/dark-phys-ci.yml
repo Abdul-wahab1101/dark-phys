@@ -9,6 +9,20 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  windows-setup-and-launchers:
+    name: Windows setup + launcher validation
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Windows PowerShell scripts
+        shell: pwsh
+        run: ./scripts/test-windows-setup.ps1
+      - name: Smoke-test Doctor dashboard on Windows
+        run: python scripts/test-dashboard-launch.py
   video-tools-and-doctor:
     name: Video tools + Universal Doctor
     runs-on: ubuntu-latest
@@ -45,6 +59,8 @@ jobs:
         run: python -m compileall -q agents/universal-doctor
       - name: Doctor unit tests
         run: python -m unittest discover -s agents/universal-doctor/tests -v
+      - name: Doctor dashboard HTTP launch smoke test
+        run: python scripts/test-dashboard-launch.py
       - name: Doctor safety and recovery self-test
         run: python agents/universal-doctor/doctor.py selftest
       - name: Doctor health and integrity check
@@ -124,3 +140,8 @@ jobs:
       - name: Render Remotion demo
         working-directory: engines/OpenMontage
         run: python render_demo.py world-in-numbers
+      - name: Render and probe a complete sample MP4
+        run: |
+          ffmpeg -y -f lavfi -i testsrc=size=640x360:rate=30 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 5 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest sample-dark-phys.mp4
+          ffprobe -v error -show_entries stream=codec_type,width,height -of json sample-dark-phys.mp4
+          python -c "import json,subprocess; d=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-of','json','sample-dark-phys.mp4'])); s=d['streams']; assert any(x['codec_type']=='video' and x['width']==640 and x['height']==360 for x in s); assert any(x['codec_type']=='audio' for x in s); print('PASS complete 5-second H.264/AAC sample MP4')"
