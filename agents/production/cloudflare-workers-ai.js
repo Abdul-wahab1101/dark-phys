@@ -10,7 +10,27 @@ const DIRECTIONS=[
 function need(v,n){v=String(v||'').trim();if(!v)throw new Error(n+' is required');return v;}
 function endpoint(a,m){return ROOT+encodeURIComponent(a)+'/ai/run/'+m.split('/').map(encodeURIComponent).join('/');}
 async function run(a,t,m,b,f){const r=await f(endpoint(a,m),{method:'POST',headers:{Authorization:'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(b)});const raw=await r.text();let j;try{j=JSON.parse(raw)}catch(e){throw new Error('Cloudflare returned non-JSON HTTP '+r.status)}if(!r.ok||j.success===false)throw new Error('Workers AI HTTP '+r.status+': '+(j.errors||[]).map(x=>x.message||x.code).join('; '));if(!j.result)throw new Error('Workers AI response missing result');return j.result;}
-function textFrom(r){if(typeof r.response==='string')return r.response;if(typeof r.output_text==='string')return r.output_text;const m=r.choices&&r.choices[0]&&r.choices[0].message;if(m&&typeof m.content==='string')return m.content;if(Array.isArray(m&&m.content))return m.content.map(x=>typeof x==='string'?x:x&&x.text||'').join('\n');throw new Error('GPT-OSS returned no usable text')}
+function textFrom(r){
+ function collect(v){
+  if(typeof v==='string')return v.trim();
+  if(Array.isArray(v))return v.map(collect).filter(Boolean).join('\n').trim();
+  if(v&&typeof v==='object'){
+   if(typeof v.text==='string'&&v.text.trim())return v.text.trim();
+   if(typeof v.output_text==='string'&&v.output_text.trim())return v.output_text.trim();
+   if(typeof v.content==='string'&&v.content.trim())return v.content.trim();
+   if(Array.isArray(v.content)){const s=collect(v.content);if(s)return s}
+   if(Array.isArray(v.text)){const s=collect(v.text);if(s)return s}
+  }
+  return '';
+ }
+ if(!r||typeof r!=='object')throw new Error('GPT-OSS returned an empty result object');
+ for(const candidate of [r.response,r.output_text,r.generated_text,r.text]){const s=collect(candidate);if(s)return s}
+ const choices=Array.isArray(r.choices)?r.choices:[];
+ for(const choice of choices){const m=choice&&choice.message;const s=collect(m&&m.content);if(s)return s;const alt=collect(choice&&choice.text);if(alt)return alt}
+ const output=collect(r.output);if(output)return output;
+ const detail={resultKeys:Object.keys(r),choiceCount:choices.length,messageKeys:choices[0]&&choices[0].message?Object.keys(choices[0].message):[],contentType:choices[0]&&choices[0].message?typeof choices[0].message.content:'missing',contentLength:typeof(choices[0]&&choices[0].message&&choices[0].message.content)==='string'?(choices[0].message.content||'').length:null,finishReason:choices[0]&&choices[0].finish_reason||null};
+ throw new Error('GPT-OSS response contained no extractable text ('+JSON.stringify(detail)+')');
+}
 function parse(s){s=String(s||'').trim().replace(/^```json\s*/i,'').replace(/\s*```$/,'');let v;try{v=JSON.parse(s)}catch(e){const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<=a)throw new Error('GPT-OSS response was not valid JSON');v=JSON.parse(s.slice(a,b+1))}if(!v||typeof v!=='object'||Array.isArray(v))throw new Error('GPT-OSS returned invalid concepts');return v}
 function esc(s){return String(s||'').replace(/[&<>\"']/g,function(c){if(c==='&')return '&amp;';if(c==='<')return '&lt;';if(c==='>')return '&gt;';if(c==='\"')return '&quot;';return '&apos;';})}
 function hookLines(h){const w=String(h||'').toUpperCase().match(/[A-Z0-9]+(?:['’-][A-Z0-9]+)*/g)||[];if(w.length<2||w.length>4||w.some(x=>x.length>13))throw new Error('Hook must be 2-4 short words');const a=[];let l='';for(const x of w){if(l&&(l+' '+x).length>15){a.push(l);l=x}else l=(l+' '+x).trim()}if(l)a.push(l);if(a.length>2)throw new Error('Hook must fit in two lines');return a}
