@@ -9,10 +9,16 @@ assert.equal(validateDraft({...draft,sourceReferences:[{sourceId:'s1',claimIds:[
 const calls=[];
 const fetchImpl=async(url,opts)=>{calls.push({url,opts});return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(draft)}}]})};};
 (async()=>{
- await assert.rejects(()=>new ViralScriptGenerator({apiKey:''}).generate(pkg),/DARK_PHYS_LLM_API_KEY/);
+ await assert.rejects(()=>new ViralScriptGenerator({apiKey:'',cloudflareToken:'',accountId:''}).generate(pkg),/DARK_PHYS_LLM_API_KEY/);
  const generator=new ViralScriptGenerator({apiKey:'test',model:'test-model',fetchImpl,timeoutMs:5000});
  const result=await generator.generate(pkg,{format:'short'});
  assert.equal(calls.length,2);assert.ok(result.scripts.en.validation.ok);assert.ok(result.scripts['ur-Latn'].validation.ok);
  assert.equal(result.approval.autoPublish,false);assert.match(calls[0].opts.headers.authorization,/Bearer test/);
+ const cloudflareCalls=[];
+ const cloudflare=new ViralScriptGenerator({apiKey:'',cloudflareToken:'cf-test-token',accountId:'account-test',cloudflareModel:'@cf/openai/gpt-oss-20b',fetchImpl:async(url,opts)=>{cloudflareCalls.push({url,opts});return{ok:true,json:async()=>({success:true,result:{response:JSON.stringify(draft)}})};}});
+ const cloudflareDraft=await cloudflare.request('Return a JSON draft','en');
+ assert.equal(cloudflareDraft.titleOptions.length,3);
+ assert.match(cloudflareCalls[0].url,/accounts\\/account-test\\/ai\\/run/);
+ assert.equal(cloudflareCalls[0].opts.headers.authorization,'Bearer cf-test-token');
  console.log('PASS script generator: provider-key guard, bilingual separate drafts, schema/source validation and no-auto-publish gate');
 })().catch(e=>{console.error(e);process.exitCode=1;});
