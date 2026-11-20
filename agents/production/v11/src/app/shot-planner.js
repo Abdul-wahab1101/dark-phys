@@ -63,9 +63,21 @@ function planSceneShots({ scenes, clips, totalSec }) {
 }
 
 function shotArgs(shot, { width = 1080, height = 1920, fps = 30 } = {}) {
+  const framing = { wide: 1.04, medium: 1.08, detail: 1.14, macro: 1.18, tracking: 1.08, 'over-shoulder': 1.10 };
+  const factor = framing[shot.shotType] || 1.08;
+  const scaledWidth = Math.ceil(width * factor), scaledHeight = Math.ceil(height * factor);
+  let x = '(iw-ow)*0.5', y = '(ih-oh)*0.5';
+  if (shot.movement === 'lateral-pan' || shot.movement === 'tracking') x = '(iw-ow)*(0.5+0.32*sin(t*0.65))';
+  else if (shot.movement === 'tilt') y = '(ih-oh)*(0.5+0.28*sin(t*0.55))';
+  else if (shot.movement === 'slow-push') x = '(iw-ow)*(0.5+0.035*sin(t*0.35))';
+  const filters = [
+    'scale=' + scaledWidth + ':' + scaledHeight + ':force_original_aspect_ratio=increase',
+    'crop=' + width + ':' + height + ':x=\'' + x + '\':y=\'' + y + '\':eval=frame',
+    'setsar=1', 'fps=' + fps
+  ];
+  if (shot.colourGrade === 'consistent-documentary-neutral') filters.push('eq=contrast=1.04:saturation=0.96:brightness=0.005');
   return ['-stream_loop', '-1', '-ss', String(shot.ss), '-i', shot.source, '-t', String(shot.dur),
-    '-vf', 'scale=' + width + ':' + height + ':force_original_aspect_ratio=increase,crop=' + width + ':' + height + ',setsar=1,fps=' + fps + (shot.colourGrade === 'consistent-documentary-neutral' ? ',eq=contrast=1.04:saturation=0.96:brightness=0.005' : ''),
-    '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p'];
+    '-vf', filters.join(','), '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p'];
 }
 
 module.exports = { planShots, planSceneShots, shotArgs };
