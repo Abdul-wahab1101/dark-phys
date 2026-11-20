@@ -262,7 +262,7 @@ class ProductionPipeline {
     await this.runner.run([...inputs, '-filter_complex', vf + ';' + af, '-map', '[v]', '-map', '[a]', '-t', total.toFixed(2),
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'muxed.part.mp4'], { cwd: dir, label: 'mux' });
     replaceFileSync(part, out);
-    const cueSheetPath = path.resolve(job.outPath).replace(/\\.[^.]+$/, '') + '.sound-cue-sheet.json';
+    const cueSheetPath = path.resolve(job.outPath).replace(/\.[^.]+$/, '') + '.sound-cue-sheet.json';
     fs.mkdirSync(path.dirname(cueSheetPath), { recursive: true });
     fs.writeFileSync(cueSheetPath, JSON.stringify({ version: 1, jobId: job.jobId, durationSeconds: total,
       musicActs: soundPlan.musicActs || [], musicSegments: soundPlan.musicSegments || [],
