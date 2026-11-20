@@ -1,61 +1,32 @@
-# Phase 2 — Original Content Studio
+# Phase 2 — Original Content Studio / Script Engine v2
 
-## Delivered workflow
+## Script Engine v2
 
-The studio accepts a researcher-prepared JSON package and produces a traceable documentary draft bundle:
-- Source register with title, publisher, URL and publication/access dates.
-- Claim-to-source ledger. Each claim must reference one or more known source IDs; unknown references are rejected.
-- Fact-check status defaults to \`needs_human_verification\`. References establish traceability, not truth.
-- Distinct English and Pakistani Roman Urdu narration inputs and outputs. The engine does not translate one language into the other.
-- Hook options, eight-beat 8–12 minute documentary structure, retention checkpoints and a 45-second Shorts plan for each language.
-- Originality fingerprint and editorial checklist; compare against the channel history before approval.
-- Draft approval gates for evidence, fact-check, language edit, originality and script.
+The default AI writing route is now `node scripts/viral-generate.js research-package.json` (or `node scripts/script-engine-v2.js`). Use `--short` for the separate 20–60 second Shorts pipeline. The previous generator remains available with `--legacy`.
 
-## Live research intake
-
-Run the Phase 1 public research adapters from the Content Studio workflow:
-
-```powershell
-node scripts/research-content-studio.js "gaslighting psychology" --region=US --language=en
-node scripts/research-content-studio.js "emotional manipulation" --region=PK --language=en
-```
-
-This gathers available public signals from Google Trends RSS, GDELT news, Reddit public RSS and official YouTube Data API (YouTube requires `YOUTUBE_DATA_API_KEY`). It saves `research-signals.json` and `research-sources.md` under `uploads/content-studio/research-<topic>/`. Provider availability varies; results are source leads and snippets, not completed deep reading or proof. Open primary sources and verify them before entering claims.
+The v2 pipeline adds:
+- Separate Long-form and Shorts briefs, pacing requirements and validation.
+- Source-linked claim ledger. Unknown source IDs and claim IDs are rejected; single-source claims and claims not marked reviewed are flagged.
+- Exactly one central question and one case-study/illustration field per draft.
+- Three title options and three distinct hooks; long-form cold open, promise, 3–5 acts, open loops, rehooks and payoff; Shorts use one complete idea.
+- Sentence-level visual-intent records, each with a meaning-based footage query and source type.
+- Critic scoring and revision pass, spoken/read-aloud polish, and a tightening pass targeting approximately 15%.
+- Final structural and claim-reference validation. A failed schema, incomplete claim map or out-of-range tightening result blocks the draft.
+- Human source verification and approval gates remain mandatory. AI cannot independently prove that a cited source supports a claim.
 
 ## Input package
 
-Create a UTF-8 JSON file using this shape (replace example URLs and text with sources actually read):
-\`\`\`json
-{
-  "topic": "Why people doubt their own memory",
-  "researchSummary": "Summarise the research question and competing interpretations.",
-  "sources": [
-    {"id":"s1","title":"Source title","publisher":"Publisher","url":"https://example.org/paper","publishedAt":"2024-01-01","accessedAt":"2026-11-19"}
-  ],
-  "claims": [
-    {"id":"c1","text":"A precise factual claim","sourceIds":["s1"],"notes":"What the source does and does not establish"}
-  ],
-  "titles": {"en":"Why You Sometimes Doubt Your Own Memory","ur-Latn":"Aap Apni Yaad Par Shak Kyun Karte Hain?"},
-  "narration": {
-    "en":"Write the English narration draft here.",
-    "ur-Latn":"Roman Urdu mein fitri Pakistani lehje mein alag narration yahan likhein."
-  }
-}
-\`\`\`
+Use the existing JSON shape documented below. It must include topic, sources, claims, separate English and Roman Urdu narration/reference text, and researcher-rated `viralFactors` (0–5). Do not invent source URLs, evidence or scoring factors. The provider needs `DARK_PHYS_LLM_API_KEY` and `DARK_PHYS_LLM_MODEL`; optional `DARK_PHYS_LLM_BASE_URL` supports an OpenAI-compatible endpoint.
 
-## Run on Windows PowerShell
+```powershell
+node scripts/viral-generate.js research-package.json
+node scripts/viral-generate.js research-package.json --short
+node scripts/viral-generate.js research-package.json --legacy
+node scripts/test-production-engines-v2.js
+```
 
-\`\`\`powershell
-node scripts/content-studio.js research-package.json
-node scripts/content-studio.js research-package.json --short
-node scripts/content-studio.js research-package.json --duration=600
-node scripts/test-content-studio.js
-\`\`\`
+Generated packages are drafts. Open each source, verify exact claim context and dates, review native-language delivery, and approve before production. Critic scores are editorial guidance, not audience-retention or view predictions.
 
-The generated bundle also includes evidence-bound writer prompts for both languages (`writer-prompt-en.md` and `writer-prompt-roman-urdu.md`). Use them with the configured writing provider or a human writer, then paste the reviewed narration into the input package for the fact-check and export stage. The tool does not make an API call to an LLM itself.
+## Legacy offline package
 
-Outputs are written under \`uploads/content-studio/<topic>/\`: JSON package, source references, English narration and Roman Urdu narration.
-
-## Important capability boundary
-
-This is a deterministic, offline drafting and editorial-structure engine, not a live web researcher or an LLM writer. It does not independently read papers, verify whether a source supports a claim, create a polished 1,500-word finished documentary from a topic alone, generate voice audio, or automatically cut Shorts. Research notes and both language drafts must be supplied by a researcher/writer. Hook and structure suggestions are editorial starting points, not guaranteed retention. Every claim and narration requires human fact-check and language review. No paid API key is needed for this local workflow.
+The deterministic offline package builder remains available through `node scripts/content-studio.js research-package.json`. It continues to generate source registers, bilingual prompts and editorial checklists without calling an LLM. The offline path is not a replacement for the v2 AI writer.
