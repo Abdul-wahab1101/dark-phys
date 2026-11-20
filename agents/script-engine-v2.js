@@ -8,6 +8,7 @@ const { buildWriterPrompt, validateResearch } = require('./original-content-stud
 const { makeBrief } = require('./viral-intelligence-engine');
 
 const LANGS = ['en', 'ur-Latn'];
+const SUPPORTED_SOURCE_TYPES = new Set(['stock_video', 'archive_video']);
 const words = value => String(value || '').trim().split(/\s+/).filter(Boolean);
 const DEFAULT_BANNED_PHRASES = [
   "in today's video", "like and subscribe", "smash that like button",
@@ -45,7 +46,7 @@ function validateEditorialDraft(draft, pkg, format) {
   if (!Array.isArray(draft.openLoops) || !draft.openLoops.length) errors.push('At least one resolved open loop is required');
   else if (draft.openLoops.some(x => !String(x.setup || '').trim() || !String(x.payoffAct || '').trim() || !draft.acts?.some(a => String(a.id) === String(x.payoffAct)))) errors.push('Every open loop needs a setup and a valid payoffAct');
   if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) errors.push('Sentence-by-sentence visual intent plan is required');
-  else if (draft.sentenceVisuals.some(x => !String(x.sentence || '').trim() || !String(x.visualIntent || '').trim() || !String(x.footageQuery || '').trim() || !String(x.sourceType || '').trim())) errors.push('Every sentence visual needs sentence, visualIntent, footageQuery and sourceType');
+  else if (draft.sentenceVisuals.some(x => !String(x.sentence || '').trim() || !String(x.visualIntent || '').trim() || !String(x.footageQuery || '').trim() || !String(x.sourceType || '').trim())) errors.push('Every sentence visual needs sentence, visualIntent, footageQuery and a supported sourceType (stock_video or archive_video)');
   const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
   if (sentenceCount && Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length !== sentenceCount) errors.push('Every narration sentence must have exactly one sentenceVisuals entry');
   if (Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length === sentenceCount) {
@@ -90,7 +91,7 @@ class ScriptEngineV2 {
     for (const lang of LANGS) {
       const prompt = buildWriterPrompt(pkg, lang, mode) + '\n\nEDITORIAL SYSTEM V2 REQUIREMENTS:\n' +
         JSON.stringify({ format: mode, brief, audience: pkg.audience || 'curious documentary viewers' }) +
-        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy {type:documented|hypothetical,summary,label,sourceIds}, acts [{id,title,purpose,narration}] (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
+        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy {type:documented|hypothetical,summary,label,sourceIds}, acts [{id,title,purpose,narration}] (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType:stock_video|archive_video,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
         (mode === 'short' ? 'Make one complete standalone vertical Short, 20–60 seconds, one idea only.' :
           'Make an 8–12 minute documentary with cold open, promise, 3–5 main acts, rehooks roughly every 60–90 seconds, and a satisfying payoff.') +
         ' Use exactly one central question and one case. Never invent a real case, study, statistic, quote or source. Mark unsupported material [NEEDS SOURCE].';
