@@ -129,3 +129,17 @@ test('temp: sweepJunk removes partial files but keeps finished ones; broken base
     assert.ok(fs.existsSync(fallback.baseDir));
   } finally { h.rm(base); }
 });
+
+test('file replacement: an existing completed output is replaced without losing the old file on failure', () => {
+  const dir = h.tmp();
+  try {
+    const { replaceFileSync } = require('../src/infra/file-utils');
+    const source = path.join(dir, 'new.part.mp4'), destination = path.join(dir, 'final.mp4');
+    fs.writeFileSync(source, 'new-render');
+    fs.writeFileSync(destination, 'old-render');
+    replaceFileSync(source, destination);
+    assert.equal(fs.readFileSync(destination, 'utf8'), 'new-render');
+    assert.equal(fs.existsSync(source), false);
+    assert.deepEqual(fs.readdirSync(dir), ['final.mp4']);
+  } finally { h.rm(dir); }
+});
