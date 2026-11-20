@@ -158,7 +158,7 @@ function create(h) {
           '<rect x="0" y="46" width="1280" height="5" fill="#000"/><rect x="0" y="669" width="1280" height="5" fill="#000"/>' +
           '<g transform="translate(1130 150)"><path d="M0 -78 L84 66 H-84 Z" fill="' + p.a + '" stroke="#000" stroke-width="10" stroke-linejoin="round"/>' +
           '<rect x="-7" y="-30" width="14" height="52" rx="5" fill="#000"/><circle cx="0" cy="40" r="8" fill="#000"/></g>',
-        text: [{ lines, font: 'impact', box: { x: 90, y: 395, w: 1100, h: 240 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 74, lh: 0.98, ls: 0.015, fills: [p.a, p.light], stroke: '#000', strokeW: 9, shadow: 'hard', shadowColor: '#000', shadowOff: [6, 6] }],
+        text: [{ lines, font: 'impact', box: { x: 90, y: 370, w: 1100, h: 220 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 74, lh: 0.98, ls: 0.015, fills: [p.a, p.light], stroke: '#000', strokeW: 9, shadow: 'hard', shadowColor: '#000', shadowOff: [6, 6] }],
         decorate(info) {
           const label = 'WARNING  ' + eyebrow;
           const w = c.tw(label, 24, 3) + 40;
@@ -425,8 +425,8 @@ function create(h) {
           bars + '<rect width="1280" height="720" fill="url(#vhsBot)"/><rect width="1280" height="720" fill="url(#vhsLn)"/>' +
           '<polygon points="64,66 64,106 98,86" fill="#fff"/>' +
           '<text x="116" y="98" ' + fontAttr(c.fonts.inter, ' font-size="34" letter-spacing="4"') + ' fill="#fff">PLAY</text>' +
-          '<text x="1216" y="98" text-anchor="end" ' + fontAttr(c.fonts.inter, ' font-size="30" letter-spacing="3"') + ' fill="#fff">SP ' + sp + '</text>',
-        text: [{ lines, font: 'impact', box: { x: 70, y: 405, w: 1100, h: 235 }, ha: 'start', va: 'bottom', maxSize: 150, minSize: 74, lh: 0.98, ls: 0.015, fills: [p.light, p.b], shadow: 'glitch', shadowColor: p.a, glitch: [p.a, p.b] }],
+          '<text x="640" y="98" text-anchor="middle" ' + fontAttr(c.fonts.inter, ' font-size="30" letter-spacing="3"') + ' fill="#fff">SP ' + sp + '</text>',
+        text: [{ lines, font: 'impact', box: { x: 70, y: 360, w: 1100, h: 220 }, ha: 'start', va: 'bottom', maxSize: 150, minSize: 74, lh: 0.98, ls: 0.015, fills: [p.light, p.b], shadow: 'glitch', shadowColor: p.a, glitch: [p.a, p.b] }],
         decorate() { return ''; }
       };
     }
