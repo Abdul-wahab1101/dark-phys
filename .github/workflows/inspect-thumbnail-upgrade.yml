@@ -1,0 +1,32 @@
+name: Inspect v10 thumbnail upgrade
+on:
+  push:
+    branches: [integration/dark-phys-final]
+    paths:
+      - 'youtube-agent-upgrade-v10.zip'
+      - '.github/workflows/inspect-thumbnail-upgrade.yml'
+permissions:
+  contents: read
+  actions: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract and inventory v10 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/v10
+          unzip -q youtube-agent-upgrade-v10.zip -d /tmp/v10
+          find /tmp/v10 -type f -printf '%P\t%s bytes\n' | sort | tee /tmp/v10-inventory.txt
+          echo "File count: $(find /tmp/v10 -type f | wc -l)"
+      - name: Preserve extracted package for integration review
+        uses: actions/upload-artifact@v4
+        with:
+          name: v10-thumbnail-package
+          path: |
+            /tmp/v10/
+            /tmp/v10-inventory.txt
+          if-no-files-found: error
+          retention-days: 7
