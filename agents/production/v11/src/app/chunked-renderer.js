@@ -5,7 +5,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { writeFileAtomic } = require('../infra/file-utils');
+const { writeFileAtomic, replaceFileSync } = require('../infra/file-utils');
 
 class ChunkedRenderer {
   constructor(runner, { durationTolerance = 0.3, logger = null } = {}) {
@@ -42,7 +42,7 @@ class ChunkedRenderer {
       const part = path.join(dir, c.id + '.part.mp4');
       try { fs.unlinkSync(part); } catch (_) { /* none */ }
       await this.runner.run([...c.args, part], { cwd: dir, label: 'render ' + c.id });
-      fs.renameSync(part, file);
+      replaceFileSync(part, file);
       manifest.chunks[c.id] = { durationSec: c.durationSec, size: fs.statSync(file).size };
       writeFileAtomic(this.manifestPath(dir), JSON.stringify(manifest));
       rendered++;
