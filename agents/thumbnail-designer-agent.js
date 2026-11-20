@@ -1257,9 +1257,9 @@ class ThumbnailDesignerAgent {
     };
     const headlines = [];
     const seenTypes = new Set();
-    const titleTokens = new Set(String(title).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2));
+    const titleTokens = new Set(String(title).toUpperCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
     const headlineTitleOverlap = (headline) => {
-      const words = String(headline).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2);
+      const words = String(headline).toUpperCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
       return words.length ? words.filter(w => titleTokens.has(w)).length / words.length : 1;
     };
     const distinctPool = options2.filter(h => h.score > -5 && h.wc >= 2 && h.wc <= 5 && headlineTitleOverlap(h.text) <= 0.8);
@@ -1283,10 +1283,10 @@ class ThumbnailDesignerAgent {
     ];
     for (const text of fallbackPool) {
       if (headlines.length >= 3) break;
-      const words = String(text).trim().split(/\\s+/);
+      const words = String(text).trim().split(/\s+/);
       if (words.length < 2 || words.length > 5 || headlineTitleOverlap(text) > 0.8) continue;
       if (headlines.some(h => similar(h.text, text))) continue;
-      headlines.push({ text, score: -1, wc: words.length, type: /\\?$/.test(text) ? 'question' : 'statement' });
+      headlines.push({ text, score: -1, wc: words.length, type: /\?$/.test(text) ? 'question' : 'statement' });
     }
     if (headlines.length < 3) throw new Error('Could not create three distinct curiosity-gap headlines without repeating the video title.');
 
