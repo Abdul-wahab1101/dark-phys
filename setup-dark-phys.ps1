@@ -22,10 +22,21 @@ if ([int]$Parts[0] -lt 3 -or ([int]$Parts[0] -eq 3 -and [int]$Parts[1] -lt 10)) 
 $Youtube = Join-Path $Engines "youtube-automation-agent"
 $YoutubeCommit = "e973d515aef90c467da2289144df737a3bd03859"
 if (-not (Test-Path (Join-Path $Youtube ".git"))) {
+  if ((Test-Path $Youtube) -and (Get-ChildItem -Force $Youtube | Select-Object -First 1)) {
+    throw "The YouTube engine folder exists but is not a Git checkout and is not empty. Back it up or rename it, then rerun setup."
+  }
   git clone https://github.com/darkzOGx/youtube-automation-agent.git $Youtube
+  if ($LASTEXITCODE -ne 0) { throw "Could not clone the pinned YouTube Automation Agent." }
   git -C $Youtube fetch --depth 1 origin $YoutubeCommit
+  if ($LASTEXITCODE -ne 0) { throw "Could not fetch the pinned YouTube Automation Agent commit." }
   git -C $Youtube checkout --detach $YoutubeCommit
-} else { Write-Host "YouTube agent already cloned; keeping your local changes." }
+  if ($LASTEXITCODE -ne 0) { throw "Could not check out the pinned YouTube Automation Agent commit." }
+} else {
+  $CurrentYoutubeCommit = (& git -C $Youtube rev-parse HEAD).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "The existing YouTube engine Git checkout is damaged." }
+  if ($CurrentYoutubeCommit -ne $YoutubeCommit) { throw "Existing YouTube engine is at $CurrentYoutubeCommit, but this integration requires $YoutubeCommit. Back up local work and correct the checkout before setup." }
+  Write-Host "Pinned YouTube engine already present; preserving local changes."
+}
 Push-Location $Youtube
 try {
   if (Test-Path "package-lock.json") { npm ci } else { npm install }
@@ -43,10 +54,21 @@ if ($IncludeOpenMontage) {
   $OpenMontage = Join-Path $Engines "OpenMontage"
   $OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
   if (-not (Test-Path (Join-Path $OpenMontage ".git"))) {
+    if ((Test-Path $OpenMontage) -and (Get-ChildItem -Force $OpenMontage | Select-Object -First 1)) {
+      throw "The OpenMontage folder exists but is not a Git checkout and is not empty. Back it up or rename it, then rerun setup."
+    }
     git clone https://github.com/OpenMontageInc/OpenMontage.git $OpenMontage
+    if ($LASTEXITCODE -ne 0) { throw "Could not clone OpenMontage." }
     git -C $OpenMontage fetch --depth 1 origin $OpenMontageCommit
+    if ($LASTEXITCODE -ne 0) { throw "Could not fetch the pinned OpenMontage commit." }
     git -C $OpenMontage checkout --detach $OpenMontageCommit
-  } else { Write-Host "OpenMontage already cloned; keeping your local changes." }
+    if ($LASTEXITCODE -ne 0) { throw "Could not check out the pinned OpenMontage commit." }
+  } else {
+    $CurrentOpenMontageCommit = (& git -C $OpenMontage rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "The existing OpenMontage Git checkout is damaged." }
+    if ($CurrentOpenMontageCommit -ne $OpenMontageCommit) { throw "Existing OpenMontage is at $CurrentOpenMontageCommit, but this integration requires $OpenMontageCommit. Back up local work and correct the checkout before setup." }
+    Write-Host "Pinned OpenMontage checkout already present; preserving local changes."
+  }
 } else {
   Write-Host "Skipping optional OpenMontage clone. Run .\\setup-openmontage.ps1 only when advanced rendering is needed."
 }
