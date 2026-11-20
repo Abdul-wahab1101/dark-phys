@@ -169,6 +169,9 @@ jobs:
       - name: Test Phase 4 packaging and monetization safety
         run: |
           node --check agents/production/phase4-packaging.js
+          node --check agents/production/cloudflare-workers-ai.js
+          node --check scripts/test-cloudflare-workers-ai.js
+          node scripts/test-cloudflare-workers-ai.js
           node --check scripts/phase4-package.js
           node --check workers/thumbnail-worker/src/index.mjs
           node --check scripts/test-phase4-cli.js
