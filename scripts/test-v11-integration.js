@@ -6,8 +6,8 @@ const path = require('node:path');
 const { buildV11Job } = require('../agents/production/v11-integration');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dark-phys-v11-adapter-'));
 try {
-  const narration = path.join(root, 'narration.mp3'), clip = path.join(root, 'clip.mp4');
-  fs.writeFileSync(narration, 'narration fixture'); fs.writeFileSync(clip, 'clip fixture');
+  const narration = path.join(root, 'narration.mp3'), clip = path.join(root, 'clip.mp4'), music = path.join(root, 'music.mp3');
+  fs.writeFileSync(narration, 'narration fixture'); fs.writeFileSync(clip, 'clip fixture'); fs.writeFileSync(music, 'music fixture');
   const plan = { projectId: 'test-project', title: 'Test documentary', scenes: [
     { id: 'scene-001', narration: 'An original opening.', selectedAssetId: 77, rightsApproved: true }
   ] };
@@ -19,6 +19,11 @@ try {
   assert.equal(prepared.assets[0].licenseId, 'pixabay-content-license'); assert.equal(prepared.job.script, 'An original opening.');
   assert.equal(prepared.job.outPath, path.join(root, 'out', 'final.mp4')); assert.equal(prepared.root, path.join(root, '.dark-phys-v11-state'));
   assert.equal(prepared.profile.width > 0, true);
+  const musicPrepared = buildV11Job({ plan: { ...plan, musicRights: { source: 'Original score', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' }, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })) }, manifest, narrationPath: narration, musicPath: music, outputPath: path.join(root, 'out', 'music.mp4'), projectDir: root });
+  assert.equal(musicPrepared.assets[1].kind, 'audio');
+  assert.equal(musicPrepared.assets[1].licenseId, 'own');
+  assert.equal(musicPrepared.job.musicAssetId, musicPrepared.assets[1].assetId);
+  assert.equal(musicPrepared.job.soundDesignPlan.musicRightsLedger.reviewStatus, 'approved');
   assert.throws(() => buildV11Job({ plan, manifest: [{ ...manifest[0], rightsApprovedByUser: false }],
     narrationPath: narration, outputPath: path.join(root, 'out', 'bad.mp4'), projectDir: root }), /Rights approval/);
   assert.throws(() => buildV11Job({ plan, manifest, narrationPath: narration, outputPath: clip, projectDir: root }), /must not overwrite/);
