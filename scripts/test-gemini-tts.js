@@ -4,6 +4,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const { GeminiTTS, pcmToWav, stylePrompt } = require('../agents/production/gemini-tts');
+const { NarrationEngine } = require('../agents/production/narration');
 (async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dark-phys-gemini-'));
   try {
@@ -34,6 +35,12 @@ const { GeminiTTS, pcmToWav, stylePrompt } = require('../agents/production/gemin
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'quota exceeded' } }) }), apiKey: 'x' }).synthesize('text', output), /HTTP 429: quota exceeded/);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true, json: async () => ({ candidates: [] }) }), apiKey: 'x' }).synthesize('text', output), /did not contain audio/);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true }), apiKey: '' }).synthesize('text', output), /GEMINI_API_KEY/);
+    const engine = new NarrationEngine({ geminiOptions: { apiKey: 'engine-key', fetch: async () => ({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64') } }] } }] }) }) } });
+    const engineOutput = path.join(dir, 'engine.wav');
+    const engineResult = await engine.synthesize('Narration engine integration test.', engineOutput, { direction: 'hook' });
+    assert.equal(engineResult.provider, 'Gemini');
+    assert.equal(engine.provider(), 'Gemini');
+    assert.equal((await fs.readFile(engineOutput)).toString('RIFF', 0, 4), 'RIFF');
     console.log('PASS Gemini TTS audio decoding, WAV writing, request config and failure handling');
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 })().catch(error => { console.error(error); process.exit(1); });
