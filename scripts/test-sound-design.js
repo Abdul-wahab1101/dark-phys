@@ -13,7 +13,7 @@ const library = [
  { id: 'riser-1', path: 'assets/riser.wav', tags: ['riser'] },
  { id: 'tail-1', path: 'assets/tail.wav', tags: ['tail'] }
 ];
-const plan = buildSoundDesignPlan({ scenes, library, musicPath: 'assets/score.mp3', voicePath: 'voice.mp3', musicRights: { source: 'Original score', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' } });
+const plan = buildSoundDesignPlan({ scenes, library, musicPath: 'assets/score.mp3', voicePath: 'voice.mp3', musicRights: { source: 'Original score', licenseId: 'own', licenseUrl: 'https://example.test/music-license', commercialUseVerified: true, reviewStatus: 'approved' } });
 assert.equal(classifyScene(scenes[0], 0, 4), 'hook');
 assert.equal(plan.durationSeconds, 33);
 assert.equal(plan.scenes.length, 4);
