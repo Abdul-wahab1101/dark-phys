@@ -863,6 +863,15 @@ const FAMILIES = {
   }
 };
 
+// v10: 12 extra design families live in their own file (same contract as the families above).
+try {
+  const extra = require('./thumbnail-families-extra');
+  Object.assign(FAMILIES, extra.create({ poly, starburst, dotsPattern, arrowSvg, jaggedPath, esc, mulberry32 }));
+  for (const tp of TOPIC_PROFILES) tp.fam = Object.assign({}, extra.TOPIC_FIT[tp.id] || {}, tp.fam || {});
+} catch (error) {
+  console.warn('[thumbnail-designer] extra families not loaded: ' + error.message);
+}
+
 const FAMILY_IDS = Object.keys(FAMILIES);
 
 const LEGACY_FAMILY_ALIASES = {
@@ -1210,6 +1219,7 @@ class ThumbnailDesignerAgent {
       score += rng() * 1.6;
       const preferred = (script.formatPlan && script.formatPlan.thumbnailFamilies) || (script.metadata && script.metadata.formatPlan && script.metadata.formatPlan.thumbnailFamilies) || [];
       if (preferred.includes(id)) score += 1.2;
+      if (fam.needsNumber) score += /\b\d{1,2}\b/.test(title) ? 2 : -3;
       const recentIdx = recent.findIndex(r => r.includes(id));
       if (recentIdx >= 0) score -= Math.max(0.8, 3.2 - recentIdx * 0.7);
       return { id, score };
@@ -1364,10 +1374,13 @@ class ThumbnailDesignerAgent {
     const pal = fam.palettes[plan.paletteIdx % fam.palettes.length];
     const scene = plan.scene;
     const analysis = concept.analysis || {};
-    const textSide = fam.textSide === 'left' ? 'left' : (fam.textSide === 'bottom' ? 'lower' : 'left');
     const negative = fam.textSide === 'left'
       ? 'The left 40 percent of the frame is calm, dark and nearly empty'
-      : 'The lower 30 percent of the frame is calm, dark and nearly empty';
+      : fam.textSide === 'right'
+        ? 'The right 45 percent of the frame is calm, dark and nearly empty'
+        : fam.textSide === 'top'
+          ? 'The upper 35 percent of the frame is calm, plain and nearly empty'
+          : 'The lower 30 percent of the frame is calm, dark and nearly empty';
 
     const colorWords = 'dominant colours ' + pal.dark + ' deep tones with accents of ' + pal.a + ' and ' + pal.b;
 
@@ -1713,6 +1726,8 @@ class ThumbnailDesignerAgent {
       .resize(W, H, { fit: 'cover', position: 'attention' })
       .modulate({ brightness: grade.brightness ?? 1, saturation: grade.saturation ?? 1 });
     if (grade.a !== undefined) img = img.linear(grade.a, grade.b ?? 0);
+    if (grade.gray) img = img.greyscale();
+    if (grade.tint) img = img.tint(grade.tint);
     if (grade.median) img = img.median(grade.median);
     if (grade.flip) img = img.flop();
     return img.png().toBuffer();
@@ -1758,12 +1773,21 @@ class ThumbnailDesignerAgent {
       eyebrow: plan.eyebrow || profile.eyebrow || 'HUMAN BEHAVIOR',
       badge: plan.badge || (profile.badges && profile.badges[0]) || 'LOOK CLOSER',
       question: /\?$/.test(headline),
+      title: String(options.title || plan.title || ''),
       tw: (str, size, ls = 0) => Math.ceil(String(str).length * (size * 0.72 + ls))
     };
 
     const built = fam.build(c);
     const layouts = [];
-    for (const block of built.text) layouts.push(await this.layoutBlock(block));
+    for (const block of built.text) {
+      let laid = await this.layoutBlock(block);
+      if (!laid.fitted && block.minSize > 50) {
+        // Long headline in a narrow box: allow a somewhat smaller (still large) size instead of overflowing.
+        const relaxed = await this.layoutBlock({ ...block, minSize: Math.max(50, Math.floor(block.minSize * 0.8)) });
+        if (relaxed.fitted) laid = relaxed;
+      }
+      layouts.push(laid);
+    }
 
     const minX = Math.min(...layouts.map(l => l.bbox.x));
     const minY = Math.min(...layouts.map(l => l.bbox.y));
