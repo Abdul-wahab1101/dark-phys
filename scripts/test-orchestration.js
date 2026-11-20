@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {ProductionOrchestrator}=require('../agents/production/orchestration');
 (async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dark-phys-orch-'));let now=Date.UTC(2026,10,20);const o=new ProductionOrchestrator({root:path.join(dir,'state'),now:()=>now,maxAttempts:2,baseBackoffMs:100});
-const batch=o.addWeeklyBatch([{jobId:'a',type:'long'},{jobId:'b',type:'short'}],{startAt:now,spacingHours:24});assert.equal(batch.length,2);assert.equal(batch[0].batchId,batch[1].batchId);
+const batch=o.addWeeklyBatch([{jobId:'a',type:'long'},{jobId:'b',type:'short'}],{startAt:now,spacingHours:24});assert.equal(batch.length,2);assert.equal(batch[0].batchId,batch[1].batchId);const beforeInvalidBatch=o.list().length;assert.throws(()=>o.addWeeklyBatch([{jobId:'fresh',type:'long'},{jobId:'a',type:'short'}],{startAt:now}),/Duplicate jobId/);assert.equal(o.list().length,beforeInvalidBatch,'invalid weekly batch must not partially enqueue jobs');assert.throws(()=>o.addWeeklyBatch(Array.from({length:8},(_,i)=>({jobId:'too-many-'+i,type:'long'}))),/seven jobs/);
 let result=await o.runNext(async job=>{job.saveCheckpoint({stage:'render',completed:['research','script']});return{ok:true};});assert.equal(result.status,'completed');assert.equal(o.list()[0].checkpoint.stage,'render');
 now+=24*3600000;result=await o.runNext(async()=>{throw Error('temporary');});assert.equal(result.status,'queued');assert.equal(o.list()[1].attempts,1);now+=1000;result=await o.runNext(async()=>({done:true}));assert.equal(result.status,'completed');
 const release=o.acquire();assert.throws(()=>o.acquire(),/already running/);release();
