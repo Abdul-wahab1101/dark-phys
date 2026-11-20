@@ -37,7 +37,7 @@ def show_findings(d: Doctor, limit: int = 40) -> None:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="doctor.py", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["init", "scan", "diagnose", "repair", "proposals", "approve", "reject", "rollback", "test", "mode", "monitor",
-                                    "status", "preflight", "dashboard", "history", "report", "health", "selftest"])
+                                    "status", "preflight", "dashboard", "history", "report", "health", "selftest", "backup", "backups", "verify-backup", "restore-backup"])
     ap.add_argument("args", nargs="*")
     ap.add_argument("--mode", choices=MODES)
     ap.add_argument("--data-dir")
@@ -48,6 +48,8 @@ def main(argv=None) -> int:
     ap.add_argument("--interval", type=float)
     ap.add_argument("--port", type=int)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--yes", action="store_true", help="confirm a destructive backup restore")
+    ap.add_argument("--reason", default="manual backup", help="reason label for a backup")
     a = ap.parse_args(argv)
 
     if a.cmd == "init":

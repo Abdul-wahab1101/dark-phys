@@ -79,6 +79,8 @@ jobs:
           node scripts/test-thumbnail-designer.js
       - name: Compile Universal Doctor
         run: python -m compileall -q agents/universal-doctor
+      - name: Validate Doctor backup CLI
+        run: python agents/universal-doctor/doctor.py --help
       - name: Doctor unit tests
         run: python -m unittest discover -s agents/universal-doctor/tests -v
       - name: Doctor dashboard HTTP launch smoke test
