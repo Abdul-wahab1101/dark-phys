@@ -126,6 +126,9 @@ jobs:
         run: npm test
       - name: Install Dark Phys test dependencies
         run: npm install --no-save sharp ffprobe-static
+      - name: Configure bundled FFprobe for production regression tests
+        run: |
+          node -e "const p=require('ffprobe-static'); const bin=p.path || p; if(!bin) process.exit(1); require('fs').accessSync(bin); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFPROBE_PATH='+bin+'\\n'); console.log('Using bundled FFprobe:', bin)"
       - name: Test video format planner
         run: node scripts/test-video-planner.js
       - name: Test stock footage adapter
