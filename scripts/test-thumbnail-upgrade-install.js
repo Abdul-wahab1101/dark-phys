@@ -69,12 +69,13 @@ try{
  assert(!patched.includes('try { const aiThumbnail'));
  assert(patchedIndex.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS')&&patchedIndex.includes('thumbnail-candidate-'));
  assert(patchedDashboard.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL')&&patchedDashboard.includes('Recommended:'));
- assert.equal(fs.readFileSync(first.backups[2],'utf8'),indexSource);
- assert.equal(fs.readFileSync(first.backups[3],'utf8'),dashboardSource);
- assert.equal(fs.readFileSync(first.backups[1],'utf8'),originalProduction);
+ assert.equal(fs.readFileSync(first.backups[1],'utf8'),'// pre-existing families\\n');
+ assert.equal(fs.readFileSync(first.backups[3],'utf8'),indexSource);
+ assert.equal(fs.readFileSync(first.backups[4],'utf8'),dashboardSource);
+ assert.equal(fs.readFileSync(first.backups[2],'utf8'),originalProduction);
  assert.equal(fs.readFileSync(first.backups[0],'utf8'),'// original upstream designer\n');
  const second=applyThumbnailUpgrade({root,engine});
  assert.equal(second.alreadyPatched,true);
- assert.equal(fs.readFileSync(first.backups[1],'utf8'),originalProduction);
+ assert.equal(fs.readFileSync(first.backups[2],'utf8'),originalProduction);
  console.log('PASS pinned upstream thumbnail override, reviewed-output handoff, original backups and idempotent re-apply');
 }finally{fs.rmSync(temp,{recursive:true,force:true});}
