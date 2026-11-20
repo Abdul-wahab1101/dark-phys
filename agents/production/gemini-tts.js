@@ -56,7 +56,7 @@ class GeminiTTS {
     const direction = options.direction || 'story';
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), options.timeoutMs || this.timeoutMs);
-    let response;
+    let response, payload;
     try {
       response = await this.fetch(ENDPOINT + encodeURIComponent(this.model) + ':generateContent', {
         method: 'POST',
@@ -70,13 +70,16 @@ class GeminiTTS {
         }),
         signal: controller.signal
       });
+      if (!response.ok) {
+        let detail = '';
+        try { const errorPayload = await response.json(); detail = errorPayload?.error?.message || ''; } catch (_) {}
+        throw new Error('Gemini TTS failed with HTTP ' + response.status + (detail ? ': ' + detail : '. Check API access, model availability, quota and billing.'));
+      }
+      payload = await response.json();
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error('Gemini TTS request timed out after ' + (options.timeoutMs || this.timeoutMs) + ' ms.');
+      throw error;
     } finally { clearTimeout(timer); }
-    if (!response.ok) {
-      let detail = '';
-      try { const payload = await response.json(); detail = payload?.error?.message || ''; } catch (_) {}
-      throw new Error('Gemini TTS failed with HTTP ' + response.status + (detail ? ': ' + detail : '. Check API access, model availability, quota and billing.'));
-    }
-    const payload = await response.json();
     const parts = payload?.candidates?.[0]?.content?.parts || [];
     const audioPart = parts.find(part => part.inlineData?.data || part.inline_data?.data);
     const encoded = audioPart?.inlineData?.data || audioPart?.inline_data?.data;
