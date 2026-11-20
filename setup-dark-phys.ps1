@@ -50,6 +50,17 @@ try {
   New-Item -ItemType Directory -Force -Path "config" | Out-Null
 } finally { Pop-Location }
 
+# The Dark Phys thumbnail designer runs from the repository root, not from the
+# upstream engine folder, so its native Sharp dependency must exist at root.
+Write-Host "Installing Dark Phys root thumbnail runtime dependency (sharp)..."
+Push-Location $Root
+try {
+  npm install --no-save --no-package-lock sharp
+  if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency installation failed." }
+  node -e "const sharp=require('sharp'); if(typeof sharp!=='function') process.exit(1); console.log('PASS root Sharp runtime:', require('sharp/package.json').version)"
+  if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency cannot be loaded." }
+} finally { Pop-Location }
+
 if ($IncludeOpenMontage) {
   $OpenMontage = Join-Path $Engines "OpenMontage"
   $OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
