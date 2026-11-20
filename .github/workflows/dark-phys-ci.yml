@@ -150,6 +150,12 @@ jobs:
           node --check agents/production/scene-planner.js
           node --check agents/production/audio-mix.js
           node --check agents/production/narration.js
+          node --check agents/production/gemini-tts.js
+          node --check agents/production/sound-design.js
+          node --check scripts/test-gemini-tts.js
+          node --check scripts/test-sound-design.js
+          node scripts/test-gemini-tts.js
+          node scripts/test-sound-design.js
           node --check scripts/narrate.js
           node --check agents/production/motion-graphics.js
           node --check agents/production/render-profile.js
