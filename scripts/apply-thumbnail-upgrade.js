@@ -10,7 +10,7 @@ function read(file) { return fs.readFileSync(file, 'utf8'); }
 function write(file, value) { fs.writeFileSync(file, value, 'utf8'); }
 
 function upgradedProcessThumbnailMethod() {
-  return String.raw`  async processThumbnail(thumbnail, script) {
+  return `  async processThumbnail(thumbnail, script) {
     // DARK_PHYS_REVIEWED_THUMBNAIL_ENGINE
     // Never replace a reviewed, approved Dark Phys thumbnail with a generic second AI image.
     const reviewed = thumbnail &&
