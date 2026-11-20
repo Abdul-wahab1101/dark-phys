@@ -192,6 +192,7 @@ jobs:
       - name: Test Phase 4 packaging and monetization safety
         run: |
           node --check agents/production/phase4-packaging.js
+          node --check agents/production/packaging-experiments.js
           node --check agents/production/cloudflare-workers-ai.js
           node --check scripts/test-cloudflare-workers-ai.js
           node scripts/test-cloudflare-workers-ai.js
@@ -200,6 +201,7 @@ jobs:
           node --check scripts/test-phase4-cli.js
           node workers/thumbnail-worker/test/worker.test.mjs
           node scripts/test-phase4-packaging.js
+          node scripts/test-packaging-experiments.js
           node scripts/test-phase4-cli.js
           node scripts/phase4-package.js
       - name: Test isolated channel workspaces
@@ -210,6 +212,28 @@ jobs:
         run: |
           node --check scripts/phase5-operator.js
           node scripts/test-phase5-operator.js
+      - name: Test independent Shorts Factory
+        run: |
+          node --check agents/production/shorts-factory.js
+          node --check scripts/shorts-factory.js
+          node scripts/test-shorts-factory.js
+          node scripts/shorts-factory.js
+      - name: Test YouTube analytics learning gate
+        run: |
+          node --check agents/production/analytics-learning.js
+          node --check scripts/analytics-report.js
+          node scripts/test-analytics-learning.js
+      - name: Test Long and Shorts QC review
+        run: |
+          node --check agents/production/quality-control.js
+          node --check scripts/quality-control.js
+          node --check scripts/qc-review-page.js
+          node scripts/test-quality-control.js
+      - name: Test weekly production orchestration
+        run: |
+          node --check agents/production/orchestration.js
+          node --check scripts/production-queue.js
+          node scripts/test-orchestration.js
       - name: Test Phase 7 production readiness
         run: |
           node --check scripts/phase7-readiness.js
