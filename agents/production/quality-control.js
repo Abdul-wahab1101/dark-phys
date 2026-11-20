@@ -11,7 +11,7 @@ function evaluateQc({mode='long',probe={},files={},editorial={},visual={},audio=
  const checks=[];
  checks.push(check('video_stream',!!v,v?.codec_name||'missing'));
  checks.push(check('audio_stream',!!a,a?.codec_name||'missing'));
- checks.push(check('duration',mode==='short'?duration>=15&&duration<=60:duration>=480&&duration<=720,duration+' seconds'));
+ checks.push(check('duration',mode==='short'?duration>=20&&duration<=60:duration>=480&&duration<=720,duration+' seconds'));
  checks.push(check('resolution',mode==='short'?width>=720&&height>width:width>=1280&&width>height,width+'x'+height));
  checks.push(check('frame_rate',fps>=23&&fps<=60,fps+' fps'));
  checks.push(check('aspect_ratio',mode==='short'?aspect>=0.52&&aspect<=0.62:aspect>=1.65&&aspect<=1.9,aspect.toFixed(3)));
