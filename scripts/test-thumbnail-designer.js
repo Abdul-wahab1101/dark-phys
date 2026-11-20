@@ -79,7 +79,7 @@ async function placeholderBackground(file, i) {
     };
     const visionReview = await agent.inspectThumbnailVisual(visionTestImage, { hook: 'WHO PULLS YOUR STRINGS?', designFamily: 'test' });
     ok(visionReview.available && visionReview.passed && visionReview.score === 91, 'Cloudflare Vision response is parsed into a visual quality review');
-    ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && visionRequest?.body.messages?.[0]?.content?.some(p => p.type === 'image_url' && p.image_url.url.startsWith('data:image/jpeg;base64,')), 'Cloudflare Vision request includes the actual thumbnail image');
+    ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && typeof visionRequest?.body.messages?.[0]?.content === 'string' && visionRequest.body.messages[0].content.includes('strict professional YouTube thumbnail art director') && visionRequest.body.image.startsWith('data:image/jpeg;base64,'), 'Cloudflare Vision request includes the actual thumbnail image');
   } finally {
     global.fetch = originalFetch;
     if (oldToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN; else process.env.CLOUDFLARE_API_TOKEN = oldToken;
