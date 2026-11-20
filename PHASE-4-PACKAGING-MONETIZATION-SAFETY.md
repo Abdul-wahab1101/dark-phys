@@ -5,6 +5,9 @@ The Phase 4 thumbnail command calls Cloudflare Workers AI directly through the a
 
 Set these values in the local channel workspace `.env` only: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_TEXT_MODEL=@cf/openai/gpt-oss-20b`, and `CLOUDFLARE_IMAGE_MODEL=@cf/black-forest-labs/flux-1-schnell`. The token needs Workers AI Read and Workers AI Write permissions. Never commit credentials. Run `node scripts/phase4-package.js thumbnails --title "Why People Manipulate You" --subtitle "Psychology Explained"`. Three JPGs and `concepts.json` are saved under `uploads/thumbnail-concepts`. Workers AI usage is subject to the account's current model pricing and limits.
 
+## Three-way packaging combinations
+The Phase 4 build step creates three distinct title + thumbnail combinations from the approved script. If you first run the thumbnails command, build automatically imports the three concepts and their JPG file paths from uploads/thumbnail-concepts/concepts.json; otherwise it creates thumbnail concept briefs for manual design. Each title receives a script-overlap score and a low-match warning. Review all combinations for accuracy and avoid misleading curiosity gaps. The package does not start YouTube Test & Compare; the live Studio feature and account authorization must be checked manually.
+
 ## SEO titles, descriptions and chapters
 The packaging module produces a primary SEO title, alternate title options, description, tags and a slug. It drafts chapter titles from supplied chapter beats/sections and generates approximate timestamps when actual timestamps are not supplied. Chapter timestamps must be checked against the final export; the validator requires at least three ascending chapters, a 00:00 first chapter, at least 10 seconds between chapters, and timestamps within the declared duration. Metadata remains a human-reviewed draft.
 
