@@ -11,7 +11,7 @@ permissions:
 jobs:
   integrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,20 +20,35 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Extract v10 package
+      - name: Extract and locate v10 package files
+        id: pkg
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p /tmp/v10
           unzip -q youtube-agent-upgrade-v10.zip -d /tmp/v10
-          test -s /tmp/v10/v10/files/agents/thumbnail-designer-agent.js
-          test -s /tmp/v10/v10/files/agents/thumbnail-families-extra.js
+          find /tmp/v10 -type f -printf '%P\t%s bytes\n' | sort
+          AGENT="$(find /tmp/v10 -type f -path '*/files/agents/thumbnail-designer-agent.js' -print -quit)"
+          EXTRA="$(find /tmp/v10 -type f -path '*/files/agents/thumbnail-families-extra.js' -print -quit)"
+          TEST="$(find /tmp/v10 -type f -path '*/files/scripts/test-thumbnail-designer.js' -print -quit)"
+          README="$(find /tmp/v10 -type f -name README_URDU.md -print -quit)"
+          test -s "$AGENT" && test -s "$EXTRA" && test -s "$TEST" && test -s "$README"
+          echo "agent=$AGENT" >> "$GITHUB_OUTPUT"
+          echo "extra=$EXTRA" >> "$GITHUB_OUTPUT"
+          echo "test=$TEST" >> "$GITHUB_OUTPUT"
+          echo "readme=$README" >> "$GITHUB_OUTPUT"
       - name: Integrate the 12 additional design families
+        env:
+          AGENT: ${{ steps.pkg.outputs.agent }}
+          EXTRA: ${{ steps.pkg.outputs.extra }}
+          TEST: ${{ steps.pkg.outputs.test }}
+          README: ${{ steps.pkg.outputs.readme }}
         run: |
           set -euo pipefail
-          cp /tmp/v10/v10/files/agents/thumbnail-designer-agent.js agents/thumbnail-designer-agent.js
-          cp /tmp/v10/v10/files/agents/thumbnail-families-extra.js agents/thumbnail-families-extra.js
-          cp /tmp/v10/v10/files/scripts/test-thumbnail-designer.js scripts/test-thumbnail-designer.js
-          cp /tmp/v10/v10/README_URDU.md THUMBNAIL-DESIGNS-V10-URDU.md
+          cp "$AGENT" agents/thumbnail-designer-agent.js
+          cp "$EXTRA" agents/thumbnail-families-extra.js
+          cp "$TEST" scripts/test-thumbnail-designer.js
+          cp "$README" THUMBNAIL-DESIGNS-V10-URDU.md
           node --check agents/thumbnail-designer-agent.js
           node --check agents/thumbnail-families-extra.js
       - name: Install thumbnail render dependencies
