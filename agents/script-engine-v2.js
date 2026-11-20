@@ -14,14 +14,24 @@ function validateEditorialDraft(draft, pkg, format) {
   const base = validateDraft(draft, new Set(pkg.sources.map(s => String(s.id))), idsFor(pkg));
   const errors = [...base.errors];
   if (!String(draft.centralQuestion || '').trim()) errors.push('A single centralQuestion is required');
-  if (!String(draft.caseStudy || '').trim()) errors.push('One documented or explicitly hypothetical caseStudy is required');
+  else if ((draft.centralQuestion.match(/[?؟]/g) || []).length !== 1) errors.push('centralQuestion must contain exactly one question');
+  if (!draft.caseStudy || typeof draft.caseStudy !== 'object' || !String(draft.caseStudy.summary || '').trim()) errors.push('One structured caseStudy is required');
+  else if (draft.caseStudy.type === 'documented') {
+    if (!Array.isArray(draft.caseStudy.sourceIds) || !draft.caseStudy.sourceIds.length || draft.caseStudy.sourceIds.some(id => !pkg.sources.some(s => String(s.id) === String(id)))) errors.push('Documented caseStudy must cite known source IDs');
+  } else if (draft.caseStudy.type !== 'hypothetical' || !/hypothetical|illustrative/i.test(String(draft.caseStudy.label || ''))) errors.push('caseStudy must be documented with sources or explicitly labelled hypothetical');
   if (!Array.isArray(draft.acts) || (format === 'short' ? draft.acts.length < 3 || draft.acts.length > 4 : draft.acts.length < 3 || draft.acts.length > 5)) errors.push('Insufficient story acts');
   if (!Array.isArray(draft.openLoops) || !draft.openLoops.length) errors.push('At least one resolved open loop is required');
-  else if (draft.openLoops.some(x => !String(x.setup || '').trim() || !String(x.payoffAct || '').trim())) errors.push('Every open loop needs a setup and payoffAct');
+  else if (draft.openLoops.some(x => !String(x.setup || '').trim() || !String(x.payoffAct || '').trim() || !draft.acts?.some(a => String(a.id) === String(x.payoffAct)))) errors.push('Every open loop needs a setup and a valid payoffAct');
   if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) errors.push('Sentence-by-sentence visual intent plan is required');
   else if (draft.sentenceVisuals.some(x => !String(x.sentence || '').trim() || !String(x.visualIntent || '').trim() || !String(x.footageQuery || '').trim() || !String(x.sourceType || '').trim())) errors.push('Every sentence visual needs sentence, visualIntent, footageQuery and sourceType');
   const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
   if (sentenceCount && Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length !== sentenceCount) errors.push('Every narration sentence must have exactly one sentenceVisuals entry');
+  if (Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length === sentenceCount) {
+    const normal = value => String(value || '').replace(/\\s+/g, ' ').trim();
+    const narrationSentences = String(draft.narration || '').match(/[^.!?؟۔\\n]+[.!?؟۔]?/g)?.map(normal) || [];
+    if (draft.sentenceVisuals.some((v, i) => normal(v.sentence) !== narrationSentences[i])) errors.push('sentenceVisuals must preserve the exact narration sentence order');
+  }
+  if (!Array.isArray(draft.claimsToVerify) || !draft.claimsToVerify.length) errors.push('claimsToVerify checklist is required');
   if (!Array.isArray(draft.claimLedger) || !draft.claimLedger.length) errors.push('Claim-level source ledger is required');
   const knownClaims = idsFor(pkg), knownSources = new Set(pkg.sources.map(s => String(s.id)));
   const mappedClaimIds = new Set((draft.claimLedger || []).map(item => String(item.claimId)));
@@ -54,7 +64,7 @@ class ScriptEngineV2 {
     for (const lang of LANGS) {
       const prompt = buildWriterPrompt(pkg, lang, mode) + '\n\nEDITORIAL SYSTEM V2 REQUIREMENTS:\n' +
         JSON.stringify({ format: mode, brief, audience: pkg.audience || 'curious documentary viewers' }) +
-        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy (exactly one real documented case with source IDs OR explicitly labelled hypothetical illustration), acts (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
+        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy {type:documented|hypothetical,summary,label,sourceIds}, acts (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
         (mode === 'short' ? 'Make one complete standalone vertical Short, 20–60 seconds, one idea only.' :
           'Make an 8–12 minute documentary with cold open, promise, 3–5 main acts, rehooks roughly every 60–90 seconds, and a satisfying payoff.') +
         ' Use exactly one central question and one case. Never invent a real case, study, statistic, quote or source. Mark unsupported material [NEEDS SOURCE].';
