@@ -12,6 +12,7 @@ const pkg = {
   viralFactors: { audience_fit: 4, demand_evidence: 4, freshness: 4, curiosity: 5, story_depth: 4, visual_potential: 4, differentiation: 4, evidence_quality: 5, series_potential: 3 }
 };
 const narration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(75);
+const tightenedNarration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(64);
 const shortNarration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(8);
 function draft(text) {
   return { titleOptions: ['Memory Explained', 'Why Recall Changes', 'The Memory Question'],
@@ -32,7 +33,7 @@ function draft(text) {
   const writer = { request: async prompt => {
     calls.push(prompt);
     if (prompt.startsWith('Act as a strict')) return { score: 88, strengths: ['clear'], weaknesses: [], unsupportedClaims: [], repetition: [], pacingIssues: [], requiredChanges: [] };
-    if (prompt.startsWith('Revise this script')) return draft(shortNarration);
+    if (prompt.startsWith('Revise this script')) return draft(tightenedNarration);
     return draft(narration);
   } };
   const result = await new ScriptEngineV2({ writer }).generate(pkg, { format: 'long-form' });
