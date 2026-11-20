@@ -9,6 +9,27 @@ const { makeBrief } = require('./viral-intelligence-engine');
 
 const LANGS = ['en', 'ur-Latn'];
 const words = value => String(value || '').trim().split(/\s+/).filter(Boolean);
+const DEFAULT_BANNED_PHRASES = [
+  "in today's video", "like and subscribe", "smash that like button",
+  "you won't believe", "the secret they don't want you to know",
+  "this one trick", "guaranteed results"
+];
+const DEFAULT_BANNED_PATTERNS = [
+  { code: 'FALSE_MEDICAL_AUTHORITY', pattern: /\bI am (a|an) (doctor|therapist|psychologist|psychiatrist)\b/i },
+  { code: 'DIAGNOSIS_CLAIM', pattern: /\bI can diagnose you\b|\bthis video diagnoses\b/i },
+  { code: 'CURE_PROMISE', pattern: /\b(this|these) (will|can) cure (you|depression|anxiety|trauma)\b|\bguaranteed cure\b/i },
+  { code: 'FALSE_CERTAINTY', pattern: /\b(guaranteed to work|works for everyone|100% effective)\b/i }
+];
+function banListReview(draft, pkg = {}) {
+  const text = [draft.narration, ...(draft.hooks || []), ...(draft.titleOptions || []),
+    ...(draft.acts || []).map(a => a.narration || ''), draft.caseStudy?.summary || ''].join(' ');
+  const lower = text.toLowerCase();
+  const phrases = [...DEFAULT_BANNED_PHRASES, ...(Array.isArray(pkg.banList) ? pkg.banList : [])];
+  const hits = phrases.filter(phrase => String(phrase).trim() && lower.includes(String(phrase).toLowerCase()))
+    .map(phrase => ({ code: 'BANNED_PHRASE', phrase: String(phrase) }));
+  for (const rule of DEFAULT_BANNED_PATTERNS) if (rule.pattern.test(text)) hits.push({ code: rule.code, phrase: rule.pattern.source });
+  return { passed: hits.length === 0, hits, checkedFields: ['narration','hooks','titleOptions','acts','caseStudy'] };
+}
 const idsFor = pkg => new Set((pkg.claims || []).map((c, i) => String(c.id || 'claim-' + (i + 1))));
 function validateEditorialDraft(draft, pkg, format) {
   const base = validateDraft(draft, new Set(pkg.sources.map(s => String(s.id))), idsFor(pkg));
