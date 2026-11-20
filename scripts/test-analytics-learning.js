@@ -8,5 +8,6 @@ let report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(r
 assert.equal(report.metrics.videoCount,14);assert.equal(report.learningGate.eligible,false);assert.equal(report.recommendations.length,0);assert.equal(report.learningGate.ruleChangesAllowed,false);
 rows.push({videoId:'v14',views:200,impressions:2000,ctr:.06,averageViewDurationSeconds:150,averageViewPercentage:40,retention});
 report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(rows.map(x=>[x.videoId,[{startRatio:.3,endRatio:.5,title:'Evidence'}]]))});
-assert.equal(report.learningGate.eligible,true);assert.equal(report.recommendations[0].automaticChange,false);assert(report.metrics.meanCtr>0);
+assert.equal(report.learningGate.eligible,true);
+assert.equal(analyzeAnalytics({videos:[...rows,rows[0]]}).metrics.videoCount,15,'duplicate video IDs count only once');assert.equal(report.recommendations[0].automaticChange,false);assert(report.metrics.meanCtr>0);
 console.log('PASS CTR, AVD, retention drop-off mapping and strict 15-video learning threshold');
