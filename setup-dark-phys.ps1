@@ -61,6 +61,10 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency cannot be loaded." }
 } finally { Pop-Location }
 
+Write-Host "Installing Dark Phys reviewed thumbnail engine into the upstream production pipeline..."
+node (Join-Path $Root "scripts\\apply-thumbnail-upgrade.js") --engine $Youtube
+if ($LASTEXITCODE -ne 0) { throw "Could not safely apply the Dark Phys thumbnail upgrade to the YouTube agent." }
+
 if ($IncludeOpenMontage) {
   $OpenMontage = Join-Path $Engines "OpenMontage"
   $OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
