@@ -52,7 +52,7 @@ class ProductionPipeline {
       title: job.title, description: job.description || '', script: job.script || '',
       segments: job.segments || null, words: job.words || null, scenePlan: job.scenePlan || null, soundDesignPlan: job.soundDesignPlan || null,
       narration: stat(job.narrationPath), music: stat(job.musicPath),
-      musicSegments: (job.musicSegments || []).map(track => ({ file: stat(track.path), assetId: track.assetId, startSeconds: track.startSeconds, endSeconds: track.endSeconds, gainDb: track.gainDb, mood: track.mood })),
+      musicSegments: (job.musicSegments || []).map(track => ({ file: stat(track.path), assetId: track.assetId, type: track.type, startSeconds: track.startSeconds, endSeconds: track.endSeconds, gainDb: track.gainDb, mood: track.mood, fadeInSeconds: track.fadeInSeconds, fadeOutSeconds: track.fadeOutSeconds, ducking: track.ducking })),
       musicAssetIds: job.musicAssetIds || [],
       clips, captions: stat(job.captionsAss), thumbnail,
       hasOriginalCommentary: job.hasOriginalCommentary !== false,
@@ -219,8 +219,9 @@ class ProductionPipeline {
       : (job.musicPath && fs.existsSync(job.musicPath) ? [{ path: job.musicPath, startSeconds: 0, endSeconds: total, gainDb: soundPlan.music && soundPlan.music.gainDb, fadeInSeconds: soundPlan.music && soundPlan.music.fadeInSeconds, fadeOutSeconds: soundPlan.music && soundPlan.music.fadeOutSeconds }] : []);
     let nextInput = 2;
     if (musicTracks.length) {
-      const sidechainLabels = musicTracks.map((_, index) => '[sc' + index + ']').join('');
-      chains.push(voiceChain + ',asplit=' + (musicTracks.length + 1) + '[vo]' + sidechainLabels);
+      const duckedCount = musicTracks.filter(track => track.ducking !== false).length;
+      const sidechainLabels = musicTracks.map((track, index) => track.ducking === false ? '' : '[sc' + index + ']').join('');
+      chains.push(voiceChain + ',asplit=' + (duckedCount + 1) + '[vo]' + sidechainLabels);
       labels.push('[vo]');
       const silenceWindows = Array.isArray(soundPlan.silenceWindows) ? soundPlan.silenceWindows : [];
       const silenceExpression = silenceWindows.reduce((expr, window) =>

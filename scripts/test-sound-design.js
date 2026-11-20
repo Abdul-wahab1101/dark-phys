@@ -13,18 +13,19 @@ const library = [
  { id: 'riser-1', path: 'assets/riser.wav', tags: ['riser'] },
  { id: 'tail-1', path: 'assets/tail.wav', tags: ['tail'] }
 ];
-const plan = buildSoundDesignPlan({ scenes, library, musicPath: 'assets/score.mp3', voicePath: 'voice.mp3', musicRights: { source: 'Original score', licenseId: 'own', licenseUrl: 'https://example.test/music-license', commercialUseVerified: true, reviewStatus: 'approved' } });
-assert.equal(classifyScene(scenes[0], 0, 4), 'hook');
+const plan = buildSoundDesignPlan({ scenes, library, musicPath: 'assets/score.mp3', voicePath: 'voice.mp3', ambienceSegments: [{ path: 'assets/room-tone.wav', startSeconds: 0, endSeconds: 33, act: 'Act I', rights: { source: 'Original ambience', licenseId: 'own', commercialUseVerified: true, licenseUrl: 'https://example.test/ambience-license', reviewStatus: 'approved' } }], musicRights: { source: 'Original score', licenseId: 'own', licenseUrl: 'https://example.test/music-license', commercialUseVerified: true, reviewStatus: 'approved' } });
+assert.equal(classifyScene(scenes[0], 0, 4), 'hook');assert.equal(classifyScene({ title: 'Atmosphere ambience', ambience: true }, 1, 4), 'ambience');
 assert.equal(plan.durationSeconds, 33);
 assert.equal(plan.scenes.length, 4);
 assert.equal(plan.music.ducking, true);
 assert.equal(plan.mix.targetIntegratedLufs, -14);
 assert.equal(plan.version, 2);
-assert.equal(plan.musicActs.length, 4);
+assert.equal(plan.musicActs.length, 4);assert.equal(plan.musicSegments[0].type,'ambience');assert.equal(plan.musicSegments[0].gainDb,-32);assert(plan.cueSheet.some(c=>c.type==='ambience-bed'));assert.equal(plan.trackRightsLedger[0].licenseId,'own');
 assert.equal(plan.silenceWindows.length, 1);
 assert(plan.cueSheet.some(c => c.type === 'intentional-silence'));
 assert.equal(validateMusicRights(plan.musicRightsLedger).passed, true);
 assert.equal(validateMusicRights({ source: 'Unknown', licenseId: 'unknown', reviewStatus: 'pending' }).passed, false);
+assert.equal(validateMusicRights({ source: 'Music', licenseId: 'own', licenseUrl: 'http://unsafe.test/license', commercialUseVerified: true, reviewStatus: 'approved' }).passed, false,'music rights evidence must use HTTPS or an existing local proof file');
 assert(plan.cues.every(cue => cue.path && cue.atSeconds >= 0 && cue.atSeconds <= 33));
 assert.equal(new Set(plan.cues.map(cue => cue.id)).size, plan.cues.length);
 console.log('PASS cinematic sound-design timeline and asset matching');

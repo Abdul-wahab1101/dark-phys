@@ -29,6 +29,13 @@ try {
   assert.equal(musicPrepared.assets[1].kind, 'audio');
   assert.equal(musicPrepared.assets[1].licenseId, 'own');
   assert.equal(musicPrepared.job.musicAssetId, musicPrepared.assets[1].assetId);
+  const ambience = path.join(root, 'room-tone.wav'); fs.writeFileSync(ambience, 'ambience fixture');
+  const ambiencePrepared = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), ambienceSegments: [{ act: 'Act I', path: ambience, startSeconds: 0, endSeconds: 5, mood: 'natural-atmosphere', rights: { source: 'Original ambience', licenseId: 'own', licenseUrl: 'https://example.test/ambience-license', commercialUseVerified: true, reviewStatus: 'approved' } }] }, manifest, narrationPath: narration, outputPath: path.join(root, 'out', 'ambience.mp4'), projectDir: root });
+  assert.equal(ambiencePrepared.job.musicSegments[0].type, 'ambience');
+  assert.equal(ambiencePrepared.job.musicSegments[0].gainDb, -32);
+  assert.equal(ambiencePrepared.job.soundDesignPlan.cueSheet.some(cue => cue.type === 'ambience-bed'), true);
+  assert.equal(ambiencePrepared.assets[1].licenseId, 'own');
+
   assert.equal(musicPrepared.job.soundDesignPlan.musicRightsLedger.reviewStatus, 'approved');
   const unprovenMusic = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), musicRights: { source: 'Claimed own music', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' } }, manifest, narrationPath: narration, musicPath: music, outputPath: path.join(root, 'out', 'unproven-music.mp4'), projectDir: root });
   assert.equal(unprovenMusic.assets[1].licenseId, 'unknown', 'music without a license URL or evidence file must remain blocked');

@@ -55,7 +55,11 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
       licenseId: rightsApproved ? (rights.licenseId || 'unknown') : 'unknown', licenseUrl: rights.licenseUrl || null,
       retrievedAt: rights.retrievedAt || undefined, sha256: musicHash });
   }
-  const musicTracks = (Array.isArray(plan.musicSegments) ? plan.musicSegments : []).map((segment, index) => {
+  const configuredAudioBeds = [
+    ...(Array.isArray(plan.musicSegments) ? plan.musicSegments.map(segment => ({ ...segment, type: segment.type || 'music' })) : []),
+    ...(Array.isArray(plan.ambienceSegments) ? plan.ambienceSegments.map(segment => ({ ...segment, type: 'ambience', gainDb: segment.gainDb ?? -32 })) : [])
+  ];
+  const musicTracks = configuredAudioBeds.map((segment, index) => {
     const trackPath = path.isAbsolute(segment.path || '') ? segment.path : path.resolve(base, segment.path || '');
     if (!segment.path || !fs.existsSync(trackPath)) throw new Error('Act-wise music track missing: ' + trackPath);
     const rights = segment.rights || plan.musicRights || {};
@@ -68,7 +72,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
       sourceUrl: rights.sourceUrl || null, author: rights.creator || null,
       licenseId: rightsApproved ? (rights.licenseId || 'unknown') : 'unknown',
       licenseUrl: rights.licenseUrl || null, retrievedAt: rights.retrievedAt || undefined, sha256: trackHash });
-    return { ...segment, path: trackPath, assetId };
+    return { ...segment, path: trackPath, assetId, gainDb: Number.isFinite(Number(segment.gainDb)) ? Number(segment.gainDb) : (segment.type === 'ambience' ? -32 : -25) };
   });
   if (musicTracks.some(track => canonical(track.path) === canonical(output))) throw new Error('Output path must not overwrite an act-wise music source track.');
   const script = plan.scenes.map(scene => String(scene.narration || '').trim()).filter(Boolean).join(' ');

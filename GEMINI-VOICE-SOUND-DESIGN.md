@@ -25,7 +25,7 @@ The engine preserves the approved narration text, synthesizes section by section
 
 ## Sound design
 
-agents/production/sound-design.js creates a scene-aware cue timeline from an approved scene plan and a local sound-effect library. Assets are matched by tags, cue timing follows scene boundaries, and the plan assigns documentary mood and music ducking guidance. Supply licensed local audio files with tags such as impact, riser, whoosh, drone, subtle-tick, warm-hit, or tail.
+agents/production/sound-design.js creates a scene-aware cue timeline from an approved scene plan and a local sound-effect library. Assets are matched by tags, cue timing follows scene boundaries, and the plan assigns documentary mood and music ducking guidance. Supply licensed local audio files with tags such as impact, reverse, riser, whoosh, drone, subtle-tick, warm-hit, tail, ambience, room-tone, or atmosphere. A scene can request ambience with its ambience flag or scene description.
 
 agents/production/audio-mix.js provides voice-focused EQ, compression, voice-priority sidechain music ducking, timed SFX placement, limiting, and final loudness targeting (default -14 LUFS, -1.5 dBTP). Music and effects must be licensed or otherwise cleared for the channel.
 

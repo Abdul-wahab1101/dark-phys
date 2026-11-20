@@ -1,32 +1,89 @@
-# Dark Phys — Advanced production engines (Points 5–9)
+# Dark Phys — Advanced Production Engines (Points 4–9)
 
-## 4. Sound Design — completed and expanded
-The scene-aware sound design engine builds act/scene mood metadata, a timestamped cue sheet, SFX placement, intentional silence windows, voice-first music ducking and a music-rights ledger record. For separate act scores, add musicSegments to the scene plan; each segment has act, path, startSeconds, endSeconds, mood, gainDb and a rights object. The v11 mixer mixes each act track at its timeline position, ducks it under narration, applies silence windows and writes a .sound-cue-sheet.json beside the final video. Each soundtrack is registered and usage-tracked in the same rights ledger as footage. A soundtrack with an unknown/non-commercial/unapproved license is blocked by v11 preflight; do not bypass the ledger. Record rights with source, sourceUrl, creator, licenseId, licenseUrl or proofPath, retrievedAt, commercialUseVerified: true, reviewStatus: approved and any required attribution text. Supported license IDs follow the v11 ledger.
+All outputs are drafts until the owner reviews them. Uploading and publishing remain manual by default.
 
-## 5. Shorts Factory
-1. Export word-level timestamps from the approved narration/transcript as JSON (transcript array; each row has start, end, text).
-2. Plan independent highlights: node scripts/shorts-factory.js plan --input uploads/transcript.json --count 3 --min 20 --max 60.
-3. Inspect each selected segment and its source provenance; edit the plan if the clip removes necessary context.
-4. Render: node scripts/shorts-factory.js render --input uploads/shorts-plan.json --id short-01 --video uploads/final.mp4 --output uploads/short-01.mp4.
-5. Run separate Short QC: node scripts/quality-control.js --video uploads/short-01.mp4 --mode short --captions uploads/short-01.srt.
-The factory selects 15–60 second candidates (defaults 20–60), ranks hook/evidence/payoff signals, avoids near-duplicate overlaps, creates timed captions and renders vertical 1080x1920 H.264/AAC with subtitles. It does not invent transcript timestamps; word-level timestamps are required. Shorts are drafts; review each independently and publish manually.
+## 4. Sound Design
+
+The v11 renderer accepts musicSegments and ambienceSegments on the scene-plan JSON. Each bed uses path, startSeconds, endSeconds, optional act, mood, gainDb, fadeInSeconds, fadeOutSeconds, ducking and a rights object. Ambience defaults to -32 dB; music defaults to -25 dB. Voice sidechain ducking is enabled unless explicitly disabled for that bed. Scene-tagged effects use a local sound-effects/manifest.json with id, path and tags.
+
+The renderer writes final.sound-cue-sheet.json beside the export. Every music/ambience source must have a verified commercial-use license, HTTPS license URL or existing local proof, and human approval. Unknown rights block v11 preflight.
+
+## 5. Independent Shorts Factory
+
+Input is a word-timestamp transcript JSON file (transcript or words array). Each word has start, end and text. Optional scene start timestamps improve candidate discovery.
+
+    node scripts/shorts-factory.js plan --input uploads/transcript.json --count 3 --min 20 --max 60 --target 42 --output uploads/shorts-plan.json
+    node scripts/shorts-factory.js render --input uploads/shorts-plan.json --id short-01 --video uploads/final-long.mp4 --output uploads/short-01.mp4
+
+Rendering creates 1080x1920 vertical video, clip-relative SRT captions and a default blurred-fill composition that preserves the original frame. Optional flags: --music bed.mp3 --voice narration.wav --layout blur-fill|crop --focus-x 0.5. Music is sidechain-ducked beneath voice and loudness-limited. Every Short retains source timecodes and must pass its own Short QC; a long-video QC pass does not approve its Shorts.
 
 ## 6. Packaging
-The Phase 4 build command now adds packagingTests with three distinct script-matched title/thumbnail combinations. Supply three reviewed thumbnailConcepts when available; otherwise it creates concept briefs for manual design. Existing SEO description, tags, chapter drafts and rights checks remain. Thumbnail/title selection is human-reviewed. YouTube Test & Compare remains unverified until the owner checks the live YouTube Studio feature and OAuth permissions; configuration flags are recorded as owner-reported only and never claim that an experiment is available or started. If unavailable, use a controlled manual comparison and follow current YouTube product guidance.
+
+    node scripts/phase4-package.js build --file uploads/phase4-package.json
+    node scripts/phase4-package.js check --file uploads/phase4-package.json
+
+The package contains three distinct title/thumbnail combinations, script-coverage and unsupported-claim warnings, SEO description/tags and draft chapters. Thumbnail generation can create three 1280x720 concepts through the configured Cloudflare Workers AI account. Select a concept manually. YouTube Test & Compare is never assumed available and is never started by the CLI; verify the feature and account eligibility in YouTube Studio, then run any experiment there with owner approval.
 
 ## 7. Analytics
-Export actual channel/video metrics from YouTube Analytics (or provide an authorized connector export) into JSON. Each video row should include videoId, views, impressions, ctr, averageViewDurationSeconds, averageViewPercentage and retention points (elapsedVideoTimeRatio, audienceWatchRatio). Optional scriptBeatsByVideo maps each video's retention ratio to script beat startRatio/endRatio/title.
-Run: node scripts/analytics-report.js --input uploads/youtube-analytics-export.json.
-The report calculates CTR, average view duration, average view percentage and retention drops mapped to script beats. Strategy recommendations stay locked until at least 15 videos have usable data. Meeting the threshold enables advisory review only; no automatic changes are made. Missing metrics remain null rather than fabricated.
 
-## 8. QC
-Run node scripts/quality-control.js --video uploads/final.mp4 --mode long --captions uploads/final.srt --thumbnail uploads/thumb.jpg or use --mode short for a vertical Short. Technical checks are separate from visual, audio and editorial human confirmations. A technically valid file is not automatically editorially approved. Generate the five-minute review page with node scripts/qc-review-page.js --mode long --video uploads/final.mp4 --output uploads/qc-review.html. Open it locally, watch the full export and complete the five timed review sections. Manual publishing remains the default.
+Export owner-authorized YouTube Analytics data to JSON using this shape:
 
-## 9. Orchestration
-Create a JSON batch file with a jobs array. Each job needs jobId, type, script (an allowlisted production script filename) and args array. Add weekly queue entries with node scripts/production-queue.js add-weekly --file uploads/weekly-jobs.json --spacing-hours 24; inspect with node scripts/production-queue.js list; execute one due job with node scripts/production-queue.js run-next.
-The runner has an allowlist of production scripts, one heavy-job lock, persistent stage checkpoints, bounded exponential retries, orphaned-worker recovery and ownership-marker-based temporary cleanup. Preview cleanup with node scripts/production-queue.js cleanup-temp --base-dir PATH; it is dry-run by default. Add --execute only after reviewing the candidate list. It never deletes unmarked folders. Review queue state and backups before manual cleanup.
+    {
+      "videos": [
+        {
+          "videoId": "VIDEO_ID",
+          "title": "Published title",
+          "status": "public",
+          "views": 1000,
+          "impressions": 12000,
+          "ctr": 0.05,
+          "averageViewDurationSeconds": 240,
+          "averageViewPercentage": 42,
+          "retention": [
+            {"elapsedVideoTimeRatio": 0, "audienceWatchRatio": 1},
+            {"elapsedVideoTimeRatio": 0.2, "audienceWatchRatio": 0.78}
+          ]
+        }
+      ],
+      "scriptBeatsByVideo": {
+        "VIDEO_ID": [
+          {"startRatio": 0.2, "endRatio": 0.35, "title": "Evidence"}
+        ]
+      }
+    }
 
-## Operational boundaries
-- Live Gemini/YouTube OAuth, API quotas, Test & Compare eligibility, account permissions and private analytics cannot be verified by offline CI.
-- No automated publishing is enabled by these helpers. Keep upload/scheduling manual unless you later explicitly approve a separate OAuth publishing workflow.
-- Do not change channel strategy based on fewer than 15 videos.
+    node scripts/analytics-report.js --input uploads/youtube-analytics-export.json
+
+The report includes CTR (mean, median and impression-weighted), views, impressions, average view duration, average view percentage, aggregate retention curve, 8-percentage-point retention drops and script-beat mapping. Duplicate video IDs count once; explicitly private/unlisted/draft/scheduled rows are excluded. Strategy changes remain locked until 15 unique published videos are available. After that, suggestions remain advisory and require owner approval; no automatic rule changes occur.
+
+## 8. Separate Long/Short QC
+
+    node scripts/quality-control.js --video uploads/final.mp4 --mode long --captions uploads/final.srt --thumbnail uploads/thumb.jpg
+    node scripts/qc-review-page.js --mode long --video uploads/final.mp4 --output uploads/long-review.html
+    node scripts/qc-review-page.js --mode short --video uploads/short-01.mp4 --output uploads/short-review.html
+
+Open the generated HTML page locally, watch the export and confirm each of the five review sections. The page saves progress in the browser and can export a review JSON. To attach that completed human review to the technical QC report:
+
+    node scripts/quality-control.js --video uploads/final.mp4 --mode long --captions uploads/final.srt --thumbnail uploads/thumb.jpg --review uploads/long-review.json
+
+The review JSON must match the exact video path and mode. Technical QC uses FFprobe; visual, audio and editorial confirmations remain explicitly human. A successful QC report is readiness for a separate manual approval decision—not upload permission.
+
+## 9. Weekly orchestration
+
+Create a jobs.json file containing a jobs array. Every job needs a unique jobId, a type, an allowlisted script filename and optional argument array. timeoutMs may be set from 60 seconds to 12 hours; default is six hours.
+
+    node scripts/production-queue.js add-weekly --file uploads/jobs.json --spacing-hours 24
+    node scripts/production-queue.js list
+    node scripts/production-queue.js run-next
+    node scripts/production-queue.js cleanup-temp --base-dir uploads/temp
+    node scripts/production-queue.js cleanup-temp --base-dir uploads/temp --execute
+
+Only due jobs run. One heavy job is allowed at a time. Failed jobs use bounded exponential retries; interrupted parent processes are recovered from the durable queue; checkpoint metadata is saved around each job stage. The child process has a hard timeout. Temporary cleanup is dry-run by default and deletes only old directories with a valid Dark Phys ownership marker. Review the dry-run list before --execute.
+
+## Safety boundaries
+
+- No automatic public upload or publishing is enabled by these engines.
+- Rights, factual accuracy, originality, title/thumbnail honesty and policy suitability require human review.
+- Analytics data must come from the channel owner’s authorized export; missing metrics remain unknown, never fabricated as zero.
+- Never commit .env, API keys, OAuth tokens, license evidence or private analytics exports.
+- CI uses fixtures/mocks and cannot validate the owner's live Gemini, Pixabay, Cloudflare or YouTube account access.

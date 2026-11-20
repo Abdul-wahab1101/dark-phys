@@ -44,7 +44,21 @@ function evaluateQc({mode='long',probe={},files={},editorial={},visual={},audio=
  return {version:1,mode,technical:{passed:checks.filter(x=>x.category==='technical').every(x=>x.passed)},visual:{passed:checks.filter(x=>x.category==='visual').every(x=>x.passed)},audio:{passed:checks.filter(x=>x.category==='audio').every(x=>x.passed)},editorial:{passed:checks.filter(x=>x.category==='editorial').every(x=>x.passed)},checks,blockers:failed.map(x=>x.name),manualReviewItems:manual.map(x=>x.name),readyForManualApproval:failed.length===0,autoPublish:false,publishingMode:'manual_by_default',humanReviewRequired:true};
 }
 function buildFiveMinuteReview(mode='long'){
- const items=[['00:00–01:00','Opening and promise','Confirm the hook is accurate, compelling and matched by the opening visuals.'],['01:00–02:00','Narration and factual claims','Listen for clarity, pacing, pronunciation and verify on-screen factual claims.'],['02:00–03:00','Visuals and captions','Check scene relevance, continuity, caption timing, spelling and safe margins.'],['03:00–04:00','Audio and rights','Check voice/music balance, clipping, silence, SFX and every asset license/credit.'],['04:00–05:00','Ending and packaging','Check payoff, title/thumbnail honesty, description and final export.']];
+ const longItems=[
+  ['Pass 1 · Opening','Opening and promise','Confirm the hook is accurate, compelling and matched by the opening visuals.'],
+  ['Pass 2 · Claims','Narration and factual claims','Listen across the full video for clarity, pacing and pronunciation; verify key claims against sources.'],
+  ['Pass 3 · Picture','Visuals and captions','Scan the full timeline for scene relevance, continuity, caption timing, spelling and safe margins.'],
+  ['Pass 4 · Sound','Audio and rights','Check voice/music balance, clipping, silence, SFX, ambience and every asset license/credit.'],
+  ['Pass 5 · Finish','Ending and packaging','Check payoff, title/thumbnail honesty, description, chapters and final export.']
+ ];
+ const shortItems=[
+  ['Pass 1 · First seconds','Hook and first frame','Check the first 1–2 seconds, immediate context and visual hook.'],
+  ['Pass 2 · One idea','Clarity and payoff','Confirm the Short makes sense independently, delivers one clear idea and has a complete payoff.'],
+  ['Pass 3 · Vertical frame','Framing and captions','Check 9:16 composition, subject visibility, caption sync, spelling and platform-safe margins.'],
+  ['Pass 4 · Sound','Voice, music and effects','Check voice clarity, music ducking, SFX timing, clipping and consistent loudness.'],
+  ['Pass 5 · Finish','Ending and packaging','Check the final cut, loop/ending, source credit, title and thumbnail where used.']
+ ];
+ const items=mode==='short'?shortItems:longItems;
  return {mode,durationMinutes:5,items:items.map((x,i)=>({minute:i+1,time:x[0],title:x[1],instructions:x[2],confirmed:false})),decision:'manual_review_required',publishing:'manual_by_default'};
 }
 module.exports={evaluateQc,buildFiveMinuteReview};
