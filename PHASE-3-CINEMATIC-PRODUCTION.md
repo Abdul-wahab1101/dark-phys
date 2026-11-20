@@ -15,12 +15,14 @@
 Set keys locally:
     $env:PIXABAY_API_KEY = "YOUR_FIRST_KEY"
     $env:PIXABAY_API_KEY_2 = "YOUR_SECOND_KEY"
-    node scripts/plan-scenes.js uploads\approved-beats.json
+    node scripts/viral-generate.js uploads\research-package.json
+    node scripts/plan-scenes.js uploads\content-studio\script-drafts.json --language=en
+    # Or pass a manually approved beats file to plan-scenes.js
     node scripts/cinematic-production.js discover uploads\production\PROJECT_ID\scene-plan.json
 
 Review asset-selection.json. Set selectedAssetId to a listed ID and rightsApproved to true only after reviewing the source page and current license. Then:
     node scripts/cinematic-production.js download-approved uploads\production\PROJECT_ID\asset-selection.json
-    node scripts/cinematic-production.js render uploads\production\PROJECT_ID\asset-selection.json uploads\narration.wav uploads\music.mp3 uploads\draft.mp4
+    node scripts/cinematic-production.js render uploads\production\PROJECT_ID\asset-selection.json uploads\narration.mp3 uploads\music.mp3 uploads\draft.mp4
 
 Generate narration from plain text or a JSON section package using `node scripts/narrate.js uploads\\approved-narration.txt uploads\\narration.mp3` or `node scripts/narrate.js uploads\\narration-sections.json uploads\\narration.mp3 pronunciation-dictionary.json` after setting the ElevenLabs key and voice ID locally. Both CLI routes master narration to -14 LUFS. Then pass that narration MP3 to the render command. FFmpeg must be on PATH or configured through FFMPEG_PATH.
 
