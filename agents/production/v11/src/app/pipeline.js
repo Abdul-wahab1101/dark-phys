@@ -238,7 +238,7 @@ class ProductionPipeline {
         const bed = 'mb' + index, ducked = 'md' + index;
         chains.push('[' + nextInput + ':a]atrim=duration=' + duration.toFixed(2) + ',asetpts=PTS-STARTPTS,volume=' + gain +
           'dB,afade=t=in:st=0:d=' + fadeIn.toFixed(2) + ',afade=t=out:st=' + Math.max(0, duration - fadeOut).toFixed(2) +
-          ':d=' + fadeOut.toFixed(2) + ',adelay=' + delay + '|' + delay + ',volume=\'' + silenceExpression + '\[' + bed + ']');
+          ':d=' + fadeOut.toFixed(2) + ',adelay=' + delay + '|' + delay + ',volume=\'' + silenceExpression + '\'[' + bed + ']');
         chains.push('[' + bed + '][sc' + index + ']sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[' + ducked + ']');
         labels.push('[' + ducked + ']');
         nextInput++;
