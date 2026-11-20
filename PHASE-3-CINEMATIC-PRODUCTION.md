@@ -42,3 +42,6 @@ Set `DARK_PHYS_SFX_FILE` to an approved local effects stem to add it to the mast
 
 ## Low-spec Windows profile
 On machines with 8 GB RAM or less, rendering defaults to 1280x720 preview, one filter thread, two encode threads, H.264 ultrafast and CRF 28. Set `DARK_PHYS_RENDER_QUALITY=final` for 1920x1080 final output (CRF 24). Render one project at a time; close browsers and other AI engines during encoding. Heavy Remotion/Chromium compositions remain optional and should be run only after a short sample proves stable.
+
+## v11 integrated production backend
+The existing `cinematic-production.js render` command now routes approved footage through the integrated v11 production engine by default. It reuses the existing scene plan, approved Pixabay manifest and narration file; it does not create another orchestrator. The v11 stages include hook/pacing analysis, license and reused-content preflight before rendering, crash-safe checkpoints, chunked FFmpeg rendering, supervised process timeouts, two-pass loudness verification and a final review report. Set `DARK_PHYS_PRODUCTION_ENGINE=legacy` to explicitly select the previous renderer. The engine is not installed or run during setup; CI validates its source and tests.

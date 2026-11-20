@@ -133,6 +133,11 @@ jobs:
           node --check agents/stock-footage/pixabay.js
           node --check scripts/stock-footage.js
           node scripts/test-stock-footage.js
+      - name: Test v11 production engine integrated with Dark Phys
+        run: |
+          node --check agents/production/v11-integration.js
+          node scripts/test-v11-integration.js
+          npm --prefix agents/production/v11 run ci
           node scripts/stock-footage.js help
           node --check agents/production/pixabay-pool.js
           node --check agents/production/scene-planner.js

@@ -13,6 +13,16 @@ async function download(file){const p=JSON.parse(await fs.readFile(file,'utf8'))
 async function render(file,voice,music,out){
  const base=path.dirname(path.resolve(file)),p=JSON.parse(await fs.readFile(file,'utf8')),manifest=JSON.parse(await fs.readFile(path.join(base,'footage','approved-assets.json'),'utf8'));
  if(!manifest.length)throw new Error('No approved footage manifest');
+ if(process.env.DARK_PHYS_PRODUCTION_ENGINE!=='legacy'){
+  const {runApprovedProduction}=require('../agents/production/v11-integration');
+  const result=await runApprovedProduction({plan:p,manifest,narrationPath:voice,musicPath:music,outputPath:out,projectDir:base});
+  console.log('v11 production result:',result.status,'| resumed stages:',(result.resumed||[]).join(', ')||'none','|',result.renderProfile.reason);
+  if(result.report&&result.report.status==='blocked')process.exitCode=2;
+  return;
+ }
+
+ const base=path.dirname(path.resolve(file)),p=JSON.parse(await fs.readFile(file,'utf8')),manifest=JSON.parse(await fs.readFile(path.join(base,'footage','approved-assets.json'),'utf8'));
+ if(!manifest.length)throw new Error('No approved footage manifest');
  const profile=getRenderProfile(),list=path.join(base,'footage','concat-list.txt'),rows=[];
  let totalDuration=0;
  for(const asset of manifest){
