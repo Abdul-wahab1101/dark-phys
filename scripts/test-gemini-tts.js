@@ -44,6 +44,7 @@ const { NarrationEngine } = require('../agents/production/narration');
     }).synthesize('slow response body', output), /timed out after 5 ms/, 'timeout must cover response-body download, not only response headers');
     let engineRequest;
     const engine = new NarrationEngine({ geminiOptions: { apiKey: 'engine-key', fetch: async (url, options) => { engineRequest = { url, options }; return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64') } }] } }] }) }; } } });
+    await assert.rejects(() => engine.synthesize('text', path.join(dir, 'engine.flac')), /\.mp3 or \.wav extension/, 'narration must not write MP3 bytes under an unrelated extension');
     const engineOutput = path.join(dir, 'engine.wav');
     const engineResult = await engine.synthesize('NASA released a report.', engineOutput, { direction: 'hook', pronunciationDictionary: { NASA: 'N A S A' } });
     assert.match(JSON.parse(engineRequest.options.body).contents[0].parts[0].text, /N A S A/);
