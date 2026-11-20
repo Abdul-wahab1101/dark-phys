@@ -6,7 +6,7 @@ const output=process.argv.includes('--output')?process.argv[process.argv.indexOf
 if(!['long','short'].includes(mode))throw new Error('--mode must be long or short');
 const review=buildFiveMinuteReview(mode);
 const videoArg=process.argv.includes('--video')?process.argv[process.argv.indexOf('--video')+1]:'';
-const videoSource=videoArg?path.relative(path.dirname(path.resolve(output)),path.resolve(videoArg)).replace(/\\\\/g,'/'): '';
+const videoSource=videoArg?path.relative(path.dirname(path.resolve(output)),path.resolve(videoArg)).split(path.sep).join('/'): '';
 if(videoArg&&!fs.existsSync(videoArg))throw new Error('Review video not found: '+videoArg);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cards=review.items.map(x=>'<label class="item"><input type="checkbox"><span><b>'+esc(x.time)+' · '+esc(x.title)+'</b><small>'+esc(x.instructions)+'</small></span></label>').join('');
