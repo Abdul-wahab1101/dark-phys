@@ -10,7 +10,7 @@ const pacing = require('../core/pacing');
 const { analyzeHook, segmentsFromScript } = require('../core/hook');
 const { planPatternInterrupts, validateInterruptPlan, buildInterruptFilter } = require('../core/interrupts');
 const { assessReuse } = require('../core/reuse-risk');
-const { planShots, shotArgs } = require('./shot-planner');
+const { planShots, planSceneShots, shotArgs } = require('./shot-planner');
 const { ChunkedRenderer } = require('./chunked-renderer');
 const { buildReport, toMarkdown } = require('./report');
 const { hashFile, safeName, replaceFileSync } = require('../infra/file-utils');
@@ -148,7 +148,9 @@ class ProductionPipeline {
     const clips = [];
     for (const c of job.clips) clips.push({ ...c, duration: (await this.runner.probe(c.path)).duration });
     const total = data['audio-clean'].durationAfter + cfg.tailPadSec;
-    const plan = planShots({ clips, totalSec: total, seed: job.jobId });
+    const plan = Array.isArray(job.scenePlan) && job.scenePlan.length
+      ? planSceneShots({ scenes: job.scenePlan, clips, totalSec: total })
+      : planShots({ clips, totalSec: total, seed: job.jobId });
     this.ledger.setUsage(job.jobId, plan.usage);
     const hookText = data['audio-clean'].segments.filter(s => s.start < cfg.hookWindowSec).map(s => s.text).join(' ');
     this.ledger.recordVideo(job.jobId, { title: job.title, scriptText: job.script || '', hookText });
