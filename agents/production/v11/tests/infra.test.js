@@ -99,6 +99,7 @@ test('temp: only marked folders are cleaned, stale ones go, resumable ones stay'
     const mk = (job, pid, beat) => {
       const d = tm.create(job);
       fs.writeFileSync(path.join(d, '.yt-work.json'), JSON.stringify({ jobId: job, pid, heartbeat: beat }));
+      tm.release(d); // simulate a workspace left behind by a previous process
       return d;
     };
     const stale = mk('stale', 99999999, clock - 10 * 3600e3);
@@ -125,6 +126,7 @@ test('temp: sweepJunk removes partial files but keeps finished ones; broken base
     for (const n of ['a.part', 'b.tmp', 'ffmpeg2pass-0.log', 'keep.mp4']) fs.writeFileSync(path.join(d, n), 'x');
     assert.equal(tm.sweepJunk(d), 3);
     assert.deepEqual(fs.readdirSync(d).filter(n => !n.startsWith('.')), ['keep.mp4']);
+    tm.release(d);
     const fallback = new TempManager({ baseDir: path.join(base, 'file.txt', 'nope') });
     assert.ok(fs.existsSync(fallback.baseDir));
   } finally { h.rm(base); }
