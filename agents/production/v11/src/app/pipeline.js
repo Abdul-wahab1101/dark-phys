@@ -50,7 +50,7 @@ class ProductionPipeline {
     } : null;
     const inputs = {
       title: job.title, description: job.description || '', script: job.script || '',
-      segments: job.segments || null, words: job.words || null,
+      segments: job.segments || null, words: job.words || null, scenePlan: job.scenePlan || null,
       narration: stat(job.narrationPath), music: stat(job.musicPath),
       clips, captions: stat(job.captionsAss), thumbnail,
       hasOriginalCommentary: job.hasOriginalCommentary !== false,
