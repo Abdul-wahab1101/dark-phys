@@ -18,7 +18,7 @@ function draft(text) {
     hooks: ['What changes when we remember?', 'Memory is not a recording.', 'The detail you overlook'],
     centralQuestion: 'How can recall change over time?',
     caseStudy: { type: 'hypothetical', label: 'Hypothetical illustration', summary: 'A person recalls a conversation after hearing new details.' },
-    acts: [{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }, { id: 'a4' }],
+    acts: [{ id: 'a1', title: 'Opening', narration: 'Opening act narration.' }, { id: 'a2', title: 'Context', narration: 'Context act narration.' }, { id: 'a3', title: 'Turning point', narration: 'Turning point narration.' }, { id: 'a4', title: 'Payoff', narration: 'Payoff act narration.' }],
     openLoops: [{ setup: 'Why confidence can differ from accuracy', payoffAct: 'a4' }],
     narration: text, chapters: [{ time: '0:00', title: 'Opening', purpose: 'Hook' }],
     visualPlan: [{ time: '0:00', visual: 'Person considering an old photograph', assetType: 'stock' }],
