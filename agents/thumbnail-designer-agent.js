@@ -2406,14 +2406,20 @@ class ThumbnailDesignerAgent {
     const layout = variant.layout || {};
     const wordCount = String(variant.hook || '').trim().split(/\s+/).filter(Boolean).length;
     const checks = variant.qualityChecks || {};
-    const safe = (layout.blockBounds || [layout.textBounds].filter(Boolean)).every(b =>
-      !(b.x < 1280 && b.x + b.w > 1040 && b.y < 720 && b.y + b.h > 600)
-    );
+    const safe = (layout.blockBounds || [layout.textBounds].filter(Boolean)).every(b => {
+      const hitsBottomRightTimestamp = b.x + b.w > 1040 && b.y + b.h > 600;
+      const hitsTopRightOverlay = b.x + b.w > 1110 && b.y < 120;
+      return !hitsBottomRightTimestamp && !hitsTopRightOverlay;
+    });
     const wordsScore = wordCount >= 2 && wordCount <= 5 ? 100 : Math.max(0, 100 - Math.abs(wordCount - 4) * 24);
+    const titleWords = new Set(String(variant.sourceTitle || variant.concept?.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\\s+/).filter(w => w.length > 2));
+    const hookWords = String(variant.hook || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\\s+/).filter(w => w.length > 2);
+    const titleOverlap = hookWords.length ? hookWords.filter(w => titleWords.has(w)).length / hookWords.length : 0;
+    const curiosityGapScore = titleOverlap > 0.8 ? 20 : titleOverlap > 0.6 ? 55 : 100;
     const technical = (checks.correctDimensions ? 20 : 0) + (checks.underTwoMB ? 15 : 0) +
       (checks.notBlank ? 15 : 0) + (checks.textFit ? 15 : 0) + (checks.contrastOk ? 15 : 0) +
       (checks.readableAtSmallSize ? 10 : 0) + (safe ? 10 : 0);
-    const heuristic = Math.round((technical * 0.65) + (wordsScore * 0.35));
+    const heuristic = Math.round((technical * 0.60) + (wordsScore * 0.25) + (curiosityGapScore * 0.15));
     const score = visual.available ? Math.round(visual.score * 0.72 + heuristic * 0.28) : heuristic;
     const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
       !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5;
@@ -2422,12 +2428,15 @@ class ThumbnailDesignerAgent {
       rejectionReasons: [
         ...(hardReject ? ['technical, text, or mobile-safe-zone validation failed'] : []),
         ...(visual.available && !visual.passed ? visual.concerns : []),
-        ...(wordCount > 5 ? ['headline exceeds five words'] : [])
+        ...(wordCount > 5 ? ['headline exceeds five words'] : []),
+        ...(titleOverlap > 0.8 ? ['headline repeats the video title instead of creating a curiosity gap'] : [])
       ],
       visualReview: visual,
       technicalScore: heuristic,
       mobileSafeZone: safe,
-      headlineWordCount: wordCount
+      headlineWordCount: wordCount,
+      titleOverlap: Number(titleOverlap.toFixed(2)),
+      curiosityGapScore
     };
   }
 
@@ -2492,7 +2501,7 @@ class ThumbnailDesignerAgent {
 
       variants = await this.generateABVariants(concept, script);
       if (variants.length !== 3) throw new Error(`Expected 3 thumbnail variants; generated ${variants.length}`);
-      variants.forEach((v, i) => { v.planIndex = i; });
+      variants.forEach((v, i) => { v.planIndex = i; v.sourceTitle = concept.title; });
       const reviewed = await this.reviewAndRankVariants(variants);
       bestReview = reviewed;
       variants = reviewed.variants;
