@@ -65,7 +65,7 @@ function draft(text) {
   const pronunciation = applyPronunciationDictionary('Read the API and OpenAI docs.', { API: 'A P I', OpenAI: 'Open A I' });
   assert.equal(pronunciation.applied.length, 2);
   assert.equal(DEFAULT_DIRECTIONS.hook.style > DEFAULT_DIRECTIONS.evidence.style, true);
-  const env = parseEnv('CLOUDFLARE_API_TOKEN=token-value\\nCLOUDFLARE_TEXT_MODEL="@cf/openai/gpt-oss-20b"\\nUNRELATED_SECRET=do-not-load');
+  const env = parseEnv('CLOUDFLARE_API_TOKEN=token-value\nCLOUDFLARE_TEXT_MODEL="@cf/openai/gpt-oss-20b"\nUNRELATED_SECRET=do-not-load');
   assert.equal(env.CLOUDFLARE_API_TOKEN, 'token-value');
   assert.equal(env.UNRELATED_SECRET, undefined);
   console.log('PASS Script Engine v2: separate generation flow, critic, 15% tightening, claim ledger and approval gate');
