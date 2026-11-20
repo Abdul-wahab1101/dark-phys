@@ -7,7 +7,7 @@ const { createProductionSystem } = require('./v11');
 const { getRenderProfile } = require('./render-profile');
 const { buildSoundDesignPlan } = require('./sound-design');
 
-function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, projectDir }) {
+function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, projectDir, soundEffects }) {
   if (!plan || !Array.isArray(plan.scenes) || !plan.scenes.length) throw new Error('A valid Dark Phys scene plan is required.');
   if (!Array.isArray(manifest) || !manifest.length) throw new Error('The approved Pixabay asset manifest is empty.');
   if (!narrationPath || !outputPath) throw new Error('Narration and output paths are required.');
@@ -50,7 +50,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     ...(music ? { musicPath: music } : {}),
     ...(plan.captionsAss ? { captionsAss: path.resolve(plan.captionsAss) } : {}),
     ...(plan.thumbnail && plan.thumbnail.path ? { thumbnail: { ...plan.thumbnail, path: path.resolve(plan.thumbnail.path) } } : {}) };
-  let soundLibrary = Array.isArray(options.soundEffects) ? options.soundEffects : (Array.isArray(plan.soundEffects) ? plan.soundEffects : []);
+  let soundLibrary = Array.isArray(soundEffects) ? soundEffects : (Array.isArray(plan.soundEffects) ? plan.soundEffects : []);
   const soundManifest = plan.soundEffectsManifest ? path.resolve(base, plan.soundEffectsManifest) : path.join(base, 'sound-effects', 'manifest.json');
   if (!soundLibrary.length && fs.existsSync(soundManifest)) {
     const parsed = JSON.parse(fs.readFileSync(soundManifest, 'utf8'));
