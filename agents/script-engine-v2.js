@@ -76,7 +76,8 @@ class ScriptEngineV2 {
       scripts[lang] = { ...polish, critic, validation: finalCheck,
         tightening: { beforeWords: before, afterWords: after, reductionRatio: Number(reduction.toFixed(3)),
           target: 0.15, withinTolerance: reduction >= 0.10 && reduction <= 0.20 },
-        status: finalCheck.ok && reduction >= 0.10 && reduction <= 0.20 ? 'draft_requires_human_review' : 'blocked_for_revision' };
+        review: { readAloudPolishRequested: true, humanReadAloudStillRequired: true, criticScore: Number(critic.score), criticPassed: Number(critic.score) >= 70, unsupportedClaimsFlagged: Array.isArray(critic.unsupportedClaims) ? critic.unsupportedClaims : [] },
+        status: finalCheck.ok && reduction >= 0.10 && reduction <= 0.20 && Number(critic.score) >= 70 && !(Array.isArray(critic.unsupportedClaims) && critic.unsupportedClaims.length) ? 'draft_requires_human_review' : 'blocked_for_revision' };
     }
     return { schemaVersion: 2, engine: 'Dark Phys Script Engine v2', topic: pkg.topic, format: mode,
       createdAt: new Date().toISOString(), editorialBrief: brief, evidenceWarnings: evidenceWarnings(pkg), scripts,
