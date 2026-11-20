@@ -1,4 +1,5 @@
 'use strict';
+require('./local-secrets').loadLocalSecrets();
 /**
  * Optional OpenAI-compatible script generation adapter.
  * Sends only the supplied research package and editorial brief to the configured provider.
