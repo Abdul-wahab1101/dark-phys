@@ -22,6 +22,7 @@ async function main() {
       });
     } else {
       result = await engine.synthesize(raw, output, { pronunciationDictionary: dictionary, direction: 'story' });
+      result.loudness = await engine.normalizeLoudness(output, -14);
     }
   } catch (error) {
     if (error instanceof SyntaxError) {
