@@ -35,6 +35,13 @@ const { NarrationEngine } = require('../agents/production/narration');
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'quota exceeded' } }) }), apiKey: 'x' }).synthesize('text', output), /HTTP 429: quota exceeded/);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true, json: async () => ({ candidates: [] }) }), apiKey: 'x' }).synthesize('text', output), /did not contain audio/);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true }), apiKey: '' }).synthesize('text', output), /GEMINI_API_KEY/);
+    await assert.rejects(() => new GeminiTTS({
+      apiKey: 'x', timeoutMs: 5,
+      fetch: async (_url, options) => ({ ok: true, json: () => new Promise((resolve, reject) => {
+        if (options.signal.aborted) reject(new Error('aborted'));
+        else options.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+      }) })
+    }).synthesize('slow response body', output), /timed out after 5 ms/, 'timeout must cover response-body download, not only response headers');
     let engineRequest;
     const engine = new NarrationEngine({ geminiOptions: { apiKey: 'engine-key', fetch: async (url, options) => { engineRequest = { url, options }; return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64') } }] } }] }) }; } } });
     const engineOutput = path.join(dir, 'engine.wav');
