@@ -154,6 +154,7 @@ class NarrationEngine {
   }
   async synthesizeSections(sections, outputPath, options = {}) {
     if (!Array.isArray(sections) || !sections.length) throw new Error('Narration sections are required.');
+    if (path.extname(outputPath).toLowerCase() !== '.mp3') throw new Error('Section-wise narration output must use an .mp3 extension.');
     const destination = path.resolve(outputPath), workDir = destination + '.sections';
     await fs.mkdir(workDir, { recursive: true });
     const outputs = [];
