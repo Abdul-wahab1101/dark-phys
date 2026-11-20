@@ -10,7 +10,7 @@ The v2 pipeline adds:
 - Exactly one central question and one case-study/illustration field per draft.
 - Three title options and three distinct hooks; long-form cold open, promise, 3–5 acts, open loops, rehooks and payoff; Shorts use one complete idea.
 - Sentence-level visual-intent records, each with a meaning-based footage query and source type.
-- Critic scoring and revision pass, spoken/read-aloud polish, and a tightening pass targeting approximately 15%.
+- Critic scoring and revision pass, spoken/read-aloud polish, approximately 15% tightening (10–20% acceptance band), long/Short spoken-word duration gates, and a configurable ban-list validator that blocks fake medical authority, diagnosis/cure promises and generic clickbait/filler.
 - Final structural and claim-reference validation. A failed schema, incomplete claim map or out-of-range tightening result blocks the draft.
 - Human source verification and approval gates remain mandatory. AI cannot independently prove that a cited source supports a claim.
 
