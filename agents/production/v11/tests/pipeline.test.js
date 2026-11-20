@@ -144,8 +144,19 @@ test('sound design plan mixes timed SFX and voice-ducked music into the final re
     const s = setup(dir);
     const sfx = path.join(dir, 'impact.wav');
     h.makeTone(sfx, { seconds: 1.2, freq: 880, volume: 0.18 });
+    s.ledger.register({ assetId: 'music-act-a', kind: 'audio', source: 'Original score', licenseId: 'own' });
+    s.ledger.register({ assetId: 'music-act-b', kind: 'audio', source: 'Original score', licenseId: 'own' });
+    s.job.musicSegments = [
+      { assetId: 'music-act-a', path: s.job.musicPath, startSeconds: 0, endSeconds: 4, gainDb: -27 },
+      { assetId: 'music-act-b', path: s.job.musicPath, startSeconds: 4, endSeconds: 12, gainDb: -24 }
+    ];
+    s.job.musicAssetIds = ['music-act-a', 'music-act-b'];
     s.job.soundDesignPlan = {
       music: { gainDb: -25, fadeInSeconds: 1, fadeOutSeconds: 2 },
+      musicActs: [{ act: 'Act I', mood: 'cinematic-tension' }, { act: 'Act II', mood: 'restrained-documentary' }],
+      musicSegments: s.job.musicSegments,
+      silenceWindows: [{ startSeconds: 2, endSeconds: 2.5, reason: 'dramatic pause' }],
+      cueSheet: [{ type: 'scene-mood', atSeconds: 0, act: 'Act I' }],
       cues: [{ id: 'impact-1', path: sfx, atSeconds: 1.1, gainDb: -18 }],
       mix: { targetIntegratedLufs: -14, truePeakDbtp: -1.5 }
     };
@@ -153,6 +164,12 @@ test('sound design plan mixes timed SFX and voice-ducked music into the final re
     assert.ok(['ready', 'review'].includes(r.status), r.status + ' ' + JSON.stringify(r.report.mustFix));
     assert.equal(r.data.mux.soundDesign.cueCount, 1);
     assert.equal(r.data.mux.soundDesign.musicDucking, true);
+    assert.equal(r.data.mux.soundDesign.musicActCount, 2);
+    assert.equal(r.data.mux.soundDesign.silenceWindowCount, 1);
+    assert.ok(fs.existsSync(r.data.mux.soundDesign.cueSheetPath));
+    const cueSheet = JSON.parse(fs.readFileSync(r.data.mux.soundDesign.cueSheetPath, 'utf8'));
+    assert.equal(cueSheet.musicSegments.length, 2);
+    assert.equal(cueSheet.silenceWindows.length, 1);
     const info = await new FfmpegRunner().probe(s.job.outPath);
     assert.equal(info.hasAudio, true);
     assert.ok(Math.abs(r.data.loudness.after.integrated - -14) <= 1.0);
