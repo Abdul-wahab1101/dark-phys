@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { ScriptEngineV2, validateEditorialDraft, evidenceWarnings, banListReview } = require('../agents/script-engine-v2');
 const { planScenes, splitSentences } = require('../agents/production/scene-planner');
 const { applyPronunciationDictionary, DEFAULT_DIRECTIONS } = require('../agents/production/narration');
+const { parseEnv } = require('../agents/local-secrets');
 const { planSceneShots, shotArgs } = require('../agents/production/v11/src/app/shot-planner');
 const pkg = {
   topic: 'How memory can change during recall', audience: 'Psychology documentary viewers', researchAgeDays: 5,
@@ -64,6 +65,9 @@ function draft(text) {
   const pronunciation = applyPronunciationDictionary('Read the API and OpenAI docs.', { API: 'A P I', OpenAI: 'Open A I' });
   assert.equal(pronunciation.applied.length, 2);
   assert.equal(DEFAULT_DIRECTIONS.hook.style > DEFAULT_DIRECTIONS.evidence.style, true);
+  const env = parseEnv('CLOUDFLARE_API_TOKEN=token-value\\nCLOUDFLARE_TEXT_MODEL="@cf/openai/gpt-oss-20b"\\nUNRELATED_SECRET=do-not-load');
+  assert.equal(env.CLOUDFLARE_API_TOKEN, 'token-value');
+  assert.equal(env.UNRELATED_SECRET, undefined);
   console.log('PASS Script Engine v2: separate generation flow, critic, 15% tightening, claim ledger and approval gate');
   console.log('PASS Scene Planner v2: sentence-level intent, max 4s shots, visual variety and credit metadata');
   console.log('PASS Narration v2: pronunciation dictionary and section delivery presets');
