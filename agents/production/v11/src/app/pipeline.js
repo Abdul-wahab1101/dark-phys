@@ -19,6 +19,12 @@ const { analyzeThumbnail } = require('../infra/thumbnail-pixels');
 const ORDER = ['audio-clean', 'hook', 'shot-plan', 'preflight', 'interrupts', 'render-shots', 'mux', 'loudness', 'finalize'];
 const DEFAULT_CONFIG = { width: 1080, height: 1920, fps: 30, hookWindowSec: 15, maxAttempts: 2, backoffMs: 1500, aggressiveFillers: false, tailPadSec: 0.4 };
 
+function buildTrackDuckFilter(track, index) {
+  const bed = 'mb' + index, ducked = 'md' + index;
+  if (track.ducking === false) return { filter: '[' + bed + ']', label: '[' + bed + ']' };
+  return { filter: '[' + bed + '][sc' + index + ']sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[' + ducked + ']', label: '[' + ducked + ']' };
+}
+
 class ProductionPipeline {
   constructor({ runner, audio, checkpoints, temp, ledger, thumbnailAnalyzer = analyzeThumbnail, logger = null, sleep = ms => new Promise(r => setTimeout(r, ms)), config = {} }) {
     Object.assign(this, { runner, audio, checkpoints, temp, ledger, thumbnailAnalyzer, logger, sleep });
@@ -220,8 +226,12 @@ class ProductionPipeline {
     let nextInput = 2;
     if (musicTracks.length) {
       const duckedCount = musicTracks.filter(track => track.ducking !== false).length;
-      const sidechainLabels = musicTracks.map((track, index) => track.ducking === false ? '' : '[sc' + index + ']').join('');
-      chains.push(voiceChain + ',asplit=' + (duckedCount + 1) + '[vo]' + sidechainLabels);
+      if (duckedCount > 0) {
+        const sidechainLabels = musicTracks.map((track, index) => track.ducking === false ? '' : '[sc' + index + ']').join('');
+        chains.push(voiceChain + ',asplit=' + (duckedCount + 1) + '[vo]' + sidechainLabels);
+      } else {
+        chains.push(voiceChain + '[vo]');
+      }
       labels.push('[vo]');
       const silenceWindows = Array.isArray(soundPlan.silenceWindows) ? soundPlan.silenceWindows : [];
       const silenceExpression = silenceWindows.reduce((expr, window) =>
@@ -240,8 +250,9 @@ class ProductionPipeline {
         chains.push('[' + nextInput + ':a]atrim=duration=' + duration.toFixed(2) + ',asetpts=PTS-STARTPTS,volume=' + gain +
           'dB,afade=t=in:st=0:d=' + fadeIn.toFixed(2) + ',afade=t=out:st=' + Math.max(0, duration - fadeOut).toFixed(2) +
           ':d=' + fadeOut.toFixed(2) + ',adelay=' + delay + '|' + delay + ',volume=\'' + silenceExpression + '\'[' + bed + ']');
-        chains.push('[' + bed + '][sc' + index + ']sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[' + ducked + ']');
-        labels.push('[' + ducked + ']');
+        const mixedTrack = buildTrackDuckFilter(track, index);
+        chains.push(mixedTrack.filter);
+        labels.push(mixedTrack.label);
         nextInput++;
       });
     } else {
@@ -294,4 +305,4 @@ class ProductionPipeline {
   }
 }
 
-module.exports = { ProductionPipeline, ORDER, DEFAULT_CONFIG };
+module.exports = { ProductionPipeline, ORDER, DEFAULT_CONFIG, buildTrackDuckFilter };
