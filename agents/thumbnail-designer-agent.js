@@ -2121,6 +2121,7 @@ class ThumbnailDesignerAgent {
         designFamily: plan.familyName,
         designFamilyId: plan.familyId,
         layoutClass: FAMILIES[plan.familyId].cls,
+        visualStrategyId: plan.visualStrategy?.id || null,
         path: optimized,
         sourceFootage: source.name,
         hook: plan.headline,
@@ -2299,6 +2300,7 @@ class ThumbnailDesignerAgent {
           designFamily: composed.designFamily,
           designFamilyId: composed.designFamilyId,
           layoutClass: FAMILIES[composed.designFamilyId].cls,
+          visualStrategyId: plan.visualStrategy?.id || null,
           path: composed.path,
           sourceFootage: 'Cloudflare Workers AI - FLUX.1 Schnell',
           provider: 'cloudflare-workers-ai',
@@ -2422,7 +2424,7 @@ class ThumbnailDesignerAgent {
     const heuristic = Math.round((technical * 0.60) + (wordsScore * 0.25) + (curiosityGapScore * 0.15));
     const score = visual.available ? Math.round(visual.score * 0.72 + heuristic * 0.28) : heuristic;
     const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
-      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5;
+      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5 || titleOverlap > 0.8;
     return {
       score, passed: !hardReject && (!visual.available || visual.passed),
       rejectionReasons: [
@@ -2449,8 +2451,8 @@ class ThumbnailDesignerAgent {
     const diversity = await this.measureVariantDiversity(reviewed);
     const families = new Set(reviewed.map(v => v.designFamilyId));
     const layouts = new Set(reviewed.map(v => v.layoutClass));
-    const strategies = new Set(reviewed.map(v => v.concept?.variantPlans?.[v.planIndex]?.visualStrategy?.id || v.visualStrategy?.id || v.composition));
-    const duplicateComposition = families.size < 3 || layouts.size < 3 ||
+    const strategies = new Set(reviewed.map(v => v.visualStrategyId || v.concept?.plan?.visualStrategy?.id || v.concept?.variantPlans?.[v.planIndex]?.visualStrategy?.id || v.composition));
+    const duplicateComposition = families.size < 3 || layouts.size < 3 || strategies.size < 3 ||
       (diversity.minPairwiseImageDifference !== null && diversity.minPairwiseImageDifference < 0.075);
     if (duplicateComposition) {
       for (const v of reviewed) {
@@ -2476,15 +2478,17 @@ class ThumbnailDesignerAgent {
     let bestReview = null;
     let variants = [];
     let regenerationRounds = 0;
+    const approvedPool = new Map();
 
-    // Generate and inspect the actual image pixels. Weak sets get up to two fresh attempts.
+    // Keep passing candidates across rounds; only rejected design families need replacement.
     for (let round = 0; round < 3; round++) {
       if (round > 0) {
         regenerationRounds++;
         const plans = await this.ensurePlans(concept, script);
         const scenes = concept.profile?.scenes || [];
         concept.variantPlans = plans.map((p, i) => {
-          const nextScene = scenes[(scenes.indexOf(p.scene) + round + i + 1) % Math.max(1, scenes.length)] || p.scene;
+          const currentIndex = scenes.indexOf(p.scene);
+          const nextScene = scenes[(Math.max(0, currentIndex) + round + i + 1) % Math.max(1, scenes.length)] || p.scene;
           return {
             ...p, scene: nextScene,
             paletteIdx: (p.paletteIdx + round + i + 1) % FAMILIES[p.familyId].palettes.length,
@@ -2499,18 +2503,50 @@ class ThumbnailDesignerAgent {
         prompt = await this.createPrompt(concept);
       }
 
-      variants = await this.generateABVariants(concept, script);
-      if (variants.length !== 3) throw new Error(`Expected 3 thumbnail variants; generated ${variants.length}`);
-      variants.forEach((v, i) => { v.planIndex = i; v.sourceTitle = concept.title; });
-      const reviewed = await this.reviewAndRankVariants(variants);
+      const generated = await this.generateABVariants(concept, script);
+      if (generated.length !== 3) throw new Error(`Expected 3 thumbnail variants; generated ${generated.length}`);
+      generated.forEach((v, i) => {
+        v.planIndex = i;
+        v.sourceTitle = concept.title;
+        v.visualStrategyId = v.visualStrategyId || concept.variantPlans[i]?.visualStrategy?.id || null;
+      });
+      const reviewed = await this.reviewAndRankVariants(generated);
       bestReview = reviewed;
-      variants = reviewed.variants;
-      if (reviewed.allPassed) break;
-      this.logger.warn(`Thumbnail candidate set rejected on round ${round + 1}; regenerating weak/repeated visual concepts.`);
+
+      for (const candidate of reviewed.variants) {
+        const familyId = candidate.designFamilyId;
+        const previous = approvedPool.get(familyId);
+        if (candidate.reviewPassed && (!previous || candidate.reviewScore > previous.reviewScore)) {
+          if (previous?.path) { try { await fs.unlink(previous.path); } catch (_) {} }
+          approvedPool.set(familyId, candidate);
+        } else if (candidate.path) {
+          try { await fs.unlink(candidate.path); } catch (_) {}
+        }
+      }
+
+      variants = [...approvedPool.values()].sort((a, b) => b.reviewScore - a.reviewScore);
+      if (variants.length === 3) break;
+      this.logger.warn(`Thumbnail review round ${round + 1}: ${variants.length}/3 distinct candidates approved; regenerating rejected candidates.`);
     }
 
-    // Keep all three comparison candidates, ranked by their real review score.
-    const primary = variants[0];
+    if (variants.length !== 3) {
+      const reasons = [...approvedPool.values()].flatMap(v => v.review?.rejectionReasons || []);
+      for (const candidate of approvedPool.values()) {
+        if (candidate.path) { try { await fs.unlink(candidate.path); } catch (_) {} }
+      }
+      throw new Error('Thumbnail quality gate could not approve three genuinely distinct candidates after 3 rounds. No weak thumbnail was selected. ' + [...new Set(reasons)].join('; '));
+    }
+
+    const finalDiversity = await this.measureVariantDiversity(variants);
+    const finalFamilies = new Set(variants.map(v => v.designFamilyId));
+    const finalLayouts = new Set(variants.map(v => v.layoutClass));
+    const finalStrategies = new Set(variants.map(v => v.visualStrategyId));
+    if (finalFamilies.size !== 3 || finalLayouts.size !== 3 || finalStrategies.size !== 3 ||
+        (finalDiversity.minPairwiseImageDifference !== null && finalDiversity.minPairwiseImageDifference < 0.075)) {
+      for (const candidate of variants) { try { await fs.unlink(candidate.path); } catch (_) {} }
+      throw new Error('Final thumbnail set failed the cross-round composition diversity gate; no candidate was approved.');
+    }
+
     const usedCloudflare = variants.some(v => v.provider === 'cloudflare-workers-ai');
     const familyHistory = (await this.readFamilyHistory()).concat([{
       title: concept.title,
@@ -2552,8 +2588,9 @@ class ThumbnailDesignerAgent {
         allCandidatesPassedVisualGate: variants.every(v => v.reviewPassed),
         visionInspectionAvailable: variants.some(v => v.review?.visualReview?.available),
         visualScores: variants.map(v => v.reviewScore),
-        diversity: bestReview?.diversity,
-        duplicateCompositionRejected: bestReview?.duplicateComposition,
+        diversity: finalDiversity,
+        duplicateCompositionRejected: false,
+        distinctVisualStrategies: finalStrategies.size,
         regenerationRounds,
         mobileSafeZonesChecked: true,
         ocrVerified: false,
