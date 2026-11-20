@@ -119,4 +119,58 @@ class ElevenLabsNarration {
       measuredInputTruePeak: measured.input_tp, measuredInputLra: measured.input_lra, twoPass: true };
   }
 }
-module.exports = { ElevenLabsNarration, applyPronunciationDictionary, DEFAULT_DIRECTIONS };
+
+const { GeminiTTS } = require('./gemini-tts');
+class NarrationEngine {
+  constructor(options = {}) {
+    this.gemini = options.gemini || new GeminiTTS(options.geminiOptions || options);
+    this.legacy = options.legacy || new ElevenLabsNarration(options.elevenLabsOptions || options);
+    this.ffmpeg = options.ffmpeg || process.env.FFMPEG_PATH || 'ffmpeg';
+  }
+  provider() {
+    if (this.gemini.apiKey) return 'Gemini';
+    if (this.legacy.apiKey && this.legacy.voiceId) return 'ElevenLabs';
+    throw new Error('No TTS credentials found. Configure GEMINI_API_KEY locally; ElevenLabs is optional.');
+  }
+  async synthesize(text, outputPath, options = {}) {
+    const selected = this.provider();
+    if (selected === 'ElevenLabs') return this.legacy.synthesize(text, outputPath, options);
+    const ext = path.extname(outputPath).toLowerCase();
+    const tempWav = ext === '.wav' ? outputPath : outputPath + '.gemini-source.wav';
+    const result = await this.gemini.synthesize(text, tempWav, options);
+    if (ext === '.wav') return result;
+    const destination = path.resolve(outputPath);
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await run(this.ffmpeg, ['-y', '-i', tempWav, '-c:a', 'libmp3lame', '-b:a', '192k', destination]);
+    await fs.unlink(tempWav).catch(() => {});
+    return { ...result, output: destination, format: ext.replace('.', '') || 'mp3' };
+  }
+  async synthesizeSections(sections, outputPath, options = {}) {
+    if (!Array.isArray(sections) || !sections.length) throw new Error('Narration sections are required.');
+    const destination = path.resolve(outputPath), workDir = destination + '.sections';
+    await fs.mkdir(workDir, { recursive: true });
+    const outputs = [];
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
+      const name = String(section.id || 'section-' + (i + 1)).replace(/[^a-z0-9_-]/gi, '-');
+      const file = path.join(workDir, String(i + 1).padStart(3, '0') + '-' + name + '.mp3');
+      const direction = section.direction || (i === 0 ? 'hook' : i === sections.length - 1 ? 'payoff' : section.kind || 'story');
+      const result = await this.synthesize(section.text || section.narration, file, {
+        ...options, direction, voice: section.voice || options.voice,
+        language: section.language || options.language
+      });
+      outputs.push({ id: section.id || name, file, direction, provider: result.provider });
+    }
+    const list = path.join(workDir, 'concat.txt');
+    const quote = value => path.resolve(value).replace(/\\/g, '/').replace(/'/g, "'\\''");
+    await fs.writeFile(list, outputs.map(x => "file '" + quote(x.file) + "'").join('\n') + '\n', 'utf8');
+    await fs.mkdir(path.dirname(destination), { recursive: true });
+    await run(this.ffmpeg, ['-y', '-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'libmp3lame', '-b:a', '192k', destination]);
+    const loudness = await this.legacy.normalizeLoudness(destination, options.targetLufs == null ? -14 : Number(options.targetLufs));
+    return { provider: this.provider(), output: destination, format: 'mp3', sections: outputs,
+      loudness, targetIntegratedLufs: options.targetLufs == null ? -14 : Number(options.targetLufs),
+      reviewRequired: true };
+  }
+  async normalizeLoudness(file, target = -14) { return this.legacy.normalizeLoudness(file, target); }
+}
+module.exports = { ElevenLabsNarration, NarrationEngine, applyPronunciationDictionary, DEFAULT_DIRECTIONS };
