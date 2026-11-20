@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
 const { spawn } = require('node:child_process');
 const BASE = (process.env.DARK_PHYS_URL || 'http://127.0.0.1:3456').replace(/\/+$/, '');
 const READS = [['health','/health'],['dashboard','/api/dashboard'],['readiness','/api/readiness'],['publish_schedule','/schedule'],['video_analytics','/analytics'],['channel_analytics','/api/analytics/channel'],['outcomes','/api/outcomes'],['growth_experiments','/api/experiments']];
