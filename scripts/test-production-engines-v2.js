@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { ScriptEngineV2, validateEditorialDraft, evidenceWarnings } = require('../agents/script-engine-v2');
+const { ScriptEngineV2, validateEditorialDraft, evidenceWarnings, banListReview } = require('../agents/script-engine-v2');
 const { planScenes, splitSentences } = require('../agents/production/scene-planner');
 const { applyPronunciationDictionary, DEFAULT_DIRECTIONS } = require('../agents/production/narration');
 const { planSceneShots, shotArgs } = require('../agents/production/v11/src/app/shot-planner');
@@ -42,6 +42,9 @@ function draft(text) {
   assert.equal(result.approval.autoPublish, false);
   assert.equal(evidenceWarnings(pkg).singleSourceClaims.length, 0);
   assert.equal(validateEditorialDraft(draft(narration), pkg, 'long-form').ok, true);
+  assert.equal(banListReview(draft(narration), pkg).passed, true);
+  assert.equal(banListReview({ ...draft(narration), narration: 'I am a doctor and I can diagnose you.' }, pkg).passed, false);
+  assert.equal(banListReview({ ...draft(narration), hooks: ['Like and subscribe now', 'Second hook', 'Third hook'] }, pkg).passed, false);
   const bad = draft(narration); bad.claimLedger[0].sourceIds = ['unknown'];
   assert.equal(validateEditorialDraft(bad, pkg, 'long-form').ok, false);
   const scenes = planScenes({ title: 'Memory documentary', beats: [{ narration: 'A person opens an old letter. The details seem familiar, but one line feels different.', visualIntents: [
