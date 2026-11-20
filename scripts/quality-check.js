@@ -1,4 +1,7 @@
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
+
 /**
  * Final deliverable gate for Dark Phys.
  * Usage:
