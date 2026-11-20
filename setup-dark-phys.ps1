@@ -1,5 +1,5 @@
-$ErrorActionPreference = "Stop"
 param([switch]$IncludeOpenMontage)
+$ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Engines = Join-Path $Root "engines"
 New-Item -ItemType Directory -Force -Path $Engines | Out-Null

@@ -1,8 +1,14 @@
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $OM = Join-Path $Root "engines\OpenMontage"
+$Commit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw "Git for Windows is required." }
 if (-not (Test-Path (Join-Path $OM ".git"))) {
-  throw "OpenMontage is not cloned. Run .\setup-dark-phys.ps1 first."
+  $Engines = Split-Path -Parent $OM
+  New-Item -ItemType Directory -Force -Path $Engines | Out-Null
+  git clone https://github.com/OpenMontageInc/OpenMontage.git $OM
+  git -C $OM fetch --depth 1 origin $Commit
+  git -C $OM checkout --detach $Commit
 }
 $Python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $Python) { throw "Python 3.10+ is required." }

@@ -41,7 +41,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 ./setup-dark-phys.ps1
 ~~~
 
-Yeh pinned YouTube Automation Agent aur OpenMontage repositories ko engines folder ke andar clone karta hai, dependencies install karta hai, aur Playwright Chromium install karne ki koshish karta hai. Internet aur disk space ki zaroorat hogi; pehli installation mein waqt lag sakta hai.
+Yeh pinned YouTube Automation Agent ko engines folder mein clone karta hai, dependencies install karta hai, aur Playwright Chromium install karta hai. OpenMontage default setup ka hissa nahi—yeh optional aur heavy hai. Jab advanced rendering ki zaroorat ho tab alag se `./setup-openmontage.ps1` chalao. Internet aur disk space ki zaroorat hogi; pehli installation mein waqt lag sakta hai.
 
 Agar script fail ho to error ka exact text copy karke share karo. Existing engine folders mein local changes hon to setup script unhein overwrite nahi karta.
 
