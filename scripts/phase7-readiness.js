@@ -14,7 +14,7 @@ function commandVersion(command,args=['--version'],runner=spawnSync){
 function parseEnvKeys(filePath,readFile=fs.readFileSync){
   try{return String(readFile(filePath,'utf8')).split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith('#')&&/^[A-Za-z_][A-Za-z0-9_]*\s*=/.test(line)).map(line=>line.slice(0,line.indexOf('=')).trim());}catch{return [];}
 }
-function check({root=process.cwd(),env=process.env,platform=process.platform,totalmem=os.totalmem(),freemem=os.freemem(),runner=spawnSync,exists=fs.existsSync,statfs=fs.statfsSync,readFile=fs.readFileSync}={}){
+function check({root=process.cwd(),env=process.env,platform=process.platform,nodeVersion=process.versions.node,totalmem=os.totalmem(),freemem=os.freemem(),runner=spawnSync,exists=fs.existsSync,statfs=fs.statfsSync,readFile=fs.readFileSync}={}){
   root=path.resolve(root);
   const results=[];
   const add=(id,status,detail,action=null)=>results.push({id,status,detail,action});
@@ -23,7 +23,7 @@ function check({root=process.cwd(),env=process.env,platform=process.platform,tot
   add('node',nodeMajor>=18?'pass':'block', 'Node.js '+node+(nodeMajor>=20?' (recommended LTS)':' (20 LTS recommended)'),nodeMajor>=18?null:'Install Node.js 20 LTS');
   const git=commandVersion('git',['--version'],runner);add('git',git?'pass':'block',git||'Git not found','Install Git for Windows');
   const pyCmd=commandVersion(platform==='win32'?'python':'python3',['--version'],runner)||commandVersion('python',['--version'],runner);
-  add('python',pyCmd?'pass':'block',pyCmd||'Python 3.10+ not found','Install Python 3.10 or newer');
+  const pyMatch=pyCmd&&pyCmd.match(/Python\\s+(\\d+)\\.(\\d+)/i);\n  const pyOk=Boolean(pyMatch)&& (Number(pyMatch[1])>3||(Number(pyMatch[1])===3&&Number(pyMatch[2])>=10));\n  add('python',pyOk?'pass':'block',pyCmd||'Python 3.10+ not found',pyOk?null:'Install Python 3.10 or newer');
   const ffmpeg=commandVersion('ffmpeg',['-version'],runner);
   const app=path.join(root,'engines','youtube-automation-agent');
   const appInstalled=exists(path.join(app,'index.js'));

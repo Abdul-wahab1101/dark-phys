@@ -18,4 +18,11 @@ assert(low.checks.some(x=>x.id==='memory'&&x.status==='warn'));
 assert(low.checks.some(x=>x.id==='disk_space'&&x.status==='block'));
 assert(low.nextActions.length>0);
 assert.deepEqual(parseEnvKeys('/fake',()=> 'A=1\n#B=2\n export C=3\nD = 4\n'),['A','D']);
-console.log('PASS Phase 7 readiness: prerequisites, engine/dependency detection, optional credentials, resource warnings, secret redaction and read-only guardrails');
+
+const oldRuntime=check({root,env:{},platform:'linux',nodeVersion:'18.16.0',totalmem:16*1024**3,freemem:8*1024**3,runner:(cmd)=>({status:0,stdout:cmd==='python3'?'Python 3.9.12':'ok',stderr:''}),exists,statfs,readFile:()=>''});
+assert.equal(oldRuntime.checks.find(x=>x.id==='node').status,'block');
+assert.equal(oldRuntime.checks.find(x=>x.id==='python').status,'block');
+const rootEnv=check({root,env:{},platform:'linux',nodeVersion:'20.11.0',totalmem:16*1024**3,freemem:8*1024**3,runner:goodRunner,exists,statfs,readFile:(file)=>file===path.join(root,'.env')?'PIXABAY_API_KEY=private\\nPIXABAY_API_KEY_2=private2\\n':'DARK_PHYS_LLM_API_KEY=private\\n'});
+assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.startsWith('3 recognised'),true);
+assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.includes('private'),false);
+\nconsole.log('PASS Phase 7 readiness: prerequisites, engine/dependency detection, optional credentials, resource warnings, secret redaction and read-only guardrails');
