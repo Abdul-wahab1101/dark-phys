@@ -100,6 +100,13 @@ async function placeholderBackground(file, i) {
   const seenTrios = new Set();
   for (const v of videos) {
     const concept = await agent.generateConcept(v);
+    const titleTokens = new Set(String(v.title).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2));
+    const titleOverlap = headline => {
+      const words = String(headline).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2);
+      return words.length ? words.filter(w => titleTokens.has(w)).length / words.length : 1;
+    };
+    ok(concept.variantPlans.every(p => p.headline.split(/\\s+/).length <= 5 && titleOverlap(p.headline) <= 0.8), `three concise curiosity-gap headlines for "${v.title}"`);
+    ok(new Set(concept.variantPlans.map(p => p.headline)).size === 3, 'three different headline hooks');
     const trio = concept.variantPlans.map(p => p.familyId).join('+');
     seenTrios.add(trio);
     console.log(`\n${v.title}\n  topic=${concept.analysis.topicId} emotion=${concept.analysis.emotionalAngle}`);
