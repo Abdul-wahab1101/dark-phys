@@ -5,7 +5,7 @@
 Add these entries to the local .env file used by Dark Phys. Keep the key private; never commit .env.
 
     GEMINI_API_KEY=YOUR_GOOGLE_AI_STUDIO_KEY
-    GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts
+    GEMINI_TTS_MODEL=gemini-3.8-flash-tts
     GEMINI_TTS_VOICE=Charon
 
 If the existing key is stored as DARK_PHYS_LLM_API_KEY, the TTS adapter will reuse it only when DARK_PHYS_LLM_BASE_URL points to Google's Generative Language API or DARK_PHYS_LLM_PROVIDER=gemini. Explicit GEMINI_API_KEY / GOOGLE_API_KEY takes precedence.
