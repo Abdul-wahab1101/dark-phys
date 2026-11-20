@@ -29,7 +29,7 @@ function validateDraft(draft,knownSourceIds,knownClaimIds=new Set()){
 }
 class ViralScriptGenerator{
  constructor({apiKey=process.env.DARK_PHYS_LLM_API_KEY,baseUrl=process.env.DARK_PHYS_LLM_BASE_URL||'https://api.openai.com/v1',model=process.env.DARK_PHYS_LLM_MODEL,accountId=process.env.CLOUDFLARE_ACCOUNT_ID,cloudflareToken=process.env.CLOUDFLARE_API_TOKEN,cloudflareModel=process.env.CLOUDFLARE_TEXT_MODEL||'@cf/openai/gpt-oss-20b',fetchImpl=globalThis.fetch,timeoutMs=120000}={}) {
-  this.apiKey=apiKey||cloudflareToken; this.baseUrl=String(baseUrl).replace(/\/$/,'');
+  this.apiKey=apiKey||(cloudflareToken&&accountId?cloudflareToken:''); this.baseUrl=String(baseUrl).replace(/\/$/,'');
   this.model=model||cloudflareModel; this.accountId=accountId; this.cloudflareToken=cloudflareToken;
   this.provider=apiKey?'openai-compatible':cloudflareToken&&accountId?'cloudflare-workers-ai':'openai-compatible';
   this.fetch=fetchImpl; this.timeoutMs=timeoutMs;
