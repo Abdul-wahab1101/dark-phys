@@ -59,6 +59,8 @@ async function placeholderBackground(file, i) {
   const unsafeCandidate = { ...goodCandidate, layout: { blockBounds: [{ x: 1080, y: 635, w: 170, h: 65 }] } };
   const unsafeReview = await agent.scoreThumbnailCandidate(unsafeCandidate);
   ok(!unsafeReview.passed && !unsafeReview.mobileSafeZone, 'bottom-right YouTube timestamp safe-zone collision is rejected');
+  const missingBoundsReview = await agent.scoreThumbnailCandidate({ ...goodCandidate, layout: { blockBounds: [] } });
+  ok(!missingBoundsReview.passed && !missingBoundsReview.mobileSafeZone, 'missing layout bounds cannot bypass mobile safe-zone checks');
   agent.inspectThumbnailVisual = originalVisionReview;
 
   // Verify Cloudflare's actual image-review request/response contract without using credentials.
