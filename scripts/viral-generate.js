@@ -9,7 +9,7 @@ async function main(argv = process.argv.slice(2)) {
   if (!file || argv.includes('--help')) {
     console.log('Dark Phys AI Script Engine v2\nUsage: node scripts/viral-generate.js research-package.json [--short] [--legacy]');
     console.log('Default: Script Engine v2 with separate Long/Short editorial pipelines, critic, tightening and claim/source validation.');
-    return file ? 0 : 1;
+    return (file || argv.includes('--help')) ? 0 : 1;
   }
   const pkg = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
   const format = argv.includes('--short') ? 'short' : 'long-form';
