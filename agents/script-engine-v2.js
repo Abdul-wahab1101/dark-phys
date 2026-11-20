@@ -27,8 +27,8 @@ function validateEditorialDraft(draft, pkg, format) {
   const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
   if (sentenceCount && Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length !== sentenceCount) errors.push('Every narration sentence must have exactly one sentenceVisuals entry');
   if (Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length === sentenceCount) {
-    const normal = value => String(value || '').replace(/\\s+/g, ' ').trim();
-    const narrationSentences = String(draft.narration || '').match(/[^.!?؟۔\\n]+[.!?؟۔]?/g)?.map(normal) || [];
+    const normal = value => String(value || '').replace(/\s+/g, ' ').trim();
+    const narrationSentences = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.map(normal) || [];
     if (draft.sentenceVisuals.some((v, i) => normal(v.sentence) !== narrationSentences[i])) errors.push('sentenceVisuals must preserve the exact narration sentence order');
   }
   if (!Array.isArray(draft.claimsToVerify) || !draft.claimsToVerify.length) errors.push('claimsToVerify checklist is required');
