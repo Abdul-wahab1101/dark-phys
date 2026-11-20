@@ -9,7 +9,8 @@ function normalizeTranscript(input){
  const rows=Array.isArray(input)?input:(input&&Array.isArray(input.words)?input.words:[]);
  return rows.map((w,i)=>({start:Number(w.start??w.startSeconds),end:Number(w.end??w.endSeconds),text:String(w.text??w.word??'').trim(),index:i}))
  .filter(w=>Number.isFinite(w.start)&&Number.isFinite(w.end)&&w.start>=0&&w.end>w.start&&w.text)
- .sort((a,b)=>a.start-b.start||a.end-b.end);
+ .sort((a,b)=>a.start-b.start||a.end-b.end)
+ .map((word,index)=>({...word,index}));
 }
 function scoreCandidate(text,duration,meta={}){
  const t=String(text||''),w=wordsOf(t),unique=new Set(w);
