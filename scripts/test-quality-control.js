@@ -1,9 +1,11 @@
 'use strict';
 const assert=require('node:assert/strict');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const {evaluateQc,buildFiveMinuteReview}=require('../agents/production/quality-control');
 const long=evaluateQc({mode:'long',probe:{format:{duration:'600',format_name:'mov,mp4'},streams:[{codec_type:'video',codec_name:'h264',width:1920,height:1080,avg_frame_rate:'30/1'},{codec_type:'audio',codec_name:'aac'}]},files:{captions:'final.srt',thumbnail:'thumb.jpg'}});
 assert.equal(long.technical.passed,true);assert.equal(long.readyForManualApproval,false);assert.equal(long.autoPublish,false);
 const short=evaluateQc({mode:'short',probe:{format:{duration:'35',format_name:'mov,mp4'},streams:[{codec_type:'video',codec_name:'h264',width:1080,height:1920,avg_frame_rate:'30/1'},{codec_type:'audio',codec_name:'aac'}]},files:{captions:'short.srt'}});
 assert.equal(short.technical.passed,true);assert.equal(short.mode,'short');
 const review=buildFiveMinuteReview('short');assert.equal(review.items.length,5);assert.equal(review.durationMinutes,5);assert.equal(review.publishing,'manual_by_default');
-console.log('PASS separate Long/Short technical, visual, audio, editorial QC and five-minute review checklist');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dark-phys-qc-page-'));const page=path.join(dir,'review.html');const cli=spawnSync(process.execPath,[path.resolve(__dirname,'qc-review-page.js'),'--mode','short','--output',page],{encoding:'utf8'});assert.equal(cli.status,0,cli.stderr);const html=fs.readFileSync(page,'utf8');assert(html.includes('SHORT Five-Minute QC')||html.includes('SHORT Five-Minute QC'));assert(html.includes('watch the complete export')||html.includes('Watch the complete export'));fs.rmSync(dir,{recursive:true,force:true});
+console.log('PASS separate Long/Short technical, visual, audio, editorial QC and generated five-minute review page');
