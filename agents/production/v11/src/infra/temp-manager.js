@@ -27,7 +27,7 @@ function pickBaseDir(preferred) {
 class TempManager {
   constructor({ baseDir, prefix = 'ytjob_', now = () => Date.now() } = {}) {
     this.baseDir = pickBaseDir(baseDir);
-    this.prefix = prefix; this.now = now; this.activeDirs = new Set();
+    this.prefix = prefix; this.now = now; this.activeDirs = ACTIVE_DIRS;
   }
 
   dirFor(jobId) { return path.join(this.baseDir, this.prefix + safeName(jobId)); }
