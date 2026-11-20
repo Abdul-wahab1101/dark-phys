@@ -15,7 +15,8 @@ async function main() {
   let source = data;
   const draft = data.scripts && data.scripts[language];
   if (draft) {
-    if (draft.status && draft.status !== 'draft_requires_human_review') throw new Error('Selected script is blocked or not approved for human review.');
+    if (draft.status !== 'draft_requires_human_review') throw new Error('Selected script is blocked; resolve validation issues before review.');
+    if (data.approval?.status !== 'approved' && draft.approvalStatus !== 'approved') throw new Error('Script is still awaiting human approval. Set data.approval.status to approved only after source, claim and language review.');
     if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) throw new Error('Script Engine v2 draft has no sentenceVisuals.');
     source = { title: data.topic || draft.titleOptions?.[0] || 'Untitled documentary',
       beats: draft.sentenceVisuals.map(v => ({ narration: v.sentence, visual: v.visualIntent,
