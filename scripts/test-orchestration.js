@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {ProductionOrchestrator}=require('../agents/production/orchestration');
+(async()=>{const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dark-phys-orch-'));let now=Date.UTC(2026,10,20);const o=new ProductionOrchestrator({root:path.join(dir,'state'),now:()=>now,maxAttempts:2,baseBackoffMs:100});
+const batch=o.addWeeklyBatch([{jobId:'a',type:'long'},{jobId:'b',type:'short'}],{startAt:now,spacingHours:24});assert.equal(batch.length,2);assert.equal(batch[0].batchId,batch[1].batchId);
+let result=await o.runNext(async job=>{job.saveCheckpoint({stage:'render',completed:['research','script']});return{ok:true};});assert.equal(result.status,'completed');assert.equal(o.list()[0].checkpoint.stage,'render');
+result=await o.runNext(async()=>{throw Error('temporary');});assert.equal(result.status,'queued');assert.equal(o.list()[1].attempts,1);now+=1000;result=await o.runNext(async()=>({done:true}));assert.equal(result.status,'completed');
+const release=o.acquire();await assert.rejects(()=>o.runNext(async()=>{}),/already running/);release();
+const temp=path.join(dir,'temp');fs.mkdirSync(path.join(temp,'darkphys-job-old'),{recursive:true});fs.writeFileSync(path.join(temp,'darkphys-job-old','.dark-phys-owned.json'),JSON.stringify({createdAt:now-100000000,status:'done'}));fs.mkdirSync(path.join(temp,'darkphys-job-foreign'));assert.equal(o.cleanupOwnedTemp({baseDir:temp,dryRun:true}).removed.length,1);assert(fs.existsSync(path.join(temp,'darkphys-job-old')));const cleaned=o.cleanupOwnedTemp({baseDir:temp,dryRun:false});assert.equal(cleaned.removed.length,1);assert(!fs.existsSync(path.join(temp,'darkphys-job-old')));assert(fs.existsSync(path.join(temp,'darkphys-job-foreign')));
+fs.rmSync(dir,{recursive:true,force:true});console.log('PASS weekly batch queue, durable checkpoints, exponential retries, single heavy-job lock and ownership-safe temp cleanup');})().catch(e=>{console.error(e);process.exit(1);});
