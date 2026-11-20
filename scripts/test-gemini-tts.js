@@ -23,12 +23,13 @@ const { NarrationEngine } = require('../agents/production/narration');
       }
     });
     const output = path.join(dir, 'voice.wav');
-    const result = await client.synthesize('A carefully paced documentary narration.', output, { direction: 'evidence' });
+    const result = await client.synthesize('NASA released a report.', output, { direction: 'evidence', pronunciationDictionary: { NASA: 'N A S A' } });
     assert.equal(result.provider, 'Gemini');
     assert.equal(result.voiceId, 'Charon');
     assert.equal(result.reviewRequired, true);
     assert.match(request.url, /gemini-2\.5-flash-preview-tts:generateContent/);
     assert.equal(request.options.headers['x-goog-api-key'], 'test-key');
+    assert.match(JSON.parse(request.options.body).contents[0].parts[0].text, /N A S A/);
     const saved = await fs.readFile(output);
     assert.equal(saved.toString('RIFF', 0, 4), 'RIFF');
     assert.equal(saved.length, pcm.length + 44);
