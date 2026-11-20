@@ -217,7 +217,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22.23.4'
       - name: Test Dark Phys handoff bridge
         run: node scripts/test-openmontage-handoff.js
       - name: Checkout pinned OpenMontage
