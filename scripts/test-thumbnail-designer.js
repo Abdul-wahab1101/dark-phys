@@ -77,9 +77,9 @@ async function placeholderBackground(file, i) {
       visionRequest = { url: String(url), body: JSON.parse(options.body) };
       return { ok: true, json: async () => ({ result: { response: JSON.stringify({ score: 91, passed: true, subjectQuality: 9, clutter: 1, focalPoint: 9, textReadability: 9, composition: 9, curiosity: 9, concerns: [] }) } }) };
     };
-    const visionReview = await agent.inspectThumbnailVisual(visionTestImage, { hook: 'WHO PULLS YOUR STRINGS?', designFamily: 'test' });
+    const visionReview = await agent.inspectThumbnailVisual(visionTestImage, { hook: 'WHO PULLS YOUR STRINGS?', sourceTitle: 'Why people manipulate you', designFamily: 'test' });
     ok(visionReview.available && visionReview.passed && visionReview.score === 91, 'Cloudflare Vision response is parsed into a visual quality review');
-    ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && typeof visionRequest?.body.messages?.[0]?.content === 'string' && visionRequest.body.messages[0].content.includes('strict professional YouTube thumbnail art director') && visionRequest.body.image.startsWith('data:image/jpeg;base64,'), 'Cloudflare Vision request includes the actual thumbnail image');
+    ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && typeof visionRequest?.body.messages?.[0]?.content === 'string' && visionRequest.body.messages[0].content.includes('strict professional YouTube thumbnail art director') && visionRequest.body.messages[0].content.includes('Video title: Why people manipulate you') && visionRequest.body.image.startsWith('data:image/jpeg;base64,'), 'Cloudflare Vision request includes the actual thumbnail image');
   } finally {
     global.fetch = originalFetch;
     if (oldToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN; else process.env.CLOUDFLARE_API_TOKEN = oldToken;
