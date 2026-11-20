@@ -9,6 +9,7 @@ const path = require('path');
 const { isPidAlive, safeName } = require('./file-utils');
 
 const MARKER = '.yt-work.json';
+const ACTIVE_DIRS = new Set();
 const JUNK = /(\.tmp|\.part|\.partial|\.temp)$|^ffmpeg2pass|^\.render_/i;
 
 function pickBaseDir(preferred) {
