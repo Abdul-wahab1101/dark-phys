@@ -2448,8 +2448,20 @@ class ThumbnailDesignerAgent {
     const technical = (checks.correctDimensions ? 20 : 0) + (checks.underTwoMB ? 15 : 0) +
       (checks.notBlank ? 15 : 0) + (checks.textFit ? 15 : 0) + (checks.contrastOk ? 15 : 0) +
       (checks.readableAtSmallSize ? 10 : 0) + (safe ? 10 : 0);
-    const heuristic = Math.round((technical * 0.60) + (wordsScore * 0.25) + (curiosityGapScore * 0.15));
-    const score = visual.available ? Math.round(visual.score * 0.72 + heuristic * 0.28) : heuristic;
+    const clampScore = value => Math.max(0, Math.min(100, value));
+    const contrastScore = Number.isFinite(Number(checks.contrastRatio))
+      ? clampScore(55 + (Number(checks.contrastRatio) - 3) * 7.5) : 65;
+    const fontScore = Number.isFinite(Number(checks.minFontSize))
+      ? clampScore(65 + (Number(checks.minFontSize) - 56) * 0.4) : 65;
+    const detailScore = Number.isFinite(Number(checks.pixelStdev))
+      ? clampScore(35 + (Number(checks.pixelStdev) - 12) * 1.25) : 65;
+    const heuristic = Math.round((technical * 0.35) + (wordsScore * 0.15) +
+      (curiosityGapScore * 0.15) + (contrastScore * 0.15) +
+      (fontScore * 0.10) + (detailScore * 0.10));
+    // Heuristic-only results are deliberately capped so they cannot masquerade as AI visual review.
+    const score = visual.available
+      ? Math.round(visual.score * 0.72 + heuristic * 0.28)
+      : Math.min(89, heuristic);
     const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
       !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5 || titleOverlap > 0.8;
     return {
@@ -2465,7 +2477,8 @@ class ThumbnailDesignerAgent {
       mobileSafeZone: safe,
       headlineWordCount: wordCount,
       titleOverlap: Number(titleOverlap.toFixed(2)),
-      curiosityGapScore
+      curiosityGapScore,
+      fallbackMetrics: { contrastScore: Number(contrastScore.toFixed(1)), fontScore: Number(fontScore.toFixed(1)), detailScore: Number(detailScore.toFixed(1)) }
     };
   }
 
