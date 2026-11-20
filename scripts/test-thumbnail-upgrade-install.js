@@ -26,7 +26,7 @@ try{
   "          : null;",
   "        const filePath = allowed[req.params.kind] || experimentPath;",
   "        return filePath;","  }","}","module.exports=Fixture;"
- ].join('\\n');
+ ].join('\n');
  fs.writeFileSync(indexFile,indexSource);
  const dashboardFile=path.join(dashboardDir,'app.js');
  const dashboardSource=[
@@ -36,7 +36,7 @@ try{
   "            <div class=\"quality-grid\">${(item.qualityChecks || []).map(check => check.message).join('')}</div>",
   "            ${item.review_notes ? `<p class=\"callout\">${escapeHTML(item.review_notes)}</p>` : ''}",
   "  `;","}","module.exports=openContent;"
- ].join('\\n');
+ ].join('\n');
  fs.writeFileSync(dashboardFile,dashboardSource);
  const upstreamDesigner=path.join(agents,'thumbnail-designer-agent.js');
  const upstreamFamilies=path.join(agents,'thumbnail-families-extra.js');
