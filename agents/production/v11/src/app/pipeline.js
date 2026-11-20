@@ -153,7 +153,7 @@ class ProductionPipeline {
       ? planSceneShots({ scenes: job.scenePlan, clips, totalSec: total })
       : planShots({ clips, totalSec: total, seed: job.jobId });
     const usage = [...plan.usage];
-    if (job.musicAssetId) usage.push({ assetId: job.musicAssetId, secondsUsed: total, uses: 1 });
+    if (job.musicAssetId && !(Array.isArray(job.musicSegments) && job.musicSegments.length)) usage.push({ assetId: job.musicAssetId, secondsUsed: total, uses: 1 });
     for (const assetId of (Array.isArray(job.musicAssetIds) ? job.musicAssetIds : [])) {
       const segment = (job.musicSegments || []).find(x => x.assetId === assetId);
       usage.push({ assetId, secondsUsed: segment ? Math.max(0, Number(segment.endSeconds) - Number(segment.startSeconds)) : total, uses: 1 });
