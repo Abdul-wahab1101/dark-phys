@@ -15,7 +15,9 @@ $Lite = Get-Content (Join-Path $Root "start-dark-phys-lite.ps1") -Raw
 foreach ($Needle in @("e973d515aef90c467da2289144df737a3bd03859", "2e003e65fa99a0f329478a2c1cdcf26bc481933a", "Node.js 20 LTS", "Python 3.10+")) {
   if (-not $Setup.Contains($Needle)) { throw "Setup script missing expected pinned requirement: $Needle" }
 }
-if (-not $Start.Contains("npm start")) { throw "Normal launcher does not invoke npm start." }\nif (-not $Start.Contains("phase7-readiness.js")) { throw "Normal launcher must run the Phase 7 readiness gate." }\nif (-not $Lite.Contains("phase7-readiness.js")) { throw "Lightweight launcher must run the Phase 7 readiness gate." }
+if (-not $Start.Contains("npm start")) { throw "Normal launcher does not invoke npm start." }
+if (-not $Start.Contains("phase7-readiness.js")) { throw "Normal launcher must run the Phase 7 readiness gate." }
+if (-not $Lite.Contains("phase7-readiness.js")) { throw "Lightweight launcher must run the Phase 7 readiness gate." }
 foreach ($Needle in @("NODE_OPTIONS", "UV_THREADPOOL_SIZE", "OMP_NUM_THREADS", "BelowNormal")) {
   if (-not $Lite.Contains($Needle)) { throw "Lightweight launcher missing $Needle" }
 }
