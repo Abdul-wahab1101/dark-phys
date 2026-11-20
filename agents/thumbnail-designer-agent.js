@@ -2412,8 +2412,8 @@ class ThumbnailDesignerAgent {
       return !hitsBottomRightTimestamp && !hitsTopRightOverlay;
     });
     const wordsScore = wordCount >= 2 && wordCount <= 5 ? 100 : Math.max(0, 100 - Math.abs(wordCount - 4) * 24);
-    const titleWords = new Set(String(variant.sourceTitle || variant.concept?.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\\s+/).filter(w => w.length > 2));
-    const hookWords = String(variant.hook || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\\s+/).filter(w => w.length > 2);
+    const titleWords = new Set(String(variant.sourceTitle || variant.concept?.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 2));
+    const hookWords = String(variant.hook || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 2);
     const titleOverlap = hookWords.length ? hookWords.filter(w => titleWords.has(w)).length / hookWords.length : 0;
     const curiosityGapScore = titleOverlap > 0.8 ? 20 : titleOverlap > 0.6 ? 55 : 100;
     const technical = (checks.correctDimensions ? 20 : 0) + (checks.underTwoMB ? 15 : 0) +
