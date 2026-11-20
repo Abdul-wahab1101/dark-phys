@@ -152,7 +152,9 @@ class ProductionPipeline {
     const plan = Array.isArray(job.scenePlan) && job.scenePlan.length
       ? planSceneShots({ scenes: job.scenePlan, clips, totalSec: total })
       : planShots({ clips, totalSec: total, seed: job.jobId });
-    this.ledger.setUsage(job.jobId, plan.usage);
+    const usage = [...plan.usage];
+    if (job.musicAssetId) usage.push({ assetId: job.musicAssetId, secondsUsed: total, uses: 1 });
+    this.ledger.setUsage(job.jobId, usage);
     const hookText = data['audio-clean'].segments.filter(s => s.start < cfg.hookWindowSec).map(s => s.text).join(' ');
     this.ledger.recordVideo(job.jobId, { title: job.title, scriptText: job.script || '', hookText });
     return { data: { shots: plan.shots, usage: plan.usage, totalSec: total, hookText } };
@@ -213,7 +215,10 @@ class ProductionPipeline {
       const fadeIn = Number(soundPlan.music && soundPlan.music.fadeInSeconds) || 1.5;
       const fadeOut = Number(soundPlan.music && soundPlan.music.fadeOutSeconds) || 2.5;
       chains.push(voiceChain + ',asplit=2[vo][sc]');
-      chains.push('[' + nextInput + ':a]volume=' + musicGain + 'dB,afade=t=in:st=0:d=' + fadeIn +
+      const silenceWindows = Array.isArray(soundPlan.silenceWindows) ? soundPlan.silenceWindows : [];
+      const silenceExpression = silenceWindows.reduce((expr, window) =>
+        'if(between(t,' + Math.max(0, Number(window.startSeconds) || 0).toFixed(2) + ',' + Math.max(0, Number(window.endSeconds) || 0).toFixed(2) + '),0,' + expr + ')', '1');
+      chains.push('[' + nextInput + ':a]volume=' + musicGain + 'dB,volume=\'' + silenceExpression + '\',afade=t=in:st=0:d=' + fadeIn +
         ',afade=t=out:st=' + Math.max(0, total - fadeOut).toFixed(2) + ':d=' + fadeOut + '[mb]');
       chains.push('[mb][sc]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[md]');
       labels.push('[vo]', '[md]');
