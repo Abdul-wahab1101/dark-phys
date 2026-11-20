@@ -82,6 +82,7 @@ jobs:
           node -e "const {Logger}=require('./utils/logger'); const {ThumbnailDesignerAgent,DESIGN_FAMILIES}=require('./agents/thumbnail-designer-agent'); const a=new ThumbnailDesignerAgent(null,{}); if(!(a.logger instanceof Logger)||DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS logger wiring and '+DESIGN_FAMILIES.length+' design families')"
           node scripts/test-thumbnail-designer.js
           node scripts/test-thumbnail-cli-integration.js
+          node scripts/test-thumbnail-upgrade-install.js
       - name: Compile Universal Doctor
         run: python -m compileall -q agents/universal-doctor
       - name: Validate Doctor backup CLI
