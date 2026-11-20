@@ -19,7 +19,7 @@ function validateEditorialDraft(draft, pkg, format) {
   if (!Array.isArray(draft.openLoops) || !draft.openLoops.length) errors.push('At least one resolved open loop is required');
   if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) errors.push('Sentence-by-sentence visual intent plan is required');
   else if (draft.sentenceVisuals.some(x => !String(x.sentence || '').trim() || !String(x.visualIntent || '').trim() || !String(x.footageQuery || '').trim() || !String(x.sourceType || '').trim())) errors.push('Every sentence visual needs sentence, visualIntent, footageQuery and sourceType');
-  const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
+  const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
   if (sentenceCount && Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length !== sentenceCount) errors.push('Every narration sentence must have exactly one sentenceVisuals entry');
   if (!Array.isArray(draft.claimLedger) || !draft.claimLedger.length) errors.push('Claim-level source ledger is required');
   const knownClaims = idsFor(pkg), knownSources = new Set(pkg.sources.map(s => String(s.id)));
