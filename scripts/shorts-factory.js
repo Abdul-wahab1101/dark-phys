@@ -1,4 +1,7 @@
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
+
 const fs=require('node:fs'),path=require('node:path');
 const {planShorts,renderShort}=require('../agents/production/shorts-factory');
 const args=process.argv.slice(2),get=k=>{const i=args.indexOf('--'+k);return i<0?'':args[i+1];};
