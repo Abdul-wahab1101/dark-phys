@@ -45,7 +45,7 @@ Yeh pinned YouTube Automation Agent ko engines folder mein clone karta hai, depe
 
 Agar script fail ho to error ka exact text copy karke share karo. Existing engine folders mein local changes hon to setup script unhein overwrite nahi karta.
 
-## 4) Root thumbnail dependency\n\nMain setup script upstream YouTube agent ke dependencies ke ilawa repository root par `sharp` bhi install karta hai. Yeh thumbnail designer ke liye zaroori hai; is step ko skip mat karna. Setup complete hone par script root Sharp module load karke verify bhi karta hai.\n\n## 4) API key configure karo
+## 4) Root thumbnail dependency\n\nMain setup script upstream YouTube agent ke dependencies ke ilawa repository root par `sharp` bhi install karta hai. Yeh setup upgraded thumbnail engine ko actual upstream YouTube pipeline mein bhi install karta hai aur production manager ko patch karta hai taa-ke approved thumbnail generic AI image se replace na ho. Original upstream files `.dark-phys-backups` mein safe backup rehti hain. Yeh thumbnail designer ke liye zaroori hai; is step ko skip mat karna. Setup complete hone par script root Sharp module load karke verify bhi karta hai.\n\n## 4) API key configure karo
 
 File kholo:
 
