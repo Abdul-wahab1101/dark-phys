@@ -21,8 +21,6 @@ async function render(file,voice,music,out){
   return;
  }
 
- const base=path.dirname(path.resolve(file)),p=JSON.parse(await fs.readFile(file,'utf8')),manifest=JSON.parse(await fs.readFile(path.join(base,'footage','approved-assets.json'),'utf8'));
- if(!manifest.length)throw new Error('No approved footage manifest');
  const profile=getRenderProfile(),list=path.join(base,'footage','concat-list.txt'),rows=[];
  let totalDuration=0;
  for(const asset of manifest){
