@@ -18,6 +18,9 @@ foreach ($Needle in @("e973d515aef90c467da2289144df737a3bd03859", "Node.js 20 LT
 }
 if (-not $OpenMontage.Contains("2e003e65fa99a0f329478a2c1cdcf26bc481933a")) { throw "Optional OpenMontage installer must pin the tested upstream commit." }
 if (-not $OpenMontage.Contains("requirements.txt")) { throw "Optional OpenMontage installer must install Python requirements." }
+if (-not $OpenMontage.Contains("22.23.4") -or -not $OpenMontage.Contains("NodeCompatible")) { throw "OpenMontage installer must enforce the pinned Remotion Composer Node runtime." }
+if (-not $OpenMontage.Contains("npm ci")) { throw "OpenMontage installer must use the lockfile for reproducible composer dependencies." }
+if (-not $Setup.Contains("18.17.0") -or -not $Setup.Contains("npm ci")) { throw "Main installer must enforce Node 18.17+ and use npm ci when a lockfile exists." }
 if (-not $Start.Contains("npm start")) { throw "Normal launcher does not invoke npm start." }
 if (-not $Start.Contains("phase7-readiness.js")) { throw "Normal launcher must run the Phase 7 readiness gate." }
 if (-not $Lite.Contains("phase7-readiness.js")) { throw "Lightweight launcher must run the Phase 7 readiness gate." }
