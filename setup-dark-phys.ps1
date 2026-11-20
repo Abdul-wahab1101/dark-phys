@@ -62,7 +62,7 @@ try {
 } finally { Pop-Location }
 
 Write-Host "Installing Dark Phys reviewed thumbnail engine into the upstream production pipeline..."
-node (Join-Path $Root "scripts\\apply-thumbnail-upgrade.js") --engine $Youtube
+node (Join-Path $Root "scripts\apply-thumbnail-upgrade.js") --engine $Youtube
 if ($LASTEXITCODE -ne 0) { throw "Could not safely apply the Dark Phys thumbnail upgrade to the YouTube agent." }
 
 if ($IncludeOpenMontage) {
@@ -85,7 +85,7 @@ if ($IncludeOpenMontage) {
     Write-Host "Pinned OpenMontage checkout already present; preserving local changes."
   }
 } else {
-  Write-Host "Skipping optional OpenMontage clone. Run .\\setup-openmontage.ps1 only when advanced rendering is needed."
+  Write-Host "Skipping optional OpenMontage clone. Run .\setup-openmontage.ps1 only when advanced rendering is needed."
 }
 
 Write-Host ""
