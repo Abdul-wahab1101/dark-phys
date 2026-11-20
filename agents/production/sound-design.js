@@ -115,6 +115,7 @@ function validateMusicRights(record) {
   if (!record.licenseId || record.licenseId === 'unknown') errors.push('A verified music license is required');
   if (record.licenseId && !['pixabay-content-license','pexels-license','cc0','cc-by-4.0','cc-by-sa-4.0','own','purchased','ai-generated'].includes(record.licenseId)) errors.push('Unsupported or non-commercial music license');
   if (!record.commercialUseVerified) errors.push('Commercial use must be verified');
+  if (!record.licenseUrl && !record.proofPath) errors.push('A license URL or local rights evidence file is required');
   if (record.attributionRequired && !String(record.attributionText || '').trim()) errors.push('Required music attribution text is missing');
   if (record.reviewStatus !== 'approved') errors.push('Music rights require explicit human approval');
   return { passed: errors.length === 0, required: true, errors };
