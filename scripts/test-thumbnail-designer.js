@@ -53,7 +53,7 @@ async function placeholderBackground(file, i) {
   };
   const goodReview = await agent.scoreThumbnailCandidate(goodCandidate);
   ok(goodReview.passed && goodReview.mobileSafeZone, 'strong curiosity hook and mobile-safe placement pass');
-  const repeatedCandidate = { ...goodCandidate, hook: 'HIDDEN GASLIGHTING SIGNS' };
+  const repeatedCandidate = { ...goodCandidate, hook: 'SIGNS BEING GASLIGHTED' };
   const repeatedReview = await agent.scoreThumbnailCandidate(repeatedCandidate);
   ok(!repeatedReview.passed && repeatedReview.titleOverlap > 0.8, 'headline that repeats the title is automatically rejected');
   const unsafeCandidate = { ...goodCandidate, layout: { blockBounds: [{ x: 1080, y: 635, w: 170, h: 65 }] } };
