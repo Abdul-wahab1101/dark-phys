@@ -52,7 +52,14 @@ async function runApprovedProduction(options) {
   const system = createProductionSystem({ root: prepared.root, logger: options.logger || null,
     config: { width: prepared.profile.width, height: prepared.profile.height, fps: prepared.profile.fps, maxAttempts: 2, backoffMs: 1500 } });
   const registered = system.ledger.records().assets;
-  for (const asset of prepared.assets) if (!registered.has(asset.assetId)) system.ledger.register(asset);
+  for (const asset of prepared.assets) {
+    const current = registered.get(asset.assetId);
+    const changed = !current || ['kind', 'source', 'sourceUrl', 'author', 'licenseId', 'licenseUrl', 'retrievedAt']
+      .some(key => String(current[key] || '') !== String(asset[key] || ''));
+    // Append a new ledger version when source/licence metadata changes so cached preflight
+    // fingerprints cannot keep trusting an older approval record.
+    if (changed) system.ledger.register(asset);
+  }
   const result = await system.pipeline.run(prepared.job);
   return { ...result, engine: 'v11', renderProfile: prepared.profile };
 }
