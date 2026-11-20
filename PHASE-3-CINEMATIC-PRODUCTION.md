@@ -25,7 +25,7 @@ Review asset-selection.json. Set selectedAssetId to a listed ID and rightsApprov
     node scripts/cinematic-production.js download-approved uploads\production\PROJECT_ID\asset-selection.json
     node scripts/cinematic-production.js render uploads\production\PROJECT_ID\asset-selection.json uploads\narration.mp3 uploads\music.mp3 uploads\draft.mp4
 
-Generate narration from plain text or a JSON section package using `node scripts/narrate.js uploads\\approved-narration.txt uploads\\narration.mp3` or `node scripts/narrate.js uploads\\narration-sections.json uploads\\narration.mp3 pronunciation-dictionary.json` after setting the ElevenLabs key and voice ID locally. Both CLI routes master narration to -14 LUFS. Then pass that narration MP3 to the render command. FFmpeg must be on PATH or configured through FFMPEG_PATH.
+After manually approving the Script Engine package, generate narration directly from its act-level sections with `node scripts/narrate.js uploads\\script-drafts-TIMESTAMP.json uploads\\narration.mp3 --language=en`. You can also use plain text or a custom JSON section package: `node scripts/narrate.js uploads\\approved-narration.txt uploads\\narration.mp3` or `node scripts/narrate.js uploads\\narration-sections.json uploads\\narration.mp3 pronunciation-dictionary.json` after setting the ElevenLabs key and voice ID locally. Both CLI routes master narration to -14 LUFS. Then pass that narration MP3 to the render command. FFmpeg must be on PATH or configured through FFMPEG_PATH.
 
 ## OpenMontage return
 Use the existing export-openmontage.js for the handoff brief. After the separate OpenMontage engine finishes, copy its deliverables into the handoff return folder and run:
