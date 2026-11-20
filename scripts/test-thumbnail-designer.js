@@ -44,7 +44,7 @@ async function placeholderBackground(file, i) {
   // 0) Regression checks for candidate rejection, title curiosity gap and mobile overlays.
   const originalVisionReview = agent.inspectThumbnailVisual;
   agent.inspectThumbnailVisual = async () => ({ available: false, passed: false, score: 0, concerns: [] });
-  const validChecks = { hardFailure: false, decodes: true, correctDimensions: true, underTwoMB: true, textFit: true, contrastOk: true, readableAtSmallSize: true, notBlank: true };
+  const validChecks = { hardFailure: false, decodes: true, correctDimensions: true, underTwoMB: true, textFit: true, contrastOk: true, readableAtSmallSize: true, notBlank: true, contrastRatio: 8, minFontSize: 110, pixelStdev: 48 };
   const goodCandidate = {
     path: 'not-read-by-stubbed-review.jpg', hook: 'WHO PULLS YOUR STRINGS?',
     sourceTitle: '7 Signs You Are Being Gaslighted',
@@ -53,6 +53,9 @@ async function placeholderBackground(file, i) {
   };
   const goodReview = await agent.scoreThumbnailCandidate(goodCandidate);
   ok(goodReview.passed && goodReview.mobileSafeZone, 'strong curiosity hook and mobile-safe placement pass');
+  const weakMetricsReview = await agent.scoreThumbnailCandidate({ ...goodCandidate, qualityChecks: { ...validChecks, contrastRatio: 3.1, minFontSize: 56, pixelStdev: 13 } });
+  ok(goodReview.score > weakMetricsReview.score, 'heuristic comparison ranks stronger contrast, larger type and clearer image detail higher');
+  ok(goodReview.score < 90, 'heuristic-only scores stay below the AI-visual-review score range');
   const repeatedCandidate = { ...goodCandidate, hook: 'SIGNS BEING GASLIGHTED' };
   const repeatedReview = await agent.scoreThumbnailCandidate(repeatedCandidate);
   ok(!repeatedReview.passed && repeatedReview.titleOverlap > 0.8, 'headline that repeats the title is automatically rejected');
