@@ -63,7 +63,10 @@ async function main(){
   if(manifestPath)assets=p.importAssetManifest(p.loadJson(path.resolve(manifestPath)));
   else if(Array.isArray(input.assetManifest))assets=p.importAssetManifest(input.assetManifest);
   const pkg={...input,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(assets)};
-  pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts:input.thumbnailConcepts||[],youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
+  let thumbnailConcepts=Array.isArray(input.thumbnailConcepts)?input.thumbnailConcepts:[];
+  const conceptsFile=path.resolve(arg('thumbnail-concepts','uploads/thumbnail-concepts/concepts.json'));
+  if(!thumbnailConcepts.length&&fs.existsSync(conceptsFile)){const saved=p.loadJson(conceptsFile);thumbnailConcepts=Array.isArray(saved.concepts)?saved.concepts:[];}
+  pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts,youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
   if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
   pkg.compliance=p.complianceReview({...input,...pkg.seo});
   p.writeJson(file,pkg);
@@ -109,6 +112,6 @@ async function main(){
   const pkg=p.loadJson(file),result=p.verifyApproval(pkg,pkg.approval);
   console.log(JSON.stringify(result,null,2));if(!result.valid)process.exitCode=2;return;
  }
- console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|verify --file uploads/phase4-package.json [--reviewer name]');
+ console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|verify --file uploads/phase4-package.json [--reviewer name] [--thumbnail-concepts uploads/thumbnail-concepts/concepts.json]');
 }
 main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
