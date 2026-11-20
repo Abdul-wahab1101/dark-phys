@@ -113,3 +113,22 @@ test('changed inputs invalidate the checkpoint; bad jobs are rejected early', as
     assert.deepEqual(second.resumed, [], 'nothing reused after inputs changed');
   } finally { h.rm(dir); }
 });
+
+test('checkpoint fingerprint changes when review, rights, captions, thumbnail or render settings change', () => {
+  const dir = h.tmp();
+  try {
+    const s = setup(dir);
+    const base = s.pipeline.fingerprint(s.job);
+    assert.notEqual(s.pipeline.fingerprint({ ...s.job, description: 'updated rights credit' }), base);
+    assert.notEqual(s.pipeline.fingerprint({ ...s.job, hasOriginalCommentary: false }), base);
+    assert.notEqual(s.pipeline.fingerprint({ ...s.job, realisticAiDisclosed: false }), base);
+    assert.notEqual(s.pipeline.fingerprint({ ...s.job, segments: [...SEGMENTS, { start: 12, end: 13, text: 'new segment' }] }), base);
+    assert.notEqual(s.pipeline.fingerprint({ ...s.job, thumbnail: { path: s.job.narrationPath, text: 'new thumbnail copy' } }), base);
+    const originalWidth = s.pipeline.cfg.width;
+    s.pipeline.cfg.width = originalWidth + 2;
+    assert.notEqual(s.pipeline.fingerprint(s.job), base, 'render configuration is part of the checkpoint fingerprint');
+    s.pipeline.cfg.width = originalWidth;
+    s.ledger.register({ assetId: 'pix-1', kind: 'video', source: 'pixabay', sourceUrl: 'https://pixabay.com/v/pix-1', author: 'Tester', licenseId: 'cc-by-nc-4.0' });
+    assert.notEqual(s.pipeline.fingerprint(s.job), base, 'updated licence ledger forces preflight to run again');
+  } finally { h.rm(dir); }
+});
