@@ -1173,6 +1173,8 @@ class ThumbnailDesignerAgent {
 
     profile.headlines.forEach(h => pool.add(h));
     profile.hooks.forEach(h => pool.add(h.join(' ')));
+    // Topic-neutral but psychology/documentary-safe fallback hooks ensure title repetition can be rejected without leaving fewer than three candidates.
+    ['THE HIDDEN PATTERN', 'WHO BENEFITS MOST?', 'BEHIND THE SMILE', 'THE REAL MOTIVE', 'WHAT THEY HIDE', 'TRUST YOUR INSTINCTS', 'READ BETWEEN THE LINES', 'WATCH THE PATTERN'].forEach(h => pool.add(h));
 
     const kw = new Set(analysis.keywords.concat(String(title).toLowerCase().split(/\W+/)).filter(w => w.length > 3));
     const titleWords = new Set(titleUpper.split(/\s+/));
@@ -1255,7 +1257,12 @@ class ThumbnailDesignerAgent {
     };
     const headlines = [];
     const seenTypes = new Set();
-    const distinctPool = options2.filter(h => h.score > -5 && h.wc <= 5);
+    const titleTokens = new Set(String(title).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2));
+    const headlineTitleOverlap = (headline) => {
+      const words = String(headline).toUpperCase().replace(/[^\\w\\s]/g, '').split(/\\s+/).filter(w => w.length > 2);
+      return words.length ? words.filter(w => titleTokens.has(w)).length / words.length : 1;
+    };
+    const distinctPool = options2.filter(h => h.score > -5 && h.wc >= 2 && h.wc <= 5 && headlineTitleOverlap(h.text) <= 0.8);
     for (const h of distinctPool) {
       if (headlines.length >= 3) break;
       if (headlines.some(x => similar(x.text, h.text))) continue;
@@ -1267,7 +1274,21 @@ class ThumbnailDesignerAgent {
       if (headlines.length >= 3) break;
       if (!headlines.includes(h) && !headlines.some(x => similar(x.text, h.text))) headlines.push(h);
     }
-    while (headlines.length < 3) headlines.push({ text: profile.hooks[headlines.length % 3].join(' '), score: 0, type: 'statement' });
+    const fallbackPool = [
+      ...profile.headlines,
+      ...profile.hooks.map(h => h.join(' ')),
+      'THE HIDDEN PATTERN', 'WHO BENEFITS MOST?', 'BEHIND THE SMILE',
+      'THE REAL MOTIVE', 'WHAT THEY HIDE', 'TRUST YOUR INSTINCTS',
+      'READ BETWEEN THE LINES', 'WATCH THE PATTERN'
+    ];
+    for (const text of fallbackPool) {
+      if (headlines.length >= 3) break;
+      const words = String(text).trim().split(/\\s+/);
+      if (words.length < 2 || words.length > 5 || headlineTitleOverlap(text) > 0.8) continue;
+      if (headlines.some(h => similar(h.text, text))) continue;
+      headlines.push({ text, score: -1, wc: words.length, type: /\\?$/.test(text) ? 'question' : 'statement' });
+    }
+    if (headlines.length < 3) throw new Error('Could not create three distinct curiosity-gap headlines without repeating the video title.');
 
     // Short headlines suit the split-screen family (two small labels); give it the shortest one.
     const splitSlot = chosen.findIndex(c => FAMILIES[c.id].cls === 'split');
@@ -1306,7 +1327,7 @@ class ThumbnailDesignerAgent {
       };
     });
 
-    return { plans, headlineOptions: options2.slice(0, 8).map(h => h.text), analysis, profile };
+    return { plans, headlineOptions: headlines.map(h => h.text), analysis, profile };
   }
 
   resolveFamilyId(designFamily, composition) {
@@ -2485,6 +2506,7 @@ class ThumbnailDesignerAgent {
     let variants = [];
     let regenerationRounds = 0;
     const approvedPool = new Map();
+    const rejectionSummary = [];
 
     // Keep passing candidates across rounds; only rejected design families need replacement.
     for (let round = 0; round < 3; round++) {
@@ -2518,6 +2540,11 @@ class ThumbnailDesignerAgent {
       });
       const reviewed = await this.reviewAndRankVariants(generated);
       bestReview = reviewed;
+      for (const rejected of reviewed.variants.filter(v => !v.reviewPassed)) {
+        const reason = `${rejected.designFamilyId || rejected.label}: ${(rejected.review?.rejectionReasons || []).join(', ') || 'visual diversity gate'}`;
+        rejectionSummary.push(reason);
+        this.logger.warn('Rejected thumbnail candidate: ' + reason);
+      }
 
       for (const candidate of reviewed.variants) {
         const familyId = candidate.designFamilyId;
@@ -2536,7 +2563,7 @@ class ThumbnailDesignerAgent {
     }
 
     if (variants.length !== 3) {
-      const reasons = [...approvedPool.values()].flatMap(v => v.review?.rejectionReasons || []);
+      const reasons = rejectionSummary.slice(-18);
       for (const candidate of approvedPool.values()) {
         if (candidate.path) { try { await fs.unlink(candidate.path); } catch (_) {} }
       }
