@@ -164,12 +164,16 @@ jobs:
           node scripts/cinematic-production.js
       - name: Test Script Engine v2, Scene Planner v2 and Narration v2
         run: |
+          node --check agents/local-secrets.js
           node --check agents/script-engine-v2.js
           node --check agents/production/scene-planner.js
           node --check agents/production/narration.js
           node --check scripts/script-engine-v2.js
           node --check scripts/plan-scenes.js
           node --check scripts/narrate.js
+          node scripts/script-engine-v2.js --help
+          node scripts/viral-generate.js --help
+          node scripts/narrate.js --help
           node scripts/test-production-engines-v2.js
       - name: Test Original Content Studio
         run: |
