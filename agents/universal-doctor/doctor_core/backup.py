@@ -24,16 +24,16 @@ def sha256_file(p: Path) -> str:
 def read_text_preserving(path: Path):
     """(text with LF, newline style, encoding) - so patches keep CRLF / BOM exactly."""
     raw = Path(path).read_bytes()
-    enc = "utf-8-sig" if raw.startswith(b"\\xef\\xbb\\xbf") else "utf-8"
+    enc = "utf-8-sig" if raw.startswith(b"\xef\xbb\xbf") else "utf-8"
     text = raw.decode(enc)
-    crlf = text.count("\\r\\n") > text.count("\\n") / 2 if "\\n" in text else False
-    return text.replace("\\r\\n", "\\n"), ("\\r\\n" if crlf else "\\n"), enc
+    crlf = text.count("\r\n") > text.count("\n") / 2 if "\n" in text else False
+    return text.replace("\r\n", "\n"), ("\r\n" if crlf else "\n"), enc
 
 
-def atomic_write_text(path: Path, text_lf: str, newline: str = "\\n", encoding: str = "utf-8") -> None:
+def atomic_write_text(path: Path, text_lf: str, newline: str = "\n", encoding: str = "utf-8") -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    data = text_lf.replace("\\n", newline).encode(encoding)
+    data = text_lf.replace("\n", newline).encode(encoding)
     tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex[:8]}.doctor-tmp")
     try:
         with open(tmp, "wb") as f:
@@ -75,7 +75,7 @@ class BackupManager:
         return target
 
     def _backup_dir(self, bid: str) -> Path:
-        if not isinstance(bid, str) or not re.fullmatch(r"\\d{8}_\\d{6}_[0-9a-f]{6}", bid):
+        if not isinstance(bid, str) or not re.fullmatch(r"\d{8}_\d{6}_[0-9a-f]{6}", bid):
             raise ValueError("invalid backup id")
         folder = self.dir / bid
         try:
@@ -174,7 +174,7 @@ class BackupManager:
     def list(self) -> List[dict]:
         out = []
         for d in sorted(self.dir.iterdir()):
-            if d.is_symlink() or not d.is_dir() or not re.fullmatch(r"\\d{8}_\\d{6}_[0-9a-f]{6}", d.name):
+            if d.is_symlink() or not d.is_dir() or not re.fullmatch(r"\d{8}_\d{6}_[0-9a-f]{6}", d.name):
                 continue
             if (d / "manifest.json").exists():
                 m = self.manifest(d.name)

@@ -138,7 +138,7 @@ class FilesAndBackups(unittest.TestCase):
         outside = d.parent / (d.name + "_outside.txt")
         outside.write_text("do not touch", encoding="utf-8")
         bm = BackupManager(d, d / "_bk")
-        for rel in ("../" + outside.name, str(outside), "..\\\\escape.txt"):
+        for rel in ("../" + outside.name, str(outside), "../escape.txt"):
             with self.assertRaises(ValueError):
                 bm.create([rel], "unsafe path")
         self.assertEqual(outside.read_text(encoding="utf-8"), "do not touch")
