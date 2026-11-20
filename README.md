@@ -94,3 +94,7 @@ The upstream single-controller orchestration already provides shared agent servi
 
 ## Thumbnail design system v10
 The thumbnail designer now includes 24 distinct SVG-over-photo design families (the original 12 plus 12 v10 additions), topic-aware family scoring, headline-aware big-number weighting, and family rotation to reduce repetitive visual patterns. New families include evidence-board, neon-cyber, redacted-file, hazard-warning, duotone-poster, chat-screen, big-number, spotlight-stage, torn-paper, viewfinder, minimal-modern and vhs-glitch. See [the Urdu v10 guide](THUMBNAIL-DESIGNS-V10-URDU.md). CI validates all 24 families and renders a contact sheet using synthetic test backgrounds; final visual selection and actual channel-specific subject photography still require human review.
+
+
+## Phase 7 — Production Readiness & Reliability
+Run `node scripts/phase7-readiness.js` before a production session, or add `--json` for a machine-readable report. It checks local runtime prerequisites, engine/dependency presence, FFmpeg availability, optional OpenMontage presence, available memory/disk and whether recognised provider credential variables are present. Credential values are never printed. The check is offline and read-only: it does not edit files, call providers, start jobs or publish. `BLOCK` means a hard prerequisite/resource issue; `CAUTION` means review warnings; `GO` means no blockers were detected (not a guarantee of successful rendering or YouTube approval). See [Phase 7 guide](PHASE-7-PRODUCTION-READINESS.md).
