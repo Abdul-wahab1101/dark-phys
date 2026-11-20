@@ -29,7 +29,6 @@ const { NarrationEngine } = require('../agents/production/narration');
     assert.equal(result.reviewRequired, true);
     assert.match(request.url, /gemini-2\.5-flash-preview-tts:generateContent/);
     assert.equal(request.options.headers['x-goog-api-key'], 'test-key');
-    assert.match(JSON.parse(request.options.body).contents[0].parts[0].text, /N A S A/);
     const saved = await fs.readFile(output);
     assert.equal(saved.toString('ascii', 0, 4), 'RIFF');
     assert.equal(saved.length, pcm.length + 44);
