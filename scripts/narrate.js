@@ -27,6 +27,7 @@ async function main() {
   } catch (error) {
     if (error instanceof SyntaxError) {
       result = await engine.synthesize(raw, output, { pronunciationDictionary: dictionary, direction: 'story' });
+      result.loudness = await engine.normalizeLoudness(output, -14);
     } else throw error;
   }
   console.log(JSON.stringify(result, null, 2));
