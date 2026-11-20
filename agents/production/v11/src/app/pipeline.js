@@ -69,7 +69,7 @@ class ProductionPipeline {
       this.temp.cleanupStale({ isResumable: id => this.checkpoints.listJobs().includes(safeName(id)) });
       let state = this.checkpoints.load(job.jobId);
       const fp = this.fingerprint(job);
-      if (state.meta.fingerprint && state.meta.fingerprint !== fp) { this.log('inputs changed; starting over'); this.checkpoints.clear(job.jobId); state = this.checkpoints.fresh(job.jobId); }
+      if (state.meta.fingerprint && state.meta.fingerprint !== fp) { this.log('inputs changed; starting over'); this.checkpoints.reset(job.jobId); state = this.checkpoints.fresh(job.jobId); }
       state.meta.fingerprint = fp;
 
       const ctx = { job, dir, state, data: {}, cfg: this.cfg };
