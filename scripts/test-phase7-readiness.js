@@ -8,12 +8,14 @@ const exists=p=>p.includes('youtube-automation-agent')||p.includes('index.js')||
 const statfs=()=>({bavail:10000000,bsize:4096});
 const r=check({root,env:{DARK_PHYS_LLM_API_KEY:'secret-value'},platform:'linux',totalmem:16*1024**3,freemem:8*1024**3,runner:goodRunner,exists,statfs,readFile:()=> '# test\nPIXABAY_API_KEY=hidden\n'});
 assert.equal(r.verdict,'GO');
+assert.equal(r.checks.find(x=>x.id==='thumbnail_runtime').status,'pass');
 assert.equal(r.guardrails.secretValuesExposed,false);
 assert.equal(r.guardrails.networkRequests,0);
 assert.equal(r.checks.find(x=>x.id==='credentials').detail.includes('secret-value'),false);
 assert.equal(r.checks.find(x=>x.id==='credentials').detail.startsWith('2 recognised'),true);
 const low=check({root,env:{},platform:'linux',totalmem:4*1024**3,freemem:1*1024**3,runner:()=>({status:1,stdout:'',stderr:''}),exists:()=>false,statfs:()=>({bavail:100,bsize:4096}),readFile:()=>{throw Error('missing')}});
 assert.equal(low.verdict,'BLOCK');
+assert.equal(low.checks.find(x=>x.id==='thumbnail_runtime').status,'block');
 assert(low.checks.some(x=>x.id==='memory'&&x.status==='warn'));
 assert(low.checks.some(x=>x.id==='disk_space'&&x.status==='block'));
 assert(low.nextActions.length>0);
@@ -26,4 +28,4 @@ const rootEnv=check({root,env:{},platform:'linux',nodeVersion:'20.11.0',totalmem
 assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.startsWith('3 recognised'),true);
 assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.includes('private'),false);
 
-console.log('PASS Phase 7 readiness: prerequisites, engine/dependency detection, optional credentials, resource warnings, secret redaction and read-only guardrails');
+console.log('PASS Phase 7 readiness: prerequisites, engine/root-thumbnail dependency detection, optional credentials, resource warnings, secret redaction and read-only guardrails');
