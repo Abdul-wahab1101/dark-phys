@@ -16,7 +16,8 @@ Set keys locally:
     $env:PIXABAY_API_KEY = "YOUR_FIRST_KEY"
     $env:PIXABAY_API_KEY_2 = "YOUR_SECOND_KEY"
     node scripts/viral-generate.js uploads\research-package.json
-    node scripts/plan-scenes.js uploads\content-studio\script-drafts.json --language=en
+    node scripts/plan-scenes.js uploads\content-studio\script-drafts-TIMESTAMP.json --language=en
+    # First review source claims and narration, then edit the JSON top-level approval.status to approved.
     # Or pass a manually approved beats file to plan-scenes.js
     node scripts/cinematic-production.js discover uploads\production\PROJECT_ID\scene-plan.json
 
