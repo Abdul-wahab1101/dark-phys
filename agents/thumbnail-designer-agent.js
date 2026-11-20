@@ -619,7 +619,7 @@ const FAMILIES = {
           '<text x="640" y="' + (question ? 352 : 350) + '" text-anchor="middle" font-family="' + c.fonts.impact.stack + '" font-weight="' + c.fonts.impact.weight + '" font-size="' + (question ? 70 : 52) + '" fill="#fff">' + (question ? '?' : 'VS') + '</text>',
         text: [
           { lines: l1, font: 'condensed', box: { x: 50, y: 470, w: 500, h: 190 }, ha: 'start', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.light], shadow: 'soft' },
-          { lines: l2, font: 'condensed', box: { x: 730, y: 470, w: 500, h: 190 }, ha: 'end', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.a], shadow: 'soft' }
+          { lines: l2, font: 'condensed', box: { x: 730, y: 420, w: 500, h: 180 }, ha: 'end', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.a], shadow: 'soft' }
         ],
         decorate(info) {
           const pill = (x, text, color, anchor) => {
@@ -628,7 +628,7 @@ const FAMILIES = {
             return '<rect x="' + rx + '" y="40" width="' + w + '" height="42" rx="21" fill="' + p.dark + '" fill-opacity=".85" stroke="' + color + '" stroke-width="3"/>' +
               '<text x="' + (rx + w / 2) + '" y="69" text-anchor="middle" font-family="' + c.fonts.inter.stack + '" font-weight="800" font-size="20" letter-spacing="3" fill="' + color + '">' + esc(text) + '</text>';
           };
-          return pill(50, labels[0], '#fff', 'start') + pill(1230, labels[1], p.a, 'end');
+          return pill(50, labels[0], '#fff', 'start') + pill(640, labels[1], p.a, 'end');
         }
       };
     }
@@ -683,7 +683,7 @@ const FAMILIES = {
         under: '<rect width="1280" height="720" fill="url(#surTop)"/><rect width="1280" height="720" fill="url(#surBot)"/>' +
           '<circle cx="640" cy="235" r="190" fill="none" stroke="' + p.a + '" stroke-width="3" stroke-opacity=".85" filter="url(#glow)"/>' +
           '<circle cx="640" cy="235" r="150" fill="none" stroke="' + p.a + '" stroke-width="1.5" stroke-opacity=".5"/>' + orbs,
-        text: [{ lines, font: 'serif', box: { x: 100, y: 440, w: 1080, h: 200 }, ha: 'middle', va: 'bottom', maxSize: 104, minSize: 52, lh: 1.04, ls: 0.1, fills: [p.light, p.a], shadow: 'soft' }],
+        text: [{ lines, font: 'serif', box: { x: 100, y: 380, w: 1080, h: 200 }, ha: 'middle', va: 'bottom', maxSize: 104, minSize: 56, lh: 1.04, ls: 0.1, fills: [p.light, p.a], shadow: 'soft' }],
         decorate(info) {
           const b = info.bbox;
           const cx = b.x + b.w / 2;
