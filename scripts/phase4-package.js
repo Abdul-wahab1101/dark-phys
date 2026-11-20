@@ -36,13 +36,11 @@ async function main(){
   return;
  }
  if(command==='thumbnails'){
-  const endpoint=arg('endpoint',process.env.CLOUDFLARE_THUMBNAIL_WORKER_URL||'');
-  const result=await p.requestThumbnailConcepts(endpoint,process.env.CLOUDFLARE_THUMBNAIL_TOKEN,arg('title'),arg('subtitle'));
-  const out=path.resolve(arg('output','uploads/thumbnail-concepts'));fs.mkdirSync(out,{recursive:true});
-  p.writeJson(path.join(out,'concepts.json'),result);
-  let sharp;try{sharp=require('sharp');}catch(_){try{sharp=require(path.join(__dirname,'../engines/youtube-automation-agent/node_modules/sharp'));}catch(__){throw new Error('Sharp is unavailable. Use the existing project setup before rasterizing Worker concepts.');}}
-  for(const concept of result.concepts)await sharp(Buffer.from(concept.svg)).png().toFile(path.join(out,concept.id+'.png'));
-  console.log('Saved '+result.concepts.length+' PNG thumbnail concepts:',out,'— select and review one manually.');
+  const ai=require('../agents/production/cloudflare-workers-ai');
+  const result=await ai.generateThumbnailConcepts({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,token:process.env.CLOUDFLARE_API_TOKEN,textModel:process.env.CLOUDFLARE_TEXT_MODEL,imageModel:process.env.CLOUDFLARE_IMAGE_MODEL,title:arg('title'),subtitle:arg('subtitle'),outputDir:arg('output','uploads/thumbnail-concepts')});
+  p.writeJson(path.join(path.resolve(arg('output','uploads/thumbnail-concepts')),'concepts.json'),result);
+  console.log('Generated '+result.concepts.length+' Cloudflare AI thumbnail variations:',path.resolve(arg('output','uploads/thumbnail-concepts')));
+  console.log('Review the three JPGs and manually select one. No automatic publishing.');
   return;
  }
  if(command==='build'){
