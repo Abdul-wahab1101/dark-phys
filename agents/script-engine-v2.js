@@ -33,6 +33,8 @@ function validateEditorialDraft(draft, pkg, format) {
     if (draft.sentenceVisuals.some((v, i) => normal(v.sentence) !== narrationSentences[i])) errors.push('sentenceVisuals must preserve the exact narration sentence order');
   }
   if (!Array.isArray(draft.claimsToVerify) || !draft.claimsToVerify.length) errors.push('claimsToVerify checklist is required');
+  const banned = banListReview(draft, pkg);
+  if (!banned.passed) errors.push('Ban-list validator blocked: ' + banned.hits.map(x => x.code + ':' + x.phrase).join(', '));
   if (!Array.isArray(draft.claimLedger) || !draft.claimLedger.length) errors.push('Claim-level source ledger is required');
   const knownClaims = idsFor(pkg), knownSources = new Set(pkg.sources.map(s => String(s.id)));
   const mappedClaimIds = new Set((draft.claimLedger || []).map(item => String(item.claimId)));
@@ -97,4 +99,4 @@ class ScriptEngineV2 {
       disclaimer: 'AI critique and source mapping are editorial aids, not independent fact verification or a guarantee of retention, views or monetization.' };
   }
 }
-module.exports = { ScriptEngineV2, validateEditorialDraft, evidenceWarnings };
+module.exports = { ScriptEngineV2, validateEditorialDraft, evidenceWarnings, banListReview, DEFAULT_BANNED_PHRASES };
