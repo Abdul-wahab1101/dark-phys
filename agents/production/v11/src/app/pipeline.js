@@ -156,7 +156,8 @@ class ProductionPipeline {
     if (job.musicAssetId && !(Array.isArray(job.musicSegments) && job.musicSegments.length)) usage.push({ assetId: job.musicAssetId, secondsUsed: total, uses: 1 });
     for (const assetId of (Array.isArray(job.musicAssetIds) ? job.musicAssetIds : [])) {
       const segment = (job.musicSegments || []).find(x => x.assetId === assetId);
-      usage.push({ assetId, secondsUsed: segment ? Math.max(0, Number(segment.endSeconds) - Number(segment.startSeconds)) : total, uses: 1 });
+      const segmentDuration = segment ? Number(segment.endSeconds) - Number(segment.startSeconds) : NaN;
+      usage.push({ assetId, secondsUsed: Number.isFinite(segmentDuration) && segmentDuration > 0 ? segmentDuration : total, uses: 1 });
     }
     this.ledger.setUsage(job.jobId, usage);
     const hookText = data['audio-clean'].segments.filter(s => s.start < cfg.hookWindowSec).map(s => s.text).join(' ');
