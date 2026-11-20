@@ -90,14 +90,84 @@ function upgradedProcessThumbnailMethod() {
   }`;
 }
 
+function patchUpstreamIndex(source) {
+  if (source.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS')) return source;
+  const assetAnchor = [
+    "        experimentThumbnails: (experiment?.thumbnailVariants || []).map((_variant, index) =>",
+    "          `/api/content/${bundle.id}/asset/experiment-thumbnail-${index}`",
+    "        ),",
+    "        captions: bundle.assets?.captions?.path ? `/api/content/${bundle.id}/asset/captions` : null,"
+  ].join("\n");
+  const assetReplacement = [
+    "        experimentThumbnails: (experiment?.thumbnailVariants || []).map((_variant, index) =>",
+    "          `/api/content/${bundle.id}/asset/experiment-thumbnail-${index}`",
+    "        ),",
+    "        // DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS",
+    "        thumbnailCandidates: (bundle.assets?.thumbnail?.variants || []).map((_variant, index) =>",
+    "          `/api/content/${bundle.id}/asset/thumbnail-candidate-${index}`",
+    "        ),",
+    "        captions: bundle.assets?.captions?.path ? `/api/content/${bundle.id}/asset/captions` : null,"
+  ].join("\n");
+  const routeAnchor = [
+    "        const experimentMatch = req.params.kind.match(/^experiment-thumbnail-(\\d+)$/);",
+    "        const experimentPath = experimentMatch",
+    "          ? bundle.editorData?.packagingExperiment?.thumbnailVariants?.[Number(experimentMatch[1])]?.path",
+    "          : null;",
+    "        const filePath = allowed[req.params.kind] || experimentPath;"
+  ].join("\n");
+  const routeReplacement = [
+    "        // DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS",
+    "        const candidateMatch = req.params.kind.match(/^thumbnail-candidate-(\\d+)$/);",
+    "        const candidatePath = candidateMatch",
+    "          ? bundle.assets?.thumbnail?.variants?.[Number(candidateMatch[1])]?.path",
+    "          : null;",
+    "        const experimentMatch = req.params.kind.match(/^experiment-thumbnail-(\\d+)$/);",
+    "        const experimentPath = experimentMatch",
+    "          ? bundle.editorData?.packagingExperiment?.thumbnailVariants?.[Number(experimentMatch[1])]?.path",
+    "          : null;",
+    "        const filePath = allowed[req.params.kind] || candidatePath || experimentPath;"
+  ].join("\n");
+  if (!source.includes(assetAnchor) || !source.includes(routeAnchor)) {
+    throw new Error('Pinned upstream index.js no longer matches the expected asset URL/serving routes; refusing an unsafe thumbnail UI patch.');
+  }
+  return source.replace(assetAnchor, assetReplacement).replace(routeAnchor, routeReplacement);
+}
+
+function patchDashboardApp(source) {
+  if (source.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL')) return source;
+  const selectionAnchor = "    const selectedThumbnailVariant = Number(data.selectedThumbnailVariant || 0);";
+  const selectionReplacement = [
+    selectionAnchor,
+    "    // DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL",
+    "    const thumbnailCandidates = (item.assets?.thumbnail?.variants || []).map((variant, index) => ({ ...variant, url: item.assetUrls.thumbnailCandidates?.[index] || '' }));",
+    "    const thumbnailQuality = item.assets?.thumbnail?.qualityChecks || {};",
+    "    const recommendedCandidate = item.assets?.thumbnail?.recommendedCandidate || '';"
+  ].join("\n");
+  if (!source.includes(selectionAnchor)) throw new Error('Pinned dashboard/app.js no longer has the expected content-review setup; refusing an unsafe thumbnail UI patch.');
+  source = source.replace(selectionAnchor, selectionReplacement);
+  const qualityStart = source.indexOf('            <div class="quality-grid">');
+  if (qualityStart < 0) throw new Error('Pinned dashboard/app.js quality panel not found; refusing an unsafe thumbnail UI patch.');
+  const qualityEnd = source.indexOf("\n", qualityStart);
+  if (qualityEnd < 0) throw new Error('Could not locate dashboard quality panel line ending.');
+  const panel = [
+    "            ${thumbnailCandidates.length ? `<section class=\"experiment-panel thumbnail-candidates-panel\">",
+    "              <div><p class=\"eyebrow\">THUMBNAIL CANDIDATES</p><strong>Recommended: ${escapeHTML(recommendedCandidate || 'Top score')}</strong><p>${thumbnailQuality.visionInspectionAvailable ? 'AI visual review + technical checks' : 'Technical/layout checks; AI vision unavailable'}</p></div>",
+    "              <div class=\"experiment-thumbnails\">${thumbnailCandidates.map((variant, index) => `<div class=\"experiment-thumb ${variant.label === recommendedCandidate ? 'selected' : ''}\"><img src=\"${escapeHTML(variant.url || '')}\" alt=\"${escapeHTML(variant.label || 'Candidate')}\"><span>${escapeHTML(variant.label || 'Candidate')} · ${Number(variant.reviewScore || 0)}/100</span><small>${escapeHTML(variant.hook || '')} · ${escapeHTML(variant.designFamily || '')}</small></div>`).join('')}</div>",
+    "            </section>` : ''}"
+  ].join("\n");
+  return source.slice(0, qualityEnd + 1) + panel + "\n" + source.slice(qualityEnd + 1);
+}
+
 function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } = {}) {
   if (!engine) throw new Error('Pass --engine <path> to the pinned YouTube Automation Agent checkout.');
   const engineRoot = path.resolve(engine);
   const agentsDir = path.join(engineRoot, 'agents');
-  const productionFile = path.join(engineRoot, 'agents', 'production-management-agent.js');
+  const productionFile = path.join(agentsDir, 'production-management-agent.js');
   const upstreamDesigner = path.join(agentsDir, 'thumbnail-designer-agent.js');
   const extraFamilies = path.join(agentsDir, 'thumbnail-families-extra.js');
-  if (!fs.existsSync(path.join(engineRoot, 'index.js')) || !fs.existsSync(productionFile)) {
+  const indexFile = path.join(engineRoot, 'index.js');
+  const dashboardFile = path.join(engineRoot, 'dashboard', 'app.js');
+  if (![indexFile, dashboardFile, productionFile].every(fs.existsSync)) {
     throw new Error('Target is not a compatible YouTube Automation Agent checkout: ' + engineRoot);
   }
 
@@ -112,30 +182,46 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   const methodStart = productionSource.indexOf(METHOD_START);
   const methodEnd = productionSource.indexOf(METHOD_END, methodStart);
   if (methodEnd < 0) throw new Error('Could not locate the end of upstream processThumbnail method; refusing an unsafe patch.');
+  const indexSource = read(indexFile);
+  const dashboardSource = read(dashboardFile);
+  const patchedIndex = patchUpstreamIndex(indexSource);
+  const patchedDashboard = patchDashboardApp(dashboardSource);
 
   const backupDir = path.join(engineRoot, '.dark-phys-backups');
-  const designerBackup = path.join(backupDir, 'thumbnail-designer-agent.upstream.js');
-  const productionBackup = path.join(backupDir, 'production-management-agent.upstream.js');
+  const backups = {
+    designer: path.join(backupDir, 'thumbnail-designer-agent.upstream.js'),
+    production: path.join(backupDir, 'production-management-agent.upstream.js'),
+    index: path.join(backupDir, 'index.upstream.js'),
+    dashboard: path.join(backupDir, 'dashboard-app.upstream.js')
+  };
   fs.mkdirSync(backupDir, { recursive: true });
-  if (fs.existsSync(upstreamDesigner) && !fs.existsSync(designerBackup)) fs.copyFileSync(upstreamDesigner, designerBackup);
-  if (!fs.existsSync(productionBackup)) fs.copyFileSync(productionFile, productionBackup);
+  if (fs.existsSync(upstreamDesigner) && !fs.existsSync(backups.designer)) fs.copyFileSync(upstreamDesigner, backups.designer);
+  if (!fs.existsSync(backups.production)) fs.copyFileSync(productionFile, backups.production);
+  if (!fs.existsSync(backups.index)) fs.copyFileSync(indexFile, backups.index);
+  if (!fs.existsSync(backups.dashboard)) fs.copyFileSync(dashboardFile, backups.dashboard);
 
   fs.copyFileSync(sourceDesigner, upstreamDesigner);
   fs.copyFileSync(sourceFamilies, extraFamilies);
 
-  let patched = productionSource;
-  if (!patched.includes(MARKER)) {
-    patched = patched.slice(0, methodStart) + upgradedProcessThumbnailMethod() + patched.slice(methodEnd);
-    write(productionFile, patched);
+  if (!productionSource.includes(MARKER)) {
+    write(productionFile, productionSource.slice(0, methodStart) + upgradedProcessThumbnailMethod() + productionSource.slice(methodEnd));
   }
+  if (patchedIndex !== indexSource) write(indexFile, patchedIndex);
+  if (patchedDashboard !== dashboardSource) write(dashboardFile, patchedDashboard);
 
-  // Syntax-check the two runtime entry files before reporting success.
   const { spawnSync } = require('node:child_process');
-  for (const file of [upstreamDesigner, productionFile]) {
+  for (const file of [upstreamDesigner, productionFile, indexFile, dashboardFile]) {
     const check = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8', windowsHide: true });
     if (check.status !== 0) throw new Error('Installed thumbnail upgrade failed JavaScript syntax validation: ' + file + '\n' + (check.stderr || ''));
   }
-  return { engineRoot, designer: upstreamDesigner, families: extraFamilies, productionManager: productionFile, backups: [designerBackup, productionBackup], alreadyPatched: productionSource.includes(MARKER) };
+  return {
+    engineRoot, designer: upstreamDesigner, families: extraFamilies,
+    productionManager: productionFile, api: indexFile, dashboard: dashboardFile,
+    backups: Object.values(backups),
+    alreadyPatched: productionSource.includes(MARKER) &&
+      indexSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS') &&
+      dashboardSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL')
+  };
 }
 
 function main(argv = process.argv.slice(2)) {
