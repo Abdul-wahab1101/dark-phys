@@ -63,9 +63,12 @@ class ProductionPipeline {
   async run(job) {
     this.validateJob(job);
     const release = this.checkpoints.acquire(job.jobId);
-    const dir = this.temp.create(job.jobId);
+    let dir = null;
     let ok = false;
     try {
+      // Create the workspace inside the guarded block so a disk/permission failure
+      // cannot strand the job lock and block every subsequent retry.
+      dir = this.temp.create(job.jobId);
       this.temp.cleanupStale({ isResumable: id => this.checkpoints.listJobs().includes(safeName(id)) });
       let state = this.checkpoints.load(job.jobId);
       const fp = this.fingerprint(job);
@@ -89,7 +92,10 @@ class ProductionPipeline {
       return { jobId: job.jobId, status: ctx.data.finalize.report.status, resumed, report: ctx.data.finalize.report, outPath: job.outPath, data: ctx.data };
     } finally {
       release();
-      if (ok) this.temp.remove(dir); else this.temp.sweepJunk(dir);
+      if (dir) {
+        try { if (ok) this.temp.remove(dir); else this.temp.sweepJunk(dir); }
+        finally { this.temp.release(dir); }
+      }
     }
   }
 
