@@ -8,8 +8,8 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $Root
 try {
   Write-Host "Running Dark Phys production readiness checks..."
-  node .\\scripts\\phase7-readiness.js
+  node .\scripts\phase7-readiness.js
   if ($LASTEXITCODE -ne 0) { throw "Production readiness blocked. Fix the listed prerequisites before launch." }
 } finally { Pop-Location }
-node (Join-Path $Root "scripts\\channel-workspace.js") start --id $ChannelId
+node (Join-Path $Root "scripts\channel-workspace.js") start --id $ChannelId
 exit $LASTEXITCODE
