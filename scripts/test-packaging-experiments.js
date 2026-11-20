@@ -5,6 +5,6 @@ const script='This documentary examines why people trust their memory, what cont
 const pkg=buildPackagingTests({topic:'Memory and the Mind',script,thumbnailConcepts:[{id:'a',text:'MEMORY TRAP'},{id:'b',text:'THE EVIDENCE'},{id:'c',text:'WHY IT MATTERS'}]});
 assert.equal(pkg.variants.length,3);assert.equal(new Set(pkg.variants.map(x=>x.title)).size,3);assert(pkg.variants.every(x=>x.titleScriptMatch>0&&x.humanReviewRequired));
 assert.equal(pkg.youtubeTestCompare.available,false);assert.equal(pkg.youtubeTestCompare.startAutomatically,false);
-const authorized=buildPackagingTests({title:'Why Memory Can Mislead You',script,youtubeTestCompareAvailable:true,oauthAuthorized:true});assert.equal(authorized.youtubeTestCompare.available,true);
+const authorized=buildPackagingTests({title:'Why Memory Can Mislead You',script,youtubeTestCompareAvailable:true,oauthAuthorized:true});assert.equal(authorized.youtubeTestCompare.available,false);assert.equal(authorized.youtubeTestCompare.ownerReportedAvailable,true);assert.equal(authorized.youtubeTestCompare.requiresLiveDashboardVerification,true);
 assert(overlapScore('memory evidence',script)>0);assert.throws(()=>buildPackagingTests({title:'Tiny',script:'short'}),/substantial approved script/);
 console.log('PASS three-way script-matched packaging, thumbnail concepts and conditional YouTube Test & Compare');
