@@ -16,7 +16,7 @@ async function main(argv = process.argv.slice(2)) {
   if (!inputFile || !output || argv.includes('--help')) {
     console.log('Usage: node scripts/narrate.js approved-script.json narration.mp3 [pronunciation-dictionary.json] [--language=en|ur-Latn]');
     console.log('Accepts section JSON, Script Engine v2 output, or plain narration text. TTS is section-wise and mastered to -14 LUFS.');
-    process.exitCode = inputFile ? 0 : 1; return;
+    process.exitCode = (inputFile || argv.includes('--help')) ? 0 : 1; return;
   }
   const raw = await fs.readFile(inputFile, 'utf8');
   const dictionary = dictionaryPath ? JSON.parse(await fs.readFile(path.resolve(dictionaryPath), 'utf8')) : {};
