@@ -83,11 +83,11 @@ test('checkpoint: corrupt file is quarantined and lock rejects a second live own
     assert.deepEqual(st.stages, {});
     assert.ok(fs.readdirSync(dir).some(n => n.includes('.corrupt-')));
     const release = cp.acquire('j');
-    fs.writeFileSync(cp.lockFile('j'), JSON.stringify({ pid: process.ppid, at: 1 }));
     assert.throws(() => cp.acquire('j'), /already running/);
+    release();
     fs.writeFileSync(cp.lockFile('j'), JSON.stringify({ pid: 99999999, at: 1 }));
     const r2 = cp.acquire('j');
-    r2(); release();
+    r2();
   } finally { h.rm(dir); }
 });
 
