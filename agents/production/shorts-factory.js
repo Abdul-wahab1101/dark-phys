@@ -31,11 +31,7 @@ function makeSrt(words,{maxWords=5,maxChars=38,offsetSeconds=0}={}){
  }
  if(current.length)groups.push(current);
  const stamp=s=>{const ms=Math.max(0,Math.round((s-offsetSeconds)*1000)),h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),sec=Math.floor(ms%60000/1000),milli=ms%1000;return [h,m,sec].map(x=>String(x).padStart(2,'0')).join(':')+','+String(milli).padStart(3,'0');};
- return groups.map((g,i)=>(i+1)+'
-'+stamp(g[0].start)+' --> '+stamp(g[g.length-1].end)+'
-'+g.map(x=>x.text).join(' ')+'
-').join('
-');
+ return groups.map((g,i)=>(i+1)+'\n'+stamp(g[0].start)+' --> '+stamp(g[g.length-1].end)+'\n'+g.map(x=>x.text).join(' ')+'\n').join('\n');
 }
 function planShorts({transcript,scenes=[],count=3,minSeconds=20,maxSeconds=60,targetSeconds=42}={}){
  const words=normalizeTranscript(transcript);
