@@ -185,6 +185,7 @@ async function placeholderBackground(file, i) {
     ok(new Set(result.variants.map(v => v.visualStrategyId)).size === 3, 'three distinct visual strategy IDs survive into final output');
     ok(result.variants.every(v => v.reviewPassed), 'only approved candidates survive final quality gate');
     ok(result.variants.every(v => Number.isFinite(v.reviewScore) && v.reviewScore >= 0 && v.reviewScore <= 100), 'every candidate receives a 0-100 quality score');
+    if (!result.qualityChecks.visionInspectionAvailable) ok(new Set(result.variants.map(v => v.reviewScore)).size > 1, 'heuristic-only comparison differentiates candidates instead of giving every thumbnail the same score');
     ok(result.comparison.length === 3 && result.recommendedCandidate === result.variants[0].label, 'three-way comparison and best-candidate recommendation');
     ok(result.qualityChecks.mobileSafeZonesChecked === true, 'mobile timestamp safe-zone validation enabled');
   } catch (e) { ok(false, 'end-to-end generation: ' + e.message); }
