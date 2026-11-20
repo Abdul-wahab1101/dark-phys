@@ -64,6 +64,10 @@ test('checkpoint: atomic save/load, validation of outputs, invalidate downstream
     cp.save(st);
     const again = cp.load('job 1');
     assert.equal(cp.isValid(again.stages.a), true);
+    const oldStat = fs.statSync(out);
+    fs.writeFileSync(out, 'same');
+    fs.utimesSync(out, oldStat.atime, new Date(oldStat.mtimeMs + 2000));
+    assert.equal(cp.isValid(cp.load('job 1').stages.a), false, 'same-size output replacement changed mtime');
     fs.writeFileSync(out, 'changed!');
     assert.equal(cp.isValid(cp.load('job 1').stages.a), false, 'size changed');
     fs.unlinkSync(out);
