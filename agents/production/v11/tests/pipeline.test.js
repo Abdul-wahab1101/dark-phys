@@ -90,11 +90,12 @@ test('licence block stops the run BEFORE any rendering', async () => {
     assert.ok(r.data.preflight.license.findings.some(f => f.id === 'non_commercial_license' && f.assetId === 'pix-2'));
     assert.equal(fs.existsSync(s.job.outPath), false);
     assert.equal(r.data['render-shots'], undefined);
-    // fixing the ledger and re-running continues from the halted stage
+    // A rights-ledger change is a production input change: restart all stages rather than reuse
+    // outputs that were prepared under the previous approval state.
     s.ledger.register({ assetId: 'pix-2', kind: 'video', source: 'pixabay', sourceUrl: 'https://pixabay.com/v/pix-2', author: 'Tester', licenseId: 'pixabay-content-license' });
     const again = await s.pipeline.run(s.job);
     assert.ok(['ready', 'review'].includes(again.status), again.status);
-    assert.ok(again.resumed.includes('audio-clean'));
+    assert.deepEqual(again.resumed, [], 'rights change invalidates all downstream production stages');
     assert.ok(fs.existsSync(s.job.outPath));
   } finally { h.rm(dir); }
 });
