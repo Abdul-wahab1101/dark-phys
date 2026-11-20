@@ -23,9 +23,12 @@ function analyzeAnalytics({videos=[],scriptBeatsByVideo={},minimumVideos=15}={})
  const count=normalized.length,eligible=count>=threshold;
  const mean=key=>{const values=normalized.map(v=>v[key]).filter(v=>v!==null);return values.length?values.reduce((a,b)=>a+b,0)/values.length:null;};
  const rows=normalized.map(v=>({videoId:v.videoId,title:v.title,views:v.views,impressions:v.impressions,ctr:v.ctr,averageViewDurationSeconds:v.averageViewDurationSeconds,averageViewPercentage:v.averageViewPercentage,dropoffs:mapDropoffs(v.retention,scriptBeatsByVideo[v.videoId]||[])}));
- const totalImpressions=normalized.reduce((s,v)=>s+(v.impressions||0),0);
- const weightedCtr=totalImpressions>0?normalized.reduce((s,v)=>s+(v.ctr||0)*(v.impressions||0),0)/totalImpressions:null;
- const metrics={videoCount:count,meanCtr:mean('ctr'),weightedCtr,meanAverageViewDurationSeconds:mean('averageViewDurationSeconds'),meanAverageViewPercentage:mean('averageViewPercentage'),totalViews:normalized.reduce((s,v)=>s+(v.views||0),0),totalImpressions};
+ const sumKnown=key=>{const values=normalized.map(v=>v[key]).filter(v=>v!==null);return values.length?values.reduce((a,b)=>a+b,0):null;};
+ const totalImpressions=sumKnown('impressions'),totalViews=sumKnown('views');
+ const ctrRows=normalized.filter(v=>v.ctr!==null&&v.impressions!==null&&v.impressions>0);
+ const weightedImpressions=ctrRows.reduce((s,v)=>s+v.impressions,0);
+ const weightedCtr=weightedImpressions>0?ctrRows.reduce((s,v)=>s+v.ctr*v.impressions,0)/weightedImpressions:null;
+ const metrics={videoCount:count,meanCtr:mean('ctr'),weightedCtr,meanAverageViewDurationSeconds:mean('averageViewDurationSeconds'),meanAverageViewPercentage:mean('averageViewPercentage'),totalViews,totalImpressions};
  const dropoffCounts={};for(const v of rows)for(const d of v.dropoffs)if(d.scriptBeat)dropoffCounts[d.scriptBeat]=(dropoffCounts[d.scriptBeat]||0)+1;
  const recurringDropoffs=Object.entries(dropoffCounts).map(([scriptBeat,videosAffected])=>({scriptBeat,videosAffected,share:Number((videosAffected/Math.max(1,count)).toFixed(3))})).sort((a,b)=>b.videosAffected-a.videosAffected);
  return {version:1,source:'owner-supplied-youtube-analytics-data',metrics,videos:rows,recurringDropoffs,learningGate:{minimumVideos:threshold,observedVideos:count,eligible,ruleChangesAllowed:false,reason:eligible?'Evidence threshold met; recommendations remain advisory and require owner approval.':'Insufficient sample. Do not change channel strategy, title rules, pacing or publishing cadence before at least '+threshold+' videos.'},recommendations:eligible?recurringDropoffs.slice(0,5).map(x=>({type:'investigate_script_beat_dropoff',...x,automaticChange:false,approvalRequired:true})):[]};
