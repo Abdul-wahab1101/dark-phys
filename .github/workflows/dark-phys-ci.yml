@@ -58,12 +58,16 @@ jobs:
         with:
           node-version: '20'
       - name: Install FFmpeg and Python imaging dependency
-        timeout-minutes: 15
+        timeout-minutes: 8
         run: |
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "FFmpeg already available on runner; skipping apt install."
+          else
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 update
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 install -y --no-install-recommends ffmpeg
+          fi
           ffmpeg -version
-          python -m pip install --upgrade pip pillow
+          python -c "import PIL" 2>/dev/null || python -m pip install --disable-pip-version-check pillow
       - name: Compile and test native video tools
         run: |
           python -m py_compile effects.py keyframes.py tests/test_video_tool_validation.py
