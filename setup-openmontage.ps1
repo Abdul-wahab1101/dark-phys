@@ -10,8 +10,17 @@ if (-not (Test-Path (Join-Path $OM ".git"))) {
   git -C $OM fetch --depth 1 origin $Commit
   git -C $OM checkout --detach $Commit
 }
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js 22.23.4+ is required for the pinned OpenMontage Remotion Composer." }
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { throw "npm is required for the OpenMontage Remotion Composer." }
+$NodeVersion = [version](node -p "process.versions.node")
+$NodeCompatible = (($NodeVersion.Major -eq 22 -and $NodeVersion -ge [version]"22.23.4") -or
+                   ($NodeVersion.Major -eq 24 -and $NodeVersion -ge [version]"24.22.1") -or
+                   ($NodeVersion.Major -eq 26 -and $NodeVersion -ge [version]"26.12.1"))
+if (-not $NodeCompatible) { throw "OpenMontage Remotion Composer requires Node 22.23.4+, 24.22.1+ or 26.12.1+ (supported release lines). Current: $NodeVersion. Install Node 22.23.4 LTS or newer supported release." }
 $Python = Get-Command python -ErrorAction SilentlyContinue
 if (-not $Python) { throw "Python 3.10+ is required." }
+$PythonVersion = [version](python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.0')")
+if ($PythonVersion -lt [version]"3.10.0") { throw "Python 3.10+ is required. Current: $PythonVersion" }
 $Venv = Join-Path $OM ".venv"
 if (-not (Test-Path $Venv)) { python -m venv $Venv }
 $VenvPython = Join-Path $Venv "Scripts\python.exe"
