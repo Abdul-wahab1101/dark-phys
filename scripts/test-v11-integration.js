@@ -4,8 +4,15 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { buildV11Job } = require('../agents/production/v11-integration');
+const { buildTrackDuckFilter } = require('../agents/production/v11/src/app/pipeline');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dark-phys-v11-adapter-'));
 try {
+  const duckedTrack = buildTrackDuckFilter({ ducking: true }, 0);
+  assert.match(duckedTrack.filter, /\[mb0\]\[sc0\]sidechaincompress/);
+  assert.equal(duckedTrack.label, '[md0]');
+  const cleanTrack = buildTrackDuckFilter({ ducking: false }, 1);
+  assert.equal(cleanTrack.filter, '[mb1]', 'non-ducked ambience/music must bypass the sidechain input');
+  assert.equal(cleanTrack.label, '[mb1]');
   const narration = path.join(root, 'narration.mp3'), clip = path.join(root, 'clip.mp4'), music = path.join(root, 'music.mp3');
   fs.writeFileSync(narration, 'narration fixture'); fs.writeFileSync(clip, 'clip fixture'); fs.writeFileSync(music, 'music fixture');
   const plan = { projectId: 'test-project', title: 'Test documentary', scenes: [
