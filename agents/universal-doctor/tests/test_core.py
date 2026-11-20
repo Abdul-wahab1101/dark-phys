@@ -133,6 +133,35 @@ class FilesAndBackups(unittest.TestCase):
         atomic_write_text(p, "x = 1\ny = 3\n", nl, enc)
         self.assertEqual(p.read_bytes(), b"\xef\xbb\xbfx = 1\r\ny = 3\r\n")
 
+    def test_backup_rejects_path_traversal_and_absolute_paths(self):
+        d = Path(tempfile.mkdtemp())
+        outside = d.parent / (d.name + "_outside.txt")
+        outside.write_text("do not touch", encoding="utf-8")
+        bm = BackupManager(d, d / "_bk")
+        for rel in ("../" + outside.name, str(outside), "..\\\\escape.txt"):
+            with self.assertRaises(ValueError):
+                bm.create([rel], "unsafe path")
+        self.assertEqual(outside.read_text(encoding="utf-8"), "do not touch")
+
+    def test_restore_recreates_parent_directories_and_rejects_tampered_manifest(self):
+        d = Path(tempfile.mkdtemp())
+        source = d / "nested" / "folder" / "a.txt"
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b"original")
+        bm = BackupManager(d, d / "_bk")
+        bid = bm.create(["nested/folder/a.txt"], "restore parent test")
+        source.unlink()
+        source.parent.rmdir()
+        source.parent.parent.rmdir()
+        self.assertTrue(bm.restore(bid)["ok"])
+        self.assertEqual(source.read_bytes(), b"original")
+        manifest = bm.dir / bid / "manifest.json"
+        data = __import__("json").loads(manifest.read_text(encoding="utf-8"))
+        data["files"]["../../escape.txt"] = {"existed": False}
+        manifest.write_text(__import__("json").dumps(data), encoding="utf-8")
+        self.assertFalse(bm.verify(bid))
+        self.assertFalse(bm.restore(bid)["ok"])
+
     def test_backup_restore_is_byte_identical_and_detects_damage(self):
         d = Path(tempfile.mkdtemp())
         (d / "a.py").write_bytes(b"print(1)\r\n")
