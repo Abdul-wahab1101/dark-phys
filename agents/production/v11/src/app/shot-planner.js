@@ -72,7 +72,7 @@ function shotArgs(shot, { width = 1080, height = 1920, fps = 30 } = {}) {
   else if (shot.movement === 'slow-push') x = '(iw-ow)*(0.5+0.035*sin(t*0.35))';
   const filters = [
     'scale=' + scaledWidth + ':' + scaledHeight + ':force_original_aspect_ratio=increase',
-    'crop=' + width + ':' + height + ':x=\'' + x + '\':y=\'' + y + '\':eval=frame',
+    'crop=' + width + ':' + height + ':x=\'' + x + '\':y=\'' + y + '\'',
     'setsar=1', 'fps=' + fps
   ];
   if (shot.colourGrade === 'consistent-documentary-neutral') filters.push('eq=contrast=1.04:saturation=0.96:brightness=0.005');
