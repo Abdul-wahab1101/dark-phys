@@ -1,4 +1,6 @@
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
 const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const {ProductionOrchestrator}=require('../agents/production/orchestration');
 const args=process.argv.slice(2),get=k=>{const i=args.indexOf('--'+k);return i<0?'':args[i+1];};
