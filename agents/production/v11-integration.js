@@ -63,6 +63,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
       licenseUrl: rights.licenseUrl || null, retrievedAt: rights.retrievedAt || undefined, sha256: trackHash });
     return { ...segment, path: trackPath, assetId };
   });
+  if (musicTracks.some(track => canonical(track.path) === canonical(output))) throw new Error('Output path must not overwrite an act-wise music source track.');
   const script = plan.scenes.map(scene => String(scene.narration || '').trim()).filter(Boolean).join(' ');
   if (!script) throw new Error('Scene plan has no narration text.');
   const jobId = 'dark-phys-' + String(plan.projectId || 'project') + '-' + crypto.createHash('sha256').update(output).digest('hex').slice(0, 10);
