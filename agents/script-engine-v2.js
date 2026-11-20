@@ -64,7 +64,9 @@ function validateEditorialDraft(draft, pkg, format) {
     if (!knownClaims.has(String(item.claimId))) errors.push('Unknown claim ID in claimLedger: ' + item.claimId);
     if (!Array.isArray(item.sourceIds) || !item.sourceIds.length || item.sourceIds.some(id => !knownSources.has(String(id)))) errors.push('Claim ' + item.claimId + ' has missing or unknown source IDs');
   }
-  if (format === 'short' && words(draft.narration).length > 180) errors.push('Shorts narration exceeds 180 words; tighten to a 20–60 second spoken script');
+  const narrationWordCount = words(draft.narration).length;
+  if (format === 'short' && (narrationWordCount < 45 || narrationWordCount > 180)) errors.push('Shorts narration must be 45–180 words for a 20–60 second spoken script');
+  if (format !== 'short' && (narrationWordCount < 1000 || narrationWordCount > 1800)) errors.push('Long-form narration must be 1,000–1,800 words for the 8–12 minute target');
   return { ok: errors.length === 0, errors, sourceCoverage: (draft.claimLedger || []).length };
 }
 function evidenceWarnings(pkg) {
@@ -107,7 +109,7 @@ class ScriptEngineV2 {
       const finalCheck = validateEditorialDraft(polish, pkg, mode);
       const before = words(draft.narration).length, after = words(polish.narration).length;
       const reduction = before ? (before - after) / before : 0;
-      scripts[lang] = { ...polish, critic, validation: finalCheck,
+      scripts[lang] = { ...polish, critic, validation: finalCheck, banList: banListReview(polish, pkg),
         tightening: { beforeWords: before, afterWords: after, reductionRatio: Number(reduction.toFixed(3)),
           target: 0.15, withinTolerance: reduction >= 0.10 && reduction <= 0.20 },
         review: { readAloudPolishRequested: true, humanReadAloudStillRequired: true, criticScore: Number(critic.score), criticPassed: Number(critic.score) >= 70, unsupportedClaimsFlagged: Array.isArray(critic.unsupportedClaims) ? critic.unsupportedClaims : [] },
