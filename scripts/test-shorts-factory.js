@@ -7,6 +7,9 @@ const text='Why does this happen? The hidden truth is that researchers studied t
 const tokens=text.trim().split(/\s+/);let t=0;
 for(const token of tokens){const d=0.9;transcript.push({start:t,end:t+d,text:token});t+=d;}
 const words=normalizeTranscript(transcript);assert.equal(words.length,tokens.length);
+const reordered=normalizeTranscript([{start:2,end:3,text:'later'},{start:0,end:1,text:'first.'}]);
+assert.deepEqual(reordered.map(w=>w.index),[0,1],'sorted transcript indices must match their sorted positions');
+assert.equal(reordered[1].text,'later');
 const plan=planShorts({transcript,count:3,minSeconds:20,maxSeconds:60,targetSeconds:28});
 assert(plan.shorts.length>=1);assert(plan.shorts.every(s=>s.durationSeconds>=20&&s.durationSeconds<=60));
 assert.equal(plan.aspectRatio,'9:16');assert(plan.shorts.every(s=>s.captionSrt.includes('-->')&&s.sourceProvenance));
