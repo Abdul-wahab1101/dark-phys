@@ -63,7 +63,7 @@ See [FINAL-WINDOWS-SETUP-ROMAN-URDU.md](FINAL-WINDOWS-SETUP-ROMAN-URDU.md) for t
 
 ## Integrated ZIP upgrades
 - agents/video-format-planner.js creates a six-format video plan, hook/title options, shot list, chapters, SRT/ASS captions and audio-mix instructions.
-- agents/thumbnail-designer-agent.js is the upgraded v6 thumbnail designer; utils/logger.js supplies its shared logger dependency.
+- agents/thumbnail-designer-agent.js is the upgraded 24-family v10 thumbnail designer; utils/logger.js supplies its shared logger dependency.
 - agents/universal-doctor/ contains the standalone Python Doctor with diagnostic modes, backups, tests, rollback and a localhost dashboard. Keep it in diagnostic mode unless you explicitly approve repairs.
 - Run node scripts/plan-video.js "7 Signs You Are Being Gaslighted" to create a plan. Run node scripts/test-video-planner.js, node scripts/test-thumbnail-designer.js, and node scripts/test-quality-check.js for add-on tests. Run node scripts/quality-check.js --video uploads/final.mp4 --captions uploads/final.srt --thumbnail uploads/thumbnail.jpg --seo uploads/seo.json --mode long before manual approval. Doctor: python agents/universal-doctor/doctor.py selftest.
 
@@ -90,3 +90,7 @@ Each engine is cloned as its own upstream checkout. Keep its license and notices
 
 ## Professional reliability and lightweight mode
 The upstream single-controller orchestration already provides shared agent services, structured logs, job progress, persistent generation checkpoints, transient-error retries and resume support. Dark Phys adds a structural regression check and a conservative Windows launcher for lower-memory PCs. See [PROFESSIONAL-RELIABILITY-UPGRADES.md](PROFESSIONAL-RELIABILITY-UPGRADES.md). Use start-dark-phys-lite.ps1 for the 2 GB Node heap profile; use the regular launcher for normal mode.
+
+
+## Thumbnail design system v10
+The thumbnail designer now includes 24 distinct SVG-over-photo design families (the original 12 plus 12 v10 additions), topic-aware family scoring, headline-aware big-number weighting, and family rotation to reduce repetitive visual patterns. New families include evidence-board, neon-cyber, redacted-file, hazard-warning, duotone-poster, chat-screen, big-number, spotlight-stage, torn-paper, viewfinder, minimal-modern and vhs-glitch. See [the Urdu v10 guide](THUMBNAIL-DESIGNS-V10-URDU.md). CI validates all 24 families and renders a contact sheet using synthetic test backgrounds; final visual selection and actual channel-specific subject photography still require human review.
