@@ -15,14 +15,17 @@ function validateEditorialDraft(draft, pkg, format) {
   const errors = [...base.errors];
   if (!String(draft.centralQuestion || '').trim()) errors.push('A single centralQuestion is required');
   if (!String(draft.caseStudy || '').trim()) errors.push('One documented or explicitly hypothetical caseStudy is required');
-  if (!Array.isArray(draft.acts) || (format === 'short' ? draft.acts.length < 3 : draft.acts.length < 4)) errors.push('Insufficient story acts');
+  if (!Array.isArray(draft.acts) || (format === 'short' ? draft.acts.length < 3 || draft.acts.length > 4 : draft.acts.length < 3 || draft.acts.length > 5)) errors.push('Insufficient story acts');
   if (!Array.isArray(draft.openLoops) || !draft.openLoops.length) errors.push('At least one resolved open loop is required');
+  else if (draft.openLoops.some(x => !String(x.setup || '').trim() || !String(x.payoffAct || '').trim())) errors.push('Every open loop needs a setup and payoffAct');
   if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) errors.push('Sentence-by-sentence visual intent plan is required');
   else if (draft.sentenceVisuals.some(x => !String(x.sentence || '').trim() || !String(x.visualIntent || '').trim() || !String(x.footageQuery || '').trim() || !String(x.sourceType || '').trim())) errors.push('Every sentence visual needs sentence, visualIntent, footageQuery and sourceType');
   const sentenceCount = String(draft.narration || '').match(/[^.!?؟۔\n]+[.!?؟۔]?/g)?.filter(x => x.trim()).length || 0;
   if (sentenceCount && Array.isArray(draft.sentenceVisuals) && draft.sentenceVisuals.length !== sentenceCount) errors.push('Every narration sentence must have exactly one sentenceVisuals entry');
   if (!Array.isArray(draft.claimLedger) || !draft.claimLedger.length) errors.push('Claim-level source ledger is required');
   const knownClaims = idsFor(pkg), knownSources = new Set(pkg.sources.map(s => String(s.id)));
+  const mappedClaimIds = new Set((draft.claimLedger || []).map(item => String(item.claimId)));
+  for (const claimId of knownClaims) if (!mappedClaimIds.has(claimId)) errors.push('Claim missing from claimLedger: ' + claimId);
   for (const item of draft.claimLedger || []) {
     if (!knownClaims.has(String(item.claimId))) errors.push('Unknown claim ID in claimLedger: ' + item.claimId);
     if (!Array.isArray(item.sourceIds) || !item.sourceIds.length || item.sourceIds.some(id => !knownSources.has(String(id)))) errors.push('Claim ' + item.claimId + ' has missing or unknown source IDs');
@@ -51,7 +54,7 @@ class ScriptEngineV2 {
     for (const lang of LANGS) {
       const prompt = buildWriterPrompt(pkg, lang, mode) + '\n\nEDITORIAL SYSTEM V2 REQUIREMENTS:\n' +
         JSON.stringify({ format: mode, brief, audience: pkg.audience || 'curious documentary viewers' }) +
-        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy (exactly one real documented case with source IDs OR explicitly labelled hypothetical illustration), acts (4–6 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
+        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy (exactly one real documented case with source IDs OR explicitly labelled hypothetical illustration), acts (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
         (mode === 'short' ? 'Make one complete standalone vertical Short, 20–60 seconds, one idea only.' :
           'Make an 8–12 minute documentary with cold open, promise, 3–5 main acts, rehooks roughly every 60–90 seconds, and a satisfying payoff.') +
         ' Use exactly one central question and one case. Never invent a real case, study, statistic, quote or source. Mark unsupported material [NEEDS SOURCE].';
