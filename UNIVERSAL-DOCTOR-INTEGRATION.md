@@ -70,3 +70,22 @@ request protections. These tests are controlled fixtures, not proof that every r
 The agent is deterministic/static and does not call an LLM. The checked-in report records 20 unit tests and
 61/61 controlled self-test checks from its prior Linux/Python 3.12 run. Windows behavior, Python 3.13,
 large projects, pytest-specific projects and arbitrary real-world bugs still require environment-specific validation.
+
+
+## Safe backup and restore commands
+
+Run these from the Dark Phys repository root (replace the path with your actual project folder):
+
+```powershell
+python agents/universal-doctor/doctor.py backup "engines/youtube-automation-agent" "config/settings.json" "config/channel.json" --reason "before channel configuration"
+python agents/universal-doctor/doctor.py backups "engines/youtube-automation-agent"
+python agents/universal-doctor/doctor.py verify-backup "engines/youtube-automation-agent" BACKUP_ID
+```
+
+Restore is deliberately explicit and creates a second safety snapshot first:
+
+```powershell
+python agents/universal-doctor/doctor.py restore-backup "engines/youtube-automation-agent" BACKUP_ID --yes
+```
+
+Use project-relative file paths only. Backups reject absolute paths, parent-directory traversal and symlink targets; restore verifies the SHA-256 manifest before writing. The CLI makes a pre-restore safety backup and attempts to roll back to it if restoration fails. Store a second copy of important backups on a separate drive. Do not back up .env, OAuth tokens or private credentials to an unencrypted shared location.

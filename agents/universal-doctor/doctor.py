@@ -22,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from doctor_core import report as report_mod                      # noqa: E402
 from doctor_core.config import MODES, MODE_HELP, VERSION          # noqa: E402
+from doctor_core.backup import BackupManager                       # noqa: E402
 from doctor_core.engine import Doctor                             # noqa: E402
 from doctor_core.monitor import Monitor, monitor_status, preflight  # noqa: E402
 from doctor_core.safety import verify_integrity, write_integrity_manifest  # noqa: E402
