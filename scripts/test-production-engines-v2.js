@@ -21,6 +21,7 @@ function draft(text) {
     openLoops: [{ setup: 'Why confidence can differ from accuracy', payoffAct: 'a4' }],
     narration: text, chapters: [{ time: '0:00', title: 'Opening', purpose: 'Hook' }],
     visualPlan: [{ time: '0:00', visual: 'Person considering an old photograph', assetType: 'stock' }],
+    sentenceVisuals: text.match(/[^.!?؟۔\\n]+[.!?؟۔]?/g).filter(x => x.trim()).map(sentence => ({ sentence: sentence.trim(), visualIntent: 'Illustrate the sentence meaning', footageQuery: 'documentary b-roll memory and reflection', sourceType: 'stock_video', durationSeconds: 4 })),
     sourceReferences: [{ sourceId: 's1', claimIds: ['c1'] }],
     claimLedger: [{ claimId: 'c1', sourceIds: ['s1', 's2'], exactSupportToVerify: 'Recall may be influenced by context.' }],
     claimsToVerify: ['Verify the exact context and limits of c1'] };
