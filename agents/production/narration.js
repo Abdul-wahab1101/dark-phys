@@ -105,9 +105,10 @@ class ElevenLabsNarration {
     if (!matches.length) throw new Error('FFmpeg loudness analysis did not return measurements.');
     const measured = JSON.parse(matches[matches.length - 1][0]);
     const keys = ['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'];
-    if (keys.some(k => !Number.isFinite(Number(measured[k])))) throw new Error('FFmpeg loudness measurements are incomplete.');
+    if (['input_i', 'input_tp', 'input_thresh', 'target_offset'].some(k => !Number.isFinite(Number(measured[k])))) throw new Error('FFmpeg loudness measurements are incomplete.');
+    const measuredLra = Number.isFinite(Number(measured.input_lra)) ? Number(measured.input_lra) : 0;
     const filter = 'loudnorm=I=' + target + ':TP=-1.0:LRA=11:measured_I=' + measured.input_i +
-      ':measured_TP=' + measured.input_tp + ':measured_LRA=' + measured.input_lra +
+      ':measured_TP=' + measured.input_tp + ':measured_LRA=' + measuredLra +
       ':measured_thresh=' + measured.input_thresh + ':offset=' + measured.target_offset + ':linear=true:print_format=summary';
     const temp = file + '.normalized.mp3';
     await run(this.ffmpeg, ['-y', '-i', file, '-af', filter, '-c:a', 'libmp3lame', '-b:a', '192k', temp]);
