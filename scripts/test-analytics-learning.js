@@ -6,6 +6,7 @@ const drops=mapDropoffs(retention,[{startRatio:.3,endRatio:.5,title:'Evidence'}]
 const rows=Array.from({length:14},(_,i)=>({videoId:'v'+i,views:100+i,impressions:1000,ctr:.05,averageViewDurationSeconds:120,averageViewPercentage:35,retention}));
 let report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(rows.map(x=>[x.videoId,[{startRatio:.3,endRatio:.5,title:'Evidence'}]]))});
 assert.equal(report.metrics.videoCount,14);assert.equal(report.learningGate.eligible,false);assert.equal(analyzeAnalytics({videos:rows.slice(0,14),minimumVideos:3}).learningGate.minimumVideos,15,'callers cannot lower the mandatory sample threshold');assert.equal(report.recommendations.length,0);assert.equal(report.learningGate.ruleChangesAllowed,false);
+const missing=analyzeAnalytics({videos:[{videoId:'empty'}]});assert.equal(missing.metrics.totalViews,null);assert.equal(missing.metrics.totalImpressions,null);assert.equal(missing.metrics.meanCtr,null);
 rows.push({videoId:'v14',views:200,impressions:2000,ctr:.06,averageViewDurationSeconds:150,averageViewPercentage:40,retention});
 report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(rows.map(x=>[x.videoId,[{startRatio:.3,endRatio:.5,title:'Evidence'}]]))});
 assert.equal(report.learningGate.eligible,true);
