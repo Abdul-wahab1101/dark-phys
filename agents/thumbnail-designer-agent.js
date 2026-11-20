@@ -1229,8 +1229,9 @@ class ThumbnailDesignerAgent {
     const usedCls = new Set();
     const usedSides = [];
     for (let slot = 0; slot < 3; slot++) {
-      const ranked = familyScores
-        .filter(f => !chosen.some(c => c.id === f.id))
+      const remainingFamilies = familyScores.filter(f => !chosen.some(c => c.id === f.id));
+      const distinctClassFamilies = remainingFamilies.filter(f => !usedCls.has(FAMILIES[f.id].cls));
+      const ranked = (distinctClassFamilies.length ? distinctClassFamilies : remainingFamilies)
         .map(f => {
           const fam = FAMILIES[f.id];
           let s = f.score;
@@ -2415,7 +2416,7 @@ class ThumbnailDesignerAgent {
     const heuristic = Math.round((technical * 0.65) + (wordsScore * 0.35));
     const score = visual.available ? Math.round(visual.score * 0.72 + heuristic * 0.28) : heuristic;
     const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
-      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !safe || wordCount > 5;
+      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5;
     return {
       score, passed: !hardReject && (!visual.available || visual.passed),
       rejectionReasons: [
@@ -2448,7 +2449,7 @@ class ThumbnailDesignerAgent {
         v.review.rejectionReasons.push('candidate set repeats a visual family/layout or looks too similar');
       }
     }
-    reviewed.sort((a, b) => b.reviewScore - a.reviewScore);
+    reviewed.sort((a, b) => Number(b.reviewPassed) - Number(a.reviewPassed) || b.reviewScore - a.reviewScore);
     return { variants: reviewed, diversity, duplicateComposition, allPassed: reviewed.length === 3 && reviewed.every(v => v.reviewPassed) };
   }
 
