@@ -158,6 +158,13 @@ function patchDashboardApp(source) {
   return source.slice(0, qualityEnd + 1) + panel + "\n" + source.slice(qualityEnd + 1);
 }
 
+function patchDashboardStyles(source) {
+  if (source.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE')) return source;
+  const anchor = '.experiment-thumb:has(input:checked) { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }';
+  if (!source.includes(anchor)) throw new Error('Pinned dashboard/styles.css thumbnail card style not found; refusing an unsafe style patch.');
+  return source.replace(anchor, anchor + '\\n/* DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE */\\n.thumbnail-candidates-panel .experiment-thumb.selected { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }\\n.thumbnail-candidates-panel .experiment-thumb { cursor: default; }\\n.thumbnail-candidates-panel .experiment-thumb small { display: block; color: var(--muted); font-size: 10px; line-height: 1.35; margin-top: 4px; text-align: center; }');
+}
+
 function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } = {}) {
   if (!engine) throw new Error('Pass --engine <path> to the pinned YouTube Automation Agent checkout.');
   const engineRoot = path.resolve(engine);
@@ -167,7 +174,8 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   const extraFamilies = path.join(agentsDir, 'thumbnail-families-extra.js');
   const indexFile = path.join(engineRoot, 'index.js');
   const dashboardFile = path.join(engineRoot, 'dashboard', 'app.js');
-  if (![indexFile, dashboardFile, productionFile].every(fs.existsSync)) {
+  const stylesFile = path.join(engineRoot, 'dashboard', 'styles.css');
+  if (![indexFile, dashboardFile, stylesFile, productionFile].every(fs.existsSync)) {
     throw new Error('Target is not a compatible YouTube Automation Agent checkout: ' + engineRoot);
   }
 
@@ -184,8 +192,10 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   if (methodEnd < 0) throw new Error('Could not locate the end of upstream processThumbnail method; refusing an unsafe patch.');
   const indexSource = read(indexFile);
   const dashboardSource = read(dashboardFile);
+  const stylesSource = read(stylesFile);
   const patchedIndex = patchUpstreamIndex(indexSource);
   const patchedDashboard = patchDashboardApp(dashboardSource);
+  const patchedStyles = patchDashboardStyles(stylesSource);
 
   const backupDir = path.join(engineRoot, '.dark-phys-backups');
   const backups = {
@@ -193,7 +203,8 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
     families: path.join(backupDir, 'thumbnail-families-extra.upstream.js'),
     production: path.join(backupDir, 'production-management-agent.upstream.js'),
     index: path.join(backupDir, 'index.upstream.js'),
-    dashboard: path.join(backupDir, 'dashboard-app.upstream.js')
+    dashboard: path.join(backupDir, 'dashboard-app.upstream.js'),
+    styles: path.join(backupDir, 'dashboard-styles.upstream.css')
   };
   fs.mkdirSync(backupDir, { recursive: true });
   if (fs.existsSync(upstreamDesigner) && !fs.existsSync(backups.designer)) fs.copyFileSync(upstreamDesigner, backups.designer);
@@ -201,6 +212,7 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   if (!fs.existsSync(backups.production)) fs.copyFileSync(productionFile, backups.production);
   if (!fs.existsSync(backups.index)) fs.copyFileSync(indexFile, backups.index);
   if (!fs.existsSync(backups.dashboard)) fs.copyFileSync(dashboardFile, backups.dashboard);
+  if (!fs.existsSync(backups.styles)) fs.copyFileSync(stylesFile, backups.styles);
 
   fs.copyFileSync(sourceDesigner, upstreamDesigner);
   fs.copyFileSync(sourceFamilies, extraFamilies);
@@ -210,6 +222,7 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   }
   if (patchedIndex !== indexSource) write(indexFile, patchedIndex);
   if (patchedDashboard !== dashboardSource) write(dashboardFile, patchedDashboard);
+  if (patchedStyles !== stylesSource) write(stylesFile, patchedStyles);
 
   const { spawnSync } = require('node:child_process');
   for (const file of [upstreamDesigner, productionFile, indexFile, dashboardFile]) {
@@ -222,7 +235,8 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
     backups: Object.values(backups),
     alreadyPatched: productionSource.includes(MARKER) &&
       indexSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS') &&
-      dashboardSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL')
+      dashboardSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL') &&
+      stylesSource.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE')
   };
 }
 
