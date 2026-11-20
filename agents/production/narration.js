@@ -111,7 +111,7 @@ class ElevenLabsNarration {
       ':measured_thresh=' + measured.input_thresh + ':offset=' + measured.target_offset + ':linear=true:print_format=summary';
     const temp = file + '.normalized.mp3';
     await run(this.ffmpeg, ['-y', '-i', file, '-af', filter, '-c:a', 'libmp3lame', '-b:a', '192k', temp]);
-    await fs.rename(temp, file);
+    await fs.copyFile(temp, file);\n    await fs.unlink(temp);
     return { targetIntegratedLufs: target, truePeakLimitDbtp: -1, measuredInputI: measured.input_i,
       measuredInputTruePeak: measured.input_tp, measuredInputLra: measured.input_lra, twoPass: true };
   }
