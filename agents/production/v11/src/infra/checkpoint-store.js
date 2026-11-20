@@ -66,13 +66,13 @@ class CheckpointStore {
   save(state) { state.updatedAt = this.now(); writeFileAtomic(this.file(state.jobId), JSON.stringify(state, null, 2)); }
 
   describeFiles(paths) {
-    return paths.map(p => ({ path: p, size: fs.existsSync(p) ? fs.statSync(p).size : -1 }));
+    return paths.map(p => { try { const s = fs.statSync(p); return { path: p, size: s.size, mtimeMs: s.mtimeMs }; } catch (_) { return { path: p, size: -1, mtimeMs: null }; } });
   }
 
   /** Is the recorded stage still trustworthy? */
   isValid(stage) {
     if (!stage || stage.status !== 'done') return false;
-    return (stage.outputs || []).every(o => fs.existsSync(o.path) && fs.statSync(o.path).size === o.size && o.size > 0);
+    return (stage.outputs || []).every(o => { try { const s = fs.statSync(o.path); return s.size === o.size && o.size > 0 && (o.mtimeMs === undefined || s.mtimeMs === o.mtimeMs); } catch (_) { return false; } });
   }
 
   /** Invalidate a stage and everything after it. */
