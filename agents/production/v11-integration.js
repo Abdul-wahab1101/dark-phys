@@ -34,7 +34,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     if (!record.downloadedFile || !fs.existsSync(clipPath)) throw new Error('Approved footage file not found: ' + clipPath);
     const assetId = 'pixabay-' + String(record.assetId);
     const licenseId = /pixabay content license/i.test(String(record.license || '')) ? 'pixabay-content-license' : 'unknown';
-    clips.push({ path: clipPath, assetId });
+    clips.push({ path: clipPath, assetId, sceneId: String(record.sceneId), durationSec: Number(scene.durationSeconds) || 4, visualIntent: scene.visualIntent || scene.visual || '', shotType: scene.shotType || 'medium', movement: scene.movement || 'static', colourGrade: scene.colourGrade || 'consistent-documentary-neutral' });
     assets.push({ assetId, kind: 'video', source: record.provider || 'Pixabay',
       sourceUrl: record.sourcePage || null, author: record.creator || null, licenseId,
       retrievedAt: record.retrievedAt || undefined });
