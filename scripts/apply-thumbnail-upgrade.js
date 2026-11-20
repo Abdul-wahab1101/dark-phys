@@ -162,7 +162,7 @@ function patchDashboardStyles(source) {
   if (source.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE')) return source;
   const anchor = '.experiment-thumb:has(input:checked) { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }';
   if (!source.includes(anchor)) throw new Error('Pinned dashboard/styles.css thumbnail card style not found; refusing an unsafe style patch.');
-  return source.replace(anchor, anchor + '\\n/* DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE */\\n.thumbnail-candidates-panel .experiment-thumb.selected { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }\\n.thumbnail-candidates-panel .experiment-thumb { cursor: default; }\\n.thumbnail-candidates-panel .experiment-thumb small { display: block; color: var(--muted); font-size: 10px; line-height: 1.35; margin-top: 4px; text-align: center; }');
+  return source.replace(anchor, anchor + '\n/* DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE */\n.thumbnail-candidates-panel .experiment-thumb.selected { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }\n.thumbnail-candidates-panel .experiment-thumb { cursor: default; }\n.thumbnail-candidates-panel .experiment-thumb small { display: block; color: var(--muted); font-size: 10px; line-height: 1.35; margin-top: 4px; text-align: center; }');
 }
 
 function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } = {}) {
