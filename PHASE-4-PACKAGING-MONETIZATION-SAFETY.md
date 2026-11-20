@@ -1,9 +1,9 @@
 # Phase 4 — Packaging & Monetization Safety
 
-## Cloudflare Worker thumbnail concepts
-The Worker at `workers/thumbnail-worker` exposes `GET /health` and authenticated `POST /v1/concepts`. It returns exactly three distinct 1280×720 SVG concepts (cinematic, editorial and bold contrast). Requests are bounded, headlines are checked for safe line fit, SVG text is escaped, and the endpoint requires a private Bearer token. The CLI rasterizes the returned SVGs to PNG with the project's existing Sharp dependency. It never silently selects a winner or publishes a thumbnail.
+## Direct Cloudflare Workers AI thumbnails
+The Phase 4 thumbnail command calls Cloudflare Workers AI directly through the account REST API; no custom Worker deployment or workers.dev URL is required. GPT-OSS-20B creates three distinct art-direction prompts, FLUX.1 Schnell generates three image backgrounds, and Sharp composes readable title/channel overlays into 1280x720 JPGs. Human selection remains required; the tool never publishes automatically.
 
-Cloudflare deployment is intentionally owner-controlled because it requires the owner's Cloudflare account and secret. Follow [workers/thumbnail-worker/README.md](workers/thumbnail-worker/README.md). Set `CLOUDFLARE_THUMBNAIL_WORKER_URL` and `CLOUDFLARE_THUMBNAIL_TOKEN` locally; never commit the token. CI tests the Worker source and client adapter but does not deploy a public Worker.
+Set these values in the local channel workspace `.env` only: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_TEXT_MODEL=@cf/openai/gpt-oss-20b`, and `CLOUDFLARE_IMAGE_MODEL=@cf/black-forest-labs/flux-1-schnell`. The token needs Workers AI Read and Workers AI Write permissions. Never commit credentials. Run `node scripts/phase4-package.js thumbnails --title "Why People Manipulate You" --subtitle "Psychology Explained"`. Three JPGs and `concepts.json` are saved under `uploads/thumbnail-concepts`. Workers AI usage is subject to the account's current model pricing and limits.
 
 ## SEO titles, descriptions and chapters
 The packaging module produces a primary SEO title, alternate title options, description, tags and a slug. It drafts chapter titles from supplied chapter beats/sections and generates approximate timestamps when actual timestamps are not supplied. Chapter timestamps must be checked against the final export; the validator requires at least three ascending chapters, a 00:00 first chapter, at least 10 seconds between chapters, and timestamps within the declared duration. Metadata remains a human-reviewed draft.
