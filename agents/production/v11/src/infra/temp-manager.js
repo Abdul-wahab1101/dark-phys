@@ -27,7 +27,7 @@ function pickBaseDir(preferred) {
 class TempManager {
   constructor({ baseDir, prefix = 'ytjob_', now = () => Date.now() } = {}) {
     this.baseDir = pickBaseDir(baseDir);
-    this.prefix = prefix; this.now = now;
+    this.prefix = prefix; this.now = now; this.activeDirs = new Set();
   }
 
   dirFor(jobId) { return path.join(this.baseDir, this.prefix + safeName(jobId)); }
@@ -37,6 +37,7 @@ class TempManager {
     const dir = this.dirFor(jobId);
     fs.mkdirSync(dir, { recursive: true });
     this.writeMarker(dir, jobId);
+    this.activeDirs.add(path.resolve(dir));
     return dir;
   }
 
@@ -58,9 +59,12 @@ class TempManager {
     return path.dirname(real) === path.resolve(this.baseDir) && path.basename(real).startsWith(this.prefix) && !!this.readMarker(real);
   }
 
+  release(dir) { this.activeDirs.delete(path.resolve(dir)); }
+
   remove(dir) {
     if (!this.isOwned(dir)) throw new Error('refusing to delete a folder this system did not create: ' + dir);
     fs.rmSync(dir, { recursive: true, force: true });
+    this.release(dir);
   }
 
   /** Removes partial/temp files inside a job folder but keeps finished work. */
@@ -82,6 +86,7 @@ class TempManager {
       if (!name.startsWith(this.prefix)) continue;
       const dir = path.join(this.baseDir, name);
       if (!this.isOwned(dir)) continue;
+      if (this.activeDirs.has(path.resolve(dir))) { kept.push({ dir, why: 'active in this process' }); continue; }
       const m = this.readMarker(dir);
       const age = this.now() - (m.heartbeat || 0);
       if (m.pid !== process.pid && isPidAlive(m.pid)) { kept.push({ dir, why: 'owner running' }); continue; }
