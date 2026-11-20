@@ -1,4 +1,4 @@
-name: Inspect v10 thumbnail upgrade
+name: Integrate v10 thumbnail upgrade
 on:
   push:
     branches: [integration/dark-phys-final]
@@ -6,27 +6,71 @@ on:
       - 'youtube-agent-upgrade-v10.zip'
       - '.github/workflows/inspect-thumbnail-upgrade.yml'
 permissions:
-  contents: read
+  contents: write
   actions: write
 jobs:
-  inspect:
+  integrate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Extract and inventory v10 package
-        shell: bash
+        with:
+          ref: integration/dark-phys-final
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Extract v10 package
         run: |
           set -euo pipefail
           mkdir -p /tmp/v10
           unzip -q youtube-agent-upgrade-v10.zip -d /tmp/v10
-          find /tmp/v10 -type f -printf '%P\t%s bytes\n' | sort | tee /tmp/v10-inventory.txt
-          echo "File count: $(find /tmp/v10 -type f | wc -l)"
-      - name: Preserve extracted package for integration review
+          test -s /tmp/v10/v10/files/agents/thumbnail-designer-agent.js
+          test -s /tmp/v10/v10/files/agents/thumbnail-families-extra.js
+      - name: Integrate the 12 additional design families
+        run: |
+          set -euo pipefail
+          cp /tmp/v10/v10/files/agents/thumbnail-designer-agent.js agents/thumbnail-designer-agent.js
+          cp /tmp/v10/v10/files/agents/thumbnail-families-extra.js agents/thumbnail-families-extra.js
+          cp /tmp/v10/v10/files/scripts/test-thumbnail-designer.js scripts/test-thumbnail-designer.js
+          cp /tmp/v10/v10/README_URDU.md THUMBNAIL-DESIGNS-V10-URDU.md
+          node --check agents/thumbnail-designer-agent.js
+          node --check agents/thumbnail-families-extra.js
+      - name: Install thumbnail render dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          npm install --no-save sharp
+      - name: Validate all 24 design families
+        run: |
+          node - <<'NODE'
+          const { ThumbnailDesignerAgent, DESIGN_FAMILIES } = require('./agents/thumbnail-designer-agent');
+          const agent = new ThumbnailDesignerAgent(null, {});
+          if (DESIGN_FAMILIES.length !== 24) throw new Error('Expected 24 families, found ' + DESIGN_FAMILIES.length);
+          const ids = new Set(DESIGN_FAMILIES.map(x => x.id));
+          for (const id of ['evidence-board','neon-cyber','redacted-file','hazard-warning','duotone-poster','chat-screen','big-number','spotlight-stage','torn-paper','viewfinder','minimal-modern','vhs-glitch']) {
+            if (!ids.has(id)) throw new Error('Missing v10 family: ' + id);
+          }
+          console.log('PASS: all 24 thumbnail families registered');
+          console.log(DESIGN_FAMILIES.map(x => x.id).join(', '));
+          NODE
+          node scripts/test-thumbnail-designer.js
+      - name: Preserve visual test contact sheet
         uses: actions/upload-artifact@v4
         with:
-          name: v10-thumbnail-package
-          path: |
-            /tmp/v10/
-            /tmp/v10-inventory.txt
+          name: dark-phys-thumbnail-v10-contact-sheet
+          path: uploads/thumbnails/test-run-*/
           if-no-files-found: error
           retention-days: 7
+      - name: Commit integrated thumbnail upgrade
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add agents/thumbnail-designer-agent.js agents/thumbnail-families-extra.js scripts/test-thumbnail-designer.js THUMBNAIL-DESIGNS-V10-URDU.md
+          if git diff --cached --quiet; then
+            echo "No integration changes to commit"
+          else
+            git commit -m "Integrate 12 additional v10 thumbnail design families"
+            git push origin HEAD:integration/dark-phys-final
+          fi
