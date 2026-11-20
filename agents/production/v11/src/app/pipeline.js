@@ -52,6 +52,8 @@ class ProductionPipeline {
       title: job.title, description: job.description || '', script: job.script || '',
       segments: job.segments || null, words: job.words || null, scenePlan: job.scenePlan || null, soundDesignPlan: job.soundDesignPlan || null,
       narration: stat(job.narrationPath), music: stat(job.musicPath),
+      musicSegments: (job.musicSegments || []).map(track => ({ file: stat(track.path), assetId: track.assetId, startSeconds: track.startSeconds, endSeconds: track.endSeconds, gainDb: track.gainDb, mood: track.mood })),
+      musicAssetIds: job.musicAssetIds || [],
       clips, captions: stat(job.captionsAss), thumbnail,
       hasOriginalCommentary: job.hasOriginalCommentary !== false,
       realisticAiDisclosed: job.realisticAiDisclosed ?? null,
@@ -108,6 +110,7 @@ class ProductionPipeline {
     if (!Array.isArray(job.clips) || !job.clips.length) throw new Error('job.clips must list at least one clip {path, assetId}');
     if (!fs.existsSync(job.narrationPath)) throw new Error('narration file not found: ' + job.narrationPath);
     for (const c of job.clips) if (!c.assetId || !fs.existsSync(c.path)) throw new Error('clip missing or has no assetId: ' + c.path);
+    for (const track of (job.musicSegments || [])) if (!track.assetId || !track.path || !fs.existsSync(track.path)) throw new Error('act-wise music track missing or has no rights-ledger assetId: ' + (track.path || 'path not set'));
     for (const cue of (job.soundDesignPlan && job.soundDesignPlan.cues) || []) if (!cue.path || !fs.existsSync(cue.path)) throw new Error('sound design cue missing: ' + (cue.path || 'path not set'));
   }
 
