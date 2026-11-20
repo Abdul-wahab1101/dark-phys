@@ -1,4 +1,5 @@
 'use strict';
+require('../local-secrets').loadLocalSecrets();
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
