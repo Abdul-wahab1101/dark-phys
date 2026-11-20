@@ -5,6 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { createProductionSystem } = require('./v11');
 const { getRenderProfile } = require('./render-profile');
+const { buildSoundDesignPlan } = require('./sound-design');
 
 function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, projectDir }) {
   if (!plan || !Array.isArray(plan.scenes) || !plan.scenes.length) throw new Error('A valid Dark Phys scene plan is required.');
@@ -49,6 +50,21 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     ...(music ? { musicPath: music } : {}),
     ...(plan.captionsAss ? { captionsAss: path.resolve(plan.captionsAss) } : {}),
     ...(plan.thumbnail && plan.thumbnail.path ? { thumbnail: { ...plan.thumbnail, path: path.resolve(plan.thumbnail.path) } } : {}) };
+  let soundLibrary = Array.isArray(options.soundEffects) ? options.soundEffects : (Array.isArray(plan.soundEffects) ? plan.soundEffects : []);
+  const soundManifest = plan.soundEffectsManifest ? path.resolve(base, plan.soundEffectsManifest) : path.join(base, 'sound-effects', 'manifest.json');
+  if (!soundLibrary.length && fs.existsSync(soundManifest)) {
+    const parsed = JSON.parse(fs.readFileSync(soundManifest, 'utf8'));
+    soundLibrary = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.assets) ? parsed.assets : []);
+  }
+  const soundDesignPlan = buildSoundDesignPlan({ scenes: plan.scenes, library: soundLibrary,
+    durationSeconds: plan.scenes.reduce((sum, scene) => sum + (Number(scene.durationSeconds) || 5), 0),
+    musicPath: music, voicePath: narration });
+  soundDesignPlan.cues = soundDesignPlan.cues.map(cue => {
+    const resolved = path.isAbsolute(cue.path) ? cue.path : path.resolve(base, cue.path);
+    if (!fs.existsSync(resolved)) throw new Error('Sound effect asset not found: ' + resolved);
+    return { ...cue, path: resolved };
+  });
+  job.soundDesignPlan = soundDesignPlan;
   const profile = getRenderProfile();
   return { job, assets, root: path.join(base, '.dark-phys-v11-state'), profile };
 }
