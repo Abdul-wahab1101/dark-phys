@@ -12,8 +12,17 @@ function commandVersion(command,args=['--version'],runner=spawnSync){
   try{const r=runner(command,args,{encoding:'utf8',windowsHide:true,timeout:5000});if(r.error||r.status!==0)return null;return String(r.stdout||r.stderr||'').trim().split(/\r?\n/)[0].slice(0,180)||null;}catch{return null;}
 }
 function parseEnvKeys(filePath,readFile=fs.readFileSync){
-  try{return String(readFile(filePath,'utf8')).split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith('#')&&/^[A-Za-z_][A-Za-z0-9_]*\s*=/.test(line)).map(line=>line.slice(0,line.indexOf('=')).trim());}catch{return [];}
+  try {
+    return String(readFile(filePath,'utf8')).split(/\\r?\\n/).map(line => {
+      const match = line.trim().match(/^(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*)$/);
+      if (!match) return null;
+      let value = match[2].trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1).trim();
+      return value ? match[1] : null;
+    }).filter(Boolean);
+  } catch { return []; }
 }
+
 function check({root=process.cwd(),env=process.env,platform=process.platform,nodeVersion=process.versions.node,totalmem=os.totalmem(),freemem=os.freemem(),runner=spawnSync,exists=fs.existsSync,statfs=fs.statfsSync,readFile=fs.readFileSync}={}){
   root=path.resolve(root);
   const results=[];
