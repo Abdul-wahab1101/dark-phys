@@ -6,7 +6,7 @@ function buildPackagingTests({topic,title,script,thumbnailConcepts=[],channelNam
  const source=clean(title||topic);if(source.length<5)throw new Error('Provide a clear topic/title.');
  if(clean(script).length<80)throw new Error('A substantial approved script is required to match packaging to content.');
  const base=source.replace(/[.!?]+$/,'');
- const titleCandidates=[base, /^why\\s/i.test(base)?'The Truth About '+base.replace(/^why\\s/i,''):'Why '+base+' Matters', 'What the Evidence Reveals About '+base];
+ const titleCandidates=[base, /^why\s/i.test(base)?'The Truth About '+base.replace(/^why\s/i,''):'Why '+base+' Matters', 'What the Evidence Reveals About '+base];
  const defaults=[
   {id:'curiosity',direction:'curiosity with a concrete question',text:base,visual:'one clear subject, visual question, strong focal point'},
   {id:'evidence',direction:'evidence-led credibility',text:'THE EVIDENCE',visual:'documentary evidence motif, restrained contrast, credible visual'},
