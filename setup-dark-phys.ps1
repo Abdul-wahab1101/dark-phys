@@ -72,7 +72,7 @@ if (Test-Path $ChannelWorkspaces) {
     $WorkspaceEngine = Join-Path $Workspace.FullName "engine"
     if (Test-Path (Join-Path $WorkspaceEngine "index.js")) {
       Write-Host "Upgrading thumbnail pipeline for channel workspace: $($Workspace.Name)"
-      node (Join-Path $Root "scripts\\apply-thumbnail-upgrade.js") --engine $WorkspaceEngine
+      node (Join-Path $Root "scripts\apply-thumbnail-upgrade.js") --engine $WorkspaceEngine
       if ($LASTEXITCODE -ne 0) { throw "Thumbnail upgrade failed for channel workspace $($Workspace.Name)." }
     }
   }
