@@ -25,6 +25,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
 
   const scenes = new Map(plan.scenes.map(scene => [String(scene.id), scene]));
   const clips = [], assets = [], covered = new Set();
+  let musicAssetId = null;
   for (const record of manifest) {
     if (record.rightsApprovedByUser !== true) throw new Error('Rights approval is missing for Pixabay asset ' + record.assetId);
     const scene = scenes.get(String(record.sceneId));
@@ -42,12 +43,21 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     covered.add(String(record.sceneId));
   }
   for (const scene of plan.scenes) if (!covered.has(String(scene.id))) throw new Error('Scene has no rights-approved footage: ' + scene.id);
+  if (music) {
+    const rights = plan.musicRights || {};
+    const musicHash = crypto.createHash('sha256').update(fs.readFileSync(music)).digest('hex');
+    musicAssetId = 'music-' + musicHash.slice(0, 16);
+    assets.push({ assetId: musicAssetId, kind: 'audio', source: rights.source || 'Unverified local music file',
+      sourceUrl: rights.sourceUrl || null, author: rights.creator || null,
+      licenseId: rights.licenseId || 'unknown', licenseUrl: rights.licenseUrl || null,
+      retrievedAt: rights.retrievedAt || undefined, sha256: musicHash });
+  }
   const script = plan.scenes.map(scene => String(scene.narration || '').trim()).filter(Boolean).join(' ');
   if (!script) throw new Error('Scene plan has no narration text.');
   const jobId = 'dark-phys-' + String(plan.projectId || 'project') + '-' + crypto.createHash('sha256').update(output).digest('hex').slice(0, 10);
   const job = { scenePlan: plan.scenes, jobId, title: String(plan.title || 'Dark Phys video'), description: String(plan.description || ''),
     script, narrationPath: narration, clips, outPath: output, hasOriginalCommentary: true,
-    ...(music ? { musicPath: music } : {}),
+    ...(music ? { musicPath: music, musicAssetId } : {}),
     ...(plan.captionsAss ? { captionsAss: path.resolve(plan.captionsAss) } : {}),
     ...(plan.thumbnail && plan.thumbnail.path ? { thumbnail: { ...plan.thumbnail, path: path.resolve(plan.thumbnail.path) } } : {}) };
   let soundLibrary = Array.isArray(soundEffects) ? soundEffects : (Array.isArray(plan.soundEffects) ? plan.soundEffects : []);
@@ -58,7 +68,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
   }
   const soundDesignPlan = buildSoundDesignPlan({ scenes: plan.scenes, library: soundLibrary,
     durationSeconds: plan.scenes.reduce((sum, scene) => sum + (Number(scene.durationSeconds) || 5), 0),
-    musicPath: music, voicePath: narration });
+    musicPath: music, voicePath: narration, musicRights: plan.musicRights || {}, musicSegments: plan.musicSegments || [] });
   soundDesignPlan.cues = soundDesignPlan.cues.map(cue => {
     const resolved = path.isAbsolute(cue.path) ? cue.path : path.resolve(base, cue.path);
     if (!fs.existsSync(resolved)) throw new Error('Sound effect asset not found: ' + resolved);
