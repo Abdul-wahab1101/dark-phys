@@ -18,7 +18,7 @@ const fetchImpl=async(url,opts)=>{calls.push({url,opts});return {ok:true,json:as
  const cloudflare=new ViralScriptGenerator({apiKey:'',cloudflareToken:'cf-test-token',accountId:'account-test',cloudflareModel:'@cf/openai/gpt-oss-20b',fetchImpl:async(url,opts)=>{cloudflareCalls.push({url,opts});return{ok:true,json:async()=>({success:true,result:{response:JSON.stringify(draft)}})};}});
  const cloudflareDraft=await cloudflare.request('Return a JSON draft','en');
  assert.equal(cloudflareDraft.titleOptions.length,3);
- assert.match(cloudflareCalls[0].url,/accounts\\/account-test\\/ai\\/run/);
+ assert.ok(cloudflareCalls[0].url.includes('/accounts/account-test/ai/run/'));
  assert.equal(cloudflareCalls[0].opts.headers.authorization,'Bearer cf-test-token');
  console.log('PASS script generator: provider-key guard, bilingual separate drafts, schema/source validation and no-auto-publish gate');
 })().catch(e=>{console.error(e);process.exitCode=1;});
