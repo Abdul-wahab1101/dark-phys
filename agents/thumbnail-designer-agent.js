@@ -2580,6 +2580,7 @@ class ThumbnailDesignerAgent {
       throw new Error('Final thumbnail set failed the cross-round composition diversity gate; no candidate was approved.');
     }
 
+    const primary = variants[0];
     const usedCloudflare = variants.some(v => v.provider === 'cloudflare-workers-ai');
     const familyHistory = (await this.readFamilyHistory()).concat([{
       title: concept.title,
