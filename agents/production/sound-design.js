@@ -57,7 +57,7 @@ function buildSoundDesignPlan({ scenes = [], library = [], durationSeconds, musi
   let sceneCursor = 0;
   scenes.forEach((scene, index) => {
     const start = sceneCursor, end = start + seconds(scene.durationSeconds, 5);
-    const act = String(scene.act || scene.actName || scene.section || 'Act ' + (index + 1));
+    const act = String(scene.act || scene.actName || scene.section || (scene.beat ? 'Act ' + scene.beat : 'Act ' + (index + 1)));
     const current = acts.get(act) || { act, startSeconds: start, endSeconds: end, moods: [] };
     current.endSeconds = end;
     const mood = scene.musicMood || MOOD_BY_KIND[classifyScene(scene, index, scenes.length)];
