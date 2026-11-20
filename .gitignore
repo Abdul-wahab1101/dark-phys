@@ -24,3 +24,14 @@ media/
 *.sqlite
 *.sqlite3
 *.db
+
+
+# Local upstream checkouts, channel workspaces and generated assets must never enter Git
+/engines/
+/channel-workspaces/
+/uploads/
+/data/
+/logs/
+/temp/
+/OpenMontage-main/
+/.dark-phys-orchestrator/
