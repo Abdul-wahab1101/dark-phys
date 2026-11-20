@@ -29,11 +29,35 @@ class ProductionPipeline {
   log(m) { if (this.logger) this.logger.info(m); }
 
   fingerprint(job) {
-    const stat = p => { try { const s = fs.statSync(p); return s.size + ':' + Math.round(s.mtimeMs); } catch (_) { return 'missing'; } };
-    return crypto.createHash('sha256').update(JSON.stringify({
-      t: job.title, s: job.script, n: [job.narrationPath, stat(job.narrationPath)], m: job.musicPath ? [job.musicPath, stat(job.musicPath)] : null,
-      c: (job.clips || []).map(c => [c.path, c.assetId, stat(c.path)]), a: job.captionsAss ? stat(job.captionsAss) : null
-    })).digest('hex');
+    // A checkpoint is reusable only when every input that can affect a stage is unchanged.
+    // Include approval metadata and the current ledger records: otherwise a previously-cleared
+    // preflight could be reused after an asset's licence/rights record or review decision changes.
+    const stat = p => {
+      if (!p) return null;
+      try {
+        const s = fs.statSync(p);
+        return { path: path.resolve(p), size: s.size, mtimeMs: s.mtimeMs, ino: Number(s.ino) || 0 };
+      } catch (_) { return { path: path.resolve(p), missing: true }; }
+    };
+    const ledgerAssets = this.ledger.records().assets;
+    const clips = (job.clips || []).map(c => ({
+      file: stat(c.path), assetId: c.assetId,
+      ledger: ledgerAssets.get(c.assetId) || null
+    }));
+    const thumbnail = job.thumbnail ? {
+      file: stat(job.thumbnail.path), text: job.thumbnail.text || '',
+      textBoxes: job.thumbnail.textBoxes || []
+    } : null;
+    const inputs = {
+      title: job.title, description: job.description || '', script: job.script || '',
+      segments: job.segments || null, words: job.words || null,
+      narration: stat(job.narrationPath), music: stat(job.musicPath),
+      clips, captions: stat(job.captionsAss), thumbnail,
+      hasOriginalCommentary: job.hasOriginalCommentary !== false,
+      realisticAiDisclosed: job.realisticAiDisclosed ?? null,
+      outPath: path.resolve(job.outPath), config: this.cfg
+    };
+    return crypto.createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
   }
 
   async run(job) {
