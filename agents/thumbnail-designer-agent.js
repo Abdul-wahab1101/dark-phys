@@ -2407,9 +2407,16 @@ class ThumbnailDesignerAgent {
     const layout = variant.layout || {};
     const wordCount = String(variant.hook || '').trim().split(/\s+/).filter(Boolean).length;
     const checks = variant.qualityChecks || {};
-    const safe = (layout.blockBounds || [layout.textBounds].filter(Boolean)).every(b => {
-      const hitsBottomRightTimestamp = b.x + b.w > 1040 && b.y + b.h > 600;
-      const hitsTopRightOverlay = b.x + b.w > 1110 && b.y < 120;
+    const safeBounds = Array.isArray(layout.blockBounds) && layout.blockBounds.length
+      ? layout.blockBounds
+      : [layout.textBounds].filter(Boolean);
+    const safe = safeBounds.length > 0 && safeBounds.every(b => {
+      const valid = [b.x, b.y, b.w, b.h].every(value => Number.isFinite(Number(value))) &&
+        Number(b.x) >= 0 && Number(b.y) >= 0 && Number(b.w) > 0 && Number(b.h) > 0 &&
+        Number(b.x) + Number(b.w) <= 1280 && Number(b.y) + Number(b.h) <= 720;
+      if (!valid) return false;
+      const hitsBottomRightTimestamp = Number(b.x) + Number(b.w) > 1040 && Number(b.y) + Number(b.h) > 600;
+      const hitsTopRightOverlay = Number(b.x) + Number(b.w) > 1110 && Number(b.y) < 120;
       return !hitsBottomRightTimestamp && !hitsTopRightOverlay;
     });
     const wordsScore = wordCount >= 2 && wordCount <= 5 ? 100 : Math.max(0, 100 - Math.abs(wordCount - 4) * 24);
