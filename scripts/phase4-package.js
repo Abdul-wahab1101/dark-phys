@@ -3,6 +3,7 @@ const path=require('node:path');
 const fs=require('node:fs');
 const readline=require('node:readline');
 const p=require('../agents/production/phase4-packaging');
+const {buildPackagingTests}=require('../agents/production/packaging-experiments');
 function loadLocalEnv(){
  for(const file of [path.resolve('.env'),path.resolve(__dirname,'../.env')]){
   if(!fs.existsSync(file))continue;
@@ -62,6 +63,7 @@ async function main(){
   if(manifestPath)assets=p.importAssetManifest(p.loadJson(path.resolve(manifestPath)));
   else if(Array.isArray(input.assetManifest))assets=p.importAssetManifest(input.assetManifest);
   const pkg={...input,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(assets)};
+  pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts:input.thumbnailConcepts||[],youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
   if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
   pkg.compliance=p.complianceReview({...input,...pkg.seo});
   p.writeJson(file,pkg);
