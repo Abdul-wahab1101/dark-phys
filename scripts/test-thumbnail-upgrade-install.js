@@ -31,7 +31,7 @@ try{
  const dashboardFile=path.join(dashboardDir,'app.js');
  const dashboardSource=[
   "'use strict';","async function openContent(item) {","  const data=item.editorData||{};",
-  "  const selectedThumbnailVariant = Number(data.selectedThumbnailVariant || 0);",
+  "    const selectedThumbnailVariant = Number(data.selectedThumbnailVariant || 0);",
   "  $('#content-detail').innerHTML = `",
   "            <div class=\"quality-grid\">${(item.qualityChecks || []).map(check => check.message).join('')}</div>",
   "            ${item.review_notes ? `<p class=\"callout\">${escapeHTML(item.review_notes)}</p>` : ''}",
