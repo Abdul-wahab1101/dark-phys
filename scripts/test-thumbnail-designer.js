@@ -41,6 +41,48 @@ async function placeholderBackground(file, i) {
   ok(DESIGN_FAMILIES.length >= 12, `design families available: ${DESIGN_FAMILIES.length}`);
   console.log('Fonts:', JSON.stringify(agent.getFontReport(), null, 1));
 
+  // 0) Regression checks for candidate rejection, title curiosity gap and mobile overlays.
+  const originalVisionReview = agent.inspectThumbnailVisual;
+  agent.inspectThumbnailVisual = async () => ({ available: false, passed: false, score: 0, concerns: [] });
+  const validChecks = { hardFailure: false, decodes: true, correctDimensions: true, underTwoMB: true, textFit: true, contrastOk: true, readableAtSmallSize: true, notBlank: true };
+  const goodCandidate = {
+    path: 'not-read-by-stubbed-review.jpg', hook: 'WHO PULLS YOUR STRINGS?',
+    sourceTitle: '7 Signs You Are Being Gaslighted',
+    layout: { blockBounds: [{ x: 90, y: 160, w: 440, h: 180 }] },
+    qualityChecks: validChecks
+  };
+  const goodReview = await agent.scoreThumbnailCandidate(goodCandidate);
+  ok(goodReview.passed && goodReview.mobileSafeZone, 'strong curiosity hook and mobile-safe placement pass');
+  const repeatedCandidate = { ...goodCandidate, hook: 'HIDDEN GASLIGHTING SIGNS' };
+  const repeatedReview = await agent.scoreThumbnailCandidate(repeatedCandidate);
+  ok(!repeatedReview.passed && repeatedReview.titleOverlap > 0.8, 'headline that repeats the title is automatically rejected');
+  const unsafeCandidate = { ...goodCandidate, layout: { blockBounds: [{ x: 1080, y: 635, w: 170, h: 65 }] } };
+  const unsafeReview = await agent.scoreThumbnailCandidate(unsafeCandidate);
+  ok(!unsafeReview.passed && !unsafeReview.mobileSafeZone, 'bottom-right YouTube timestamp safe-zone collision is rejected');
+  agent.inspectThumbnailVisual = originalVisionReview;
+
+  // Verify Cloudflare's actual image-review request/response contract without using credentials.
+  const originalFetch = global.fetch;
+  const oldToken = process.env.CLOUDFLARE_API_TOKEN;
+  const oldAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
+  let visionRequest = null;
+  try {
+    process.env.CLOUDFLARE_API_TOKEN = 'test-token';
+    process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
+    global.fetch = async (url, options) => {
+      visionRequest = { url: String(url), body: JSON.parse(options.body) };
+      return { ok: true, json: async () => ({ result: { response: JSON.stringify({ score: 91, passed: true, subjectQuality: 9, clutter: 1, focalPoint: 9, textReadability: 9, composition: 9, curiosity: 9, concerns: [] }) } }) };
+    };
+    const visionReview = await agent.inspectThumbnailVisual(sheetFiles[0], { hook: 'WHO PULLS YOUR STRINGS?', designFamily: 'test' });
+    ok(visionReview.available && visionReview.passed && visionReview.score === 91, 'Cloudflare Vision response is parsed into a visual quality review');
+    ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && visionRequest?.body.messages?.[0]?.content?.some(p => p.type === 'image_url' && p.image_url.url.startsWith('data:image/jpeg;base64,')), 'Cloudflare Vision request includes the actual thumbnail image');
+  } finally {
+    global.fetch = originalFetch;
+    if (oldToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN; else process.env.CLOUDFLARE_API_TOKEN = oldToken;
+    if (oldAccount === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID; else process.env.CLOUDFLARE_ACCOUNT_ID = oldAccount;
+  }
+
+
   // 1) Planning variety across different videos
   const videos = [
     { title: '7 Signs You Are Being Gaslighted', script: 'Gaslighting makes you doubt your memory. Signs of gaslighting include denial, rewriting events and blaming you.' },
@@ -119,6 +161,8 @@ async function placeholderBackground(file, i) {
     console.log('diversity:', JSON.stringify(result.qualityChecks.diversity));
     ok(result.qualityChecks.diversity.distinctFamilies === 3, 'three distinct families in end-to-end run');
     ok(new Set(result.variants.map(v => v.layoutClass)).size === 3, 'three distinct composition/layout classes');
+    ok(new Set(result.variants.map(v => v.visualStrategyId)).size === 3, 'three distinct visual strategy IDs survive into final output');
+    ok(result.variants.every(v => v.reviewPassed), 'only approved candidates survive final quality gate');
     ok(result.variants.every(v => Number.isFinite(v.reviewScore) && v.reviewScore >= 0 && v.reviewScore <= 100), 'every candidate receives a 0-100 quality score');
     ok(result.comparison.length === 3 && result.recommendedCandidate === result.variants[0].label, 'three-way comparison and best-candidate recommendation');
     ok(result.qualityChecks.mobileSafeZonesChecked === true, 'mobile timestamp safe-zone validation enabled');
