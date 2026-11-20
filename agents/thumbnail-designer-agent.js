@@ -899,10 +899,9 @@ class ThumbnailDesignerAgent {
     this.templatesPath = path.join(__dirname, '..', 'data', 'thumbnail-templates');
     this.outputPath = path.join(__dirname, '..', 'uploads', 'thumbnails');
 
-    this.defaultWorkspace = path.resolve(
-      __dirname,
-      '../../OpenMontage-main/projects/youtube-handoff-prod_1794570422249_19sn4gk1vzj_zyfleek436i'
-    );
+    // The installed YouTube engine root is the portable default workspace.
+    // It keeps assets/visuals and assets/free-stock-broll channel-local.
+    this.defaultWorkspace = path.resolve(__dirname, '..');
 
     this.projectRoot = this.defaultWorkspace;
     this.visualsPath = path.join(this.projectRoot, 'assets', 'visuals');
