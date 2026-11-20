@@ -6,7 +6,7 @@ const fetchImpl=async url=>{
  const u=new URL(url);calls.push(u);
  if(u.pathname.endsWith('/search'))return {ok:true,json:async()=>({items:[{id:{videoId:'v1'}}]})};
  if(u.searchParams.get('chart')==='mostPopular')return {ok:true,json:async()=>({items:[{id:'v2',snippet:{title:'Popular title',channelId:'c',thumbnails:{}},statistics:{viewCount:'1200'}}]})};
- if(u.searchParams.get('id')==='v1')return {ok:true,json:async()=>({items:[{id:'v1',snippet:{title:'Fresh result',publishedAt:'2026-11-19T00:00:00Z',thumbnails:{}},statistics:{viewCount:'500'}}]})};
+ if(u.searchParams.get('id')==='v1')return {ok:true,json:async()=>({items:[{id:'v1',snippet:{title:'Fresh result',publishedAt:new Date(Date.now()-3600000).toISOString(),thumbnails:{}},statistics:{viewCount:'500'}}]})};
  return {ok:true,json:async()=>({items:[]})};
 };
 (async()=>{
