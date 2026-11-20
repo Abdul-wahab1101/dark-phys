@@ -240,6 +240,9 @@ jobs:
       - name: Run FFmpeg vertical-render tests
         working-directory: engines/OpenMontage
         run: pytest -q tests/tools/test_video_compose_vertical.py
+      - name: Install pinned Remotion composer dependencies
+        working-directory: engines/OpenMontage/remotion-composer
+        run: npm ci
       - name: Render Remotion demo
         working-directory: engines/OpenMontage
         run: python render_demo.py world-in-numbers
