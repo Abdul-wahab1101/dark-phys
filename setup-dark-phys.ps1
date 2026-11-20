@@ -1,4 +1,5 @@
 $ErrorActionPreference = "Stop"
+param([switch]$IncludeOpenMontage)
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Engines = Join-Path $Root "engines"
 New-Item -ItemType Directory -Force -Path $Engines | Out-Null
@@ -36,17 +37,21 @@ try {
   New-Item -ItemType Directory -Force -Path "config" | Out-Null
 } finally { Pop-Location }
 
-$OpenMontage = Join-Path $Engines "OpenMontage"
-$OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
-if (-not (Test-Path (Join-Path $OpenMontage ".git"))) {
-  git clone https://github.com/OpenMontageInc/OpenMontage.git $OpenMontage
-  git -C $OpenMontage fetch --depth 1 origin $OpenMontageCommit
-  git -C $OpenMontage checkout --detach $OpenMontageCommit
-} else { Write-Host "OpenMontage already cloned; keeping your local changes." }
+if ($IncludeOpenMontage) {
+  $OpenMontage = Join-Path $Engines "OpenMontage"
+  $OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
+  if (-not (Test-Path (Join-Path $OpenMontage ".git"))) {
+    git clone https://github.com/OpenMontageInc/OpenMontage.git $OpenMontage
+    git -C $OpenMontage fetch --depth 1 origin $OpenMontageCommit
+    git -C $OpenMontage checkout --detach $OpenMontageCommit
+  } else { Write-Host "OpenMontage already cloned; keeping your local changes." }
+} else {
+  Write-Host "Skipping optional OpenMontage clone. Run .\\setup-openmontage.ps1 only when advanced rendering is needed."
+}
 
 Write-Host ""
 Write-Host "Dark Phys engines are ready."
 Write-Host "YouTube agent: $Youtube"
-Write-Host "OpenMontage:   $OpenMontage"
+if ($IncludeOpenMontage) { Write-Host "OpenMontage:   $OpenMontage" } else { Write-Host "OpenMontage:   skipped (optional)" }
 Write-Host "Next: add provider key to engines\youtube-automation-agent\.env"
 Write-Host "Then run .\start-dark-phys.ps1"
