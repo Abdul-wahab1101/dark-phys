@@ -40,6 +40,7 @@ The evidence-led Viral Intelligence Engine prioritises topics, builds hook/story
    Set-ExecutionPolicy -Scope Process Bypass
    .\setup-dark-phys.ps1
    ```
+   This installs the YouTube engine only. OpenMontage is optional; when advanced rendering is needed, run `./setup-openmontage.ps1` separately.
 4. Add at least one text-provider API key in engines\youtube-automation-agent\.env. Provider free tiers and limits vary.
 5. Add YouTube OAuth Desktop credentials only if you want to connect/publish to your channel; follow the upstream walkthrough rather than creating credentials by guesswork.
 6. Run .\start-dark-phys.ps1 and open http://localhost:3456.
