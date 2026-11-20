@@ -2458,10 +2458,10 @@ class ThumbnailDesignerAgent {
     const heuristic = Math.round((technical * 0.35) + (wordsScore * 0.15) +
       (curiosityGapScore * 0.15) + (contrastScore * 0.15) +
       (fontScore * 0.10) + (detailScore * 0.10));
-    // Heuristic-only results are deliberately capped so they cannot masquerade as AI visual review.
+    // Map heuristic-only scores into a separate 55-89 band so strong candidates do not all tie at 89.
     const score = visual.available
       ? Math.round(visual.score * 0.72 + heuristic * 0.28)
-      : Math.min(89, heuristic);
+      : Math.round(55 + (heuristic * 0.34));
     const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
       !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5 || titleOverlap > 0.8;
     return {
