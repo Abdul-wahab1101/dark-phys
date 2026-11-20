@@ -2,8 +2,8 @@
 const assert=require('node:assert/strict');
 const {buildPackagingTests,overlapScore}=require('../agents/production/packaging-experiments');
 const script='This documentary examines why people trust their memory, what controlled psychology research reveals, how suggestion changes recall, and why evidence matters when judging what really happened. It explains the studies and the limits of the available findings.';
-const pkg=buildPackagingTests({topic:'Memory and the Mind',script,thumbnailConcepts:[{id:'a',text:'MEMORY TRAP'},{id:'b',text:'THE EVIDENCE'},{id:'c',text:'WHY IT MATTERS'}]});
-assert.equal(pkg.variants.length,3);assert.equal(new Set(pkg.variants.map(x=>x.title)).size,3);assert(pkg.variants.every(x=>x.titleScriptMatch>0&&x.humanReviewRequired));
+const pkg=buildPackagingTests({topic:'Memory and the Mind',script,thumbnailConcepts:[{id:'a',text:'MEMORY TRAP',file:'a.jpg'},{id:'b',text:'THE EVIDENCE',file:'b.jpg'},{id:'c',text:'WHY IT MATTERS',file:'c.jpg'}]});
+assert.equal(pkg.variants.length,3);assert.equal(new Set(pkg.variants.map(x=>x.title)).size,3);assert(pkg.variants.every(x=>x.titleScriptMatch>0&&x.humanReviewRequired));assert.equal(pkg.variants[0].thumbnail.imagePath,'a.jpg');
 assert.equal(pkg.youtubeTestCompare.available,false);assert.equal(pkg.youtubeTestCompare.startAutomatically,false);
 const authorized=buildPackagingTests({title:'Why Memory Can Mislead You',script,youtubeTestCompareAvailable:true,oauthAuthorized:true});assert.equal(authorized.youtubeTestCompare.available,false);assert.equal(authorized.youtubeTestCompare.ownerReportedAvailable,true);assert.equal(authorized.youtubeTestCompare.requiresLiveDashboardVerification,true);
 assert(overlapScore('memory evidence',script)>0);assert.throws(()=>buildPackagingTests({title:'Tiny',script:'short'}),/substantial approved script/);
