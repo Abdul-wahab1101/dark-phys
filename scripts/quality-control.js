@@ -1,0 +1,8 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
+const {evaluateQc}=require('../agents/production/quality-control');
+const args=process.argv.slice(2),get=k=>{const i=args.indexOf('--'+k);return i<0?'':args[i+1];};
+const video=get('video'),mode=get('mode')||'long',captions=get('captions'),thumbnail=get('thumbnail'),out=get('output');
+if(!video||!['long','short'].includes(mode)){console.log('Usage: node scripts/quality-control.js --video final.mp4 --mode long|short [--captions file.srt] [--thumbnail file.jpg] [--output report.json]');process.exitCode=2;}
+else if(!fs.existsSync(video)){console.error('Video not found:',video);process.exitCode=2;}
+else{const bin=process.env.FFPROBE_PATH||'ffprobe',r=spawnSync(bin,['-v','error','-show_streams','-show_format','-of','json',video],{encoding:'utf8'});if(r.error||r.status!==0)throw new Error('ffprobe failed: '+(r.stderr||r.error?.message));const report=evaluateQc({mode,probe:JSON.parse(r.stdout),files:{captions:captions&&fs.existsSync(captions)?captions:'',thumbnail:thumbnail&&fs.existsSync(thumbnail)?thumbnail:''}});report.video=path.resolve(video);report.createdAt=new Date().toISOString();const target=out||video.replace(/\.[^.]+$/,'')+'.qc-report.json';fs.writeFileSync(target,JSON.stringify(report,null,2)+'\n');for(const x of report.checks)console.log((x.passed?'PASS ':'REVIEW ')+x.category+' / '+x.name+' — '+x.detail);console.log(report.readyForManualApproval?'TECHNICAL + HUMAN CHECKLIST READY':'QC BLOCKED / HUMAN REVIEW REQUIRED');if(!report.readyForManualApproval)process.exitCode=2;}
