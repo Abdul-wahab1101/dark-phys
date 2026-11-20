@@ -38,6 +38,9 @@ try{
   "  `;","}","module.exports=openContent;"
  ].join('\n');
  fs.writeFileSync(dashboardFile,dashboardSource);
+ const stylesFile=path.join(dashboardDir,'styles.css');
+ const stylesSource='.experiment-thumb:has(input:checked) { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(110, 168, 255, .18); }\\n';
+ fs.writeFileSync(stylesFile,stylesSource);
  const upstreamDesigner=path.join(agents,'thumbnail-designer-agent.js');
  const upstreamFamilies=path.join(agents,'thumbnail-families-extra.js');
  const production=path.join(agents,'production-management-agent.js');
@@ -64,14 +67,17 @@ try{
  const patched=fs.readFileSync(production,'utf8');
  const patchedIndex=fs.readFileSync(indexFile,'utf8');
  const patchedDashboard=fs.readFileSync(dashboardFile,'utf8');
+ const patchedStyles=fs.readFileSync(stylesFile,'utf8');
  assert(patched.includes('DARK_PHYS_REVIEWED_THUMBNAIL_ENGINE'));
  assert(patched.includes("generatedWith: 'Dark Phys reviewed thumbnail engine'"));
  assert(!patched.includes('try { const aiThumbnail'));
  assert(patchedIndex.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_ASSETS')&&patchedIndex.includes('thumbnail-candidate-'));
  assert(patchedDashboard.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_PANEL')&&patchedDashboard.includes('Recommended:'));
+ assert(patchedStyles.includes('DARK_PHYS_THUMBNAIL_CANDIDATE_STYLE')&&patchedStyles.includes('.thumbnail-candidates-panel .experiment-thumb.selected'));
  assert.equal(fs.readFileSync(first.backups[1],'utf8'),'// pre-existing families\n');
  assert.equal(fs.readFileSync(first.backups[3],'utf8'),indexSource);
  assert.equal(fs.readFileSync(first.backups[4],'utf8'),dashboardSource);
+ assert.equal(fs.readFileSync(first.backups[5],'utf8'),stylesSource);
  assert.equal(fs.readFileSync(first.backups[2],'utf8'),originalProduction);
  assert.equal(fs.readFileSync(first.backups[0],'utf8'),'// original upstream designer\n');
  const second=applyThumbnailUpgrade({root,engine});
