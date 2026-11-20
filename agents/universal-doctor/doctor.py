@@ -74,6 +74,41 @@ def main(argv=None) -> int:
     if bad:
         print(f"WARNING: Doctor integrity check: {bad}", file=sys.stderr)
 
+    if a.cmd in ("backup", "backups", "verify-backup", "restore-backup"):
+        manager = BackupManager(d.root, d.data_dir)
+        if a.cmd == "backups":
+            print(json.dumps(manager.list(), indent=2))
+            return 0
+        if a.cmd == "backup":
+            if len(a.args) < 2:
+                ap.error("backup requires PATH and at least one project-relative FILE")
+            bid = manager.create(a.args[1:], a.reason, {"created_by": "Universal Doctor CLI"})
+            print(json.dumps({"backup_id": bid, "verified": manager.verify(bid)}, indent=2))
+            return 0
+        if len(a.args) < 2:
+            ap.error(f"{a.cmd} requires PATH and BACKUP_ID")
+        bid = a.args[1]
+        if a.cmd == "verify-backup":
+            ok = manager.verify(bid)
+            print(json.dumps({"backup_id": bid, "verified": ok}, indent=2))
+            return 0 if ok else 1
+        if not a.yes:
+            print("Restore refused: review the backup first, then repeat with --yes.")
+            return 2
+        manifest = manager.manifest(bid)
+        safety_id = manager.create(list(manifest["files"]), f"pre-restore safety copy for {bid}",
+                                   {"created_by": "Universal Doctor CLI"})
+        try:
+            result = manager.restore(bid)
+        except Exception as exc:
+            result = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+        if not result.get("ok"):
+            rollback = manager.restore(safety_id)
+            print(json.dumps({"backup_id": bid, "result": result, "safety_backup": safety_id,
+                              "safety_rollback": rollback}, indent=2))
+            return 1
+        print(json.dumps({"backup_id": bid, "result": result, "safety_backup": safety_id}, indent=2))
+        return 0
     if a.cmd in ("scan", "diagnose"):
         s = d.scan(run_tests_flag=not a.no_tests, runtime_checks=(a.cmd == "diagnose"))
         print(f"Project: {d.root}\nMode: {d.mode}   Health: {s['health']}/100 ({s['label']})   findings: {s['findings']}   scan: {s['duration_s']}s")
