@@ -24,11 +24,14 @@ try {
   const actPrepared = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), musicSegments: [{ act: 'Act II', path: actMusic, startSeconds: 0, endSeconds: 5, mood: 'tension', rights: { source: 'Original act score', licenseId: 'own', licenseUrl: 'https://example.test/act-music-license', commercialUseVerified: true, reviewStatus: 'approved' } }] }, manifest, narrationPath: narration, outputPath: path.join(root, 'out', 'act-music.mp4'), projectDir: root });
   assert.equal(actPrepared.job.musicSegments[0].mood, 'tension');
   assert.equal(actPrepared.assets[1].kind, 'audio');
+  assert.equal(actPrepared.assets[1].licenseId, 'own');
   assert.equal(actPrepared.job.musicAssetIds.length, 1);
   assert.equal(musicPrepared.assets[1].kind, 'audio');
   assert.equal(musicPrepared.assets[1].licenseId, 'own');
   assert.equal(musicPrepared.job.musicAssetId, musicPrepared.assets[1].assetId);
   assert.equal(musicPrepared.job.soundDesignPlan.musicRightsLedger.reviewStatus, 'approved');
+  const unprovenMusic = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), musicRights: { source: 'Claimed own music', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' } }, manifest, narrationPath: narration, musicPath: music, outputPath: path.join(root, 'out', 'unproven-music.mp4'), projectDir: root });
+  assert.equal(unprovenMusic.assets[1].licenseId, 'unknown', 'music without a license URL or evidence file must remain blocked');
   assert.throws(() => buildV11Job({ plan, manifest: [{ ...manifest[0], rightsApprovedByUser: false }],
     narrationPath: narration, outputPath: path.join(root, 'out', 'bad.mp4'), projectDir: root }), /Rights approval/);
   assert.throws(() => buildV11Job({ plan, manifest, narrationPath: narration, outputPath: clip, projectDir: root }), /must not overwrite/);
