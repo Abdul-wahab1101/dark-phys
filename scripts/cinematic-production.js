@@ -1,4 +1,7 @@
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
+
 const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const {PixabayPool}=require('../agents/production/pixabay-pool');
 const {buildMotionFilters}=require('../agents/production/motion-graphics');
