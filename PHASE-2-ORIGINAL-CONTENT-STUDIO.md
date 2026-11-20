@@ -16,7 +16,7 @@ The v2 pipeline adds:
 
 ## Input package
 
-Use the existing JSON shape documented below. It must include topic, sources, claims, separate English and Roman Urdu narration/reference text, and researcher-rated `viralFactors` (0–5). Do not invent source URLs, evidence or scoring factors. The provider needs `DARK_PHYS_LLM_API_KEY` and `DARK_PHYS_LLM_MODEL`; optional `DARK_PHYS_LLM_BASE_URL` supports an OpenAI-compatible endpoint.
+Use the existing JSON shape documented below. It must include topic, sources, claims, separate English and Roman Urdu narration/reference text, and researcher-rated `viralFactors` (0–5). Do not invent source URLs, evidence or scoring factors. The provider accepts `DARK_PHYS_LLM_API_KEY` + `DARK_PHYS_LLM_MODEL` for an OpenAI-compatible endpoint, or automatically falls back to the existing `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_TEXT_MODEL` credentials when the OpenAI-compatible key is absent. Optional `DARK_PHYS_LLM_BASE_URL` selects another OpenAI-compatible endpoint.
 
 ```powershell
 node scripts/viral-generate.js research-package.json
