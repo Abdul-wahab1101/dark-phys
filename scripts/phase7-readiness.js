@@ -13,8 +13,8 @@ function commandVersion(command,args=['--version'],runner=spawnSync){
 }
 function parseEnvKeys(filePath,readFile=fs.readFileSync){
   try {
-    return String(readFile(filePath,'utf8')).split(/\\r?\\n/).map(line => {
-      const match = line.trim().match(/^(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*)$/);
+    return String(readFile(filePath,'utf8')).split(/\r?\n/).map(line => {
+      const match = line.trim().match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
       if (!match) return null;
       let value = match[2].trim();
       if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1).trim();
