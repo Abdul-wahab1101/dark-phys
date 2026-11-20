@@ -34,6 +34,7 @@ function planScenes(input = {}) {
       if (movement === previousMovement) movement = movements[(movements.indexOf(movement) + 1) % movements.length];
       previousShot = shotType; previousMovement = movement;
       const sourceType = cleanIntent(intent.sourceType || beat.sourceType || 'stock_video');
+      if (!['stock_video', 'archive_video'].includes(sourceType)) throw new Error('Unsupported sourceType for current renderer: ' + sourceType + ' (use stock_video or archive_video)');
       scenes.push({
         id: 'scene-' + String(scenes.length + 1).padStart(3, '0'), beat: beatIndex + 1,
         sentenceIndex: sentenceIndex + 1, narration: sentence, visualIntent: visual || 'Illustrate the meaning of this sentence without literal keyword matching',
