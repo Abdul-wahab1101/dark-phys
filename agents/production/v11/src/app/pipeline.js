@@ -195,18 +195,53 @@ class ProductionPipeline {
       fs.writeFileSync(path.join(dir, 'cap.ass'), pacing.remapAss(fs.readFileSync(job.captionsAss, 'utf8'), clean.keeps));
       vf += ';[vi]ass=cap.ass[v]';
     } else vf += ';[vi]null[v]';
-    let af = '[1:a]anull[a]';
+
+    const soundPlan = job.soundDesignPlan || {};
+    const chains = [];
+    const labels = [];
+    const voiceChain = '[1:a]highpass=f=80,equalizer=f=240:t=q:w=1:g=-2,' +
+      'equalizer=f=3200:t=q:w=1:g=1.5,acompressor=threshold=0.10:ratio=3:attack=12:release=180:makeup=2';
+    let nextInput = 2;
+    let musicLabel = null;
     if (job.musicPath && fs.existsSync(job.musicPath)) {
       const ext = path.extname(job.musicPath) || '.mp3';
       fs.copyFileSync(job.musicPath, path.join(dir, 'music' + ext));
       inputs.push('-stream_loop', '-1', '-i', 'music' + ext);
-      af = '[1:a]asplit=2[vo][sc];[2:a]volume=-18dB,afade=t=in:st=0:d=1.5,afade=t=out:st=' + Math.max(0, total - 3).toFixed(2) + ':d=3[m];[m][sc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=450[md];[vo][md]amix=inputs=2:duration=first:normalize=0[a]';
+      const musicGain = Number.isFinite(Number(soundPlan.music && soundPlan.music.gainDb))
+        ? Math.max(-48, Math.min(0, Number(soundPlan.music.gainDb))) : -25;
+      const fadeIn = Number(soundPlan.music && soundPlan.music.fadeInSeconds) || 1.5;
+      const fadeOut = Number(soundPlan.music && soundPlan.music.fadeOutSeconds) || 2.5;
+      chains.push(voiceChain + ',asplit=2[vo][sc]');
+      chains.push('[' + nextInput + ':a]volume=' + musicGain + 'dB,afade=t=in:st=0:d=' + fadeIn +
+        ',afade=t=out:st=' + Math.max(0, total - fadeOut).toFixed(2) + ':d=' + fadeOut + '[mb]');
+      chains.push('[mb][sc]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[md]');
+      labels.push('[vo]', '[md]');
+      nextInput++;
+    } else {
+      chains.push(voiceChain + '[vo]');
+      labels.push('[vo]');
     }
+
+    const cues = Array.isArray(soundPlan.cues) ? soundPlan.cues : [];
+    for (let index = 0; index < cues.length; index++) {
+      const cue = cues[index];
+      if (!cue || !cue.path || !fs.existsSync(cue.path)) throw new Error('Sound design cue file missing: ' + (cue && cue.path));
+      inputs.push('-i', cue.path);
+      const gain = Number.isFinite(Number(cue.gainDb)) ? Math.max(-48, Math.min(0, Number(cue.gainDb))) : -18;
+      const delay = Math.round(Math.max(0, Number(cue.atSeconds) || 0) * 1000);
+      const label = 'sfx' + index;
+      chains.push('[' + nextInput + ':a]volume=' + gain + 'dB,afade=t=in:st=0:d=0.015,adelay=' + delay + '|' + delay + '[' + label + ']');
+      labels.push('[' + label + ']');
+      nextInput++;
+    }
+    chains.push(labels.join('') + 'amix=inputs=' + labels.length +
+      ':duration=first:dropout_transition=2:normalize=0,alimiter=limit=0.95[a]');
+    const af = chains.join(';');
     const part = path.join(dir, 'muxed.part.mp4'), out = path.join(dir, 'muxed.mp4');
     await this.runner.run([...inputs, '-filter_complex', vf + ';' + af, '-map', '[v]', '-map', '[a]', '-t', total.toFixed(2),
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'muxed.part.mp4'], { cwd: dir, label: 'mux' });
     replaceFileSync(part, out);
-    return { outputs: [out], data: { path: out } };
+    return { outputs: [out], data: { path: out, soundDesign: { cueCount: cues.length, musicDucking: Boolean(job.musicPath), targetLufs: soundPlan.mix && soundPlan.mix.targetIntegratedLufs || -14 } } };
   }
 
   async stage_loudness({ job, dir }) {
