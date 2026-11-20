@@ -543,7 +543,7 @@ const FAMILIES = {
           '<pattern id="scan" width="4" height="6" patternUnits="userSpaceOnUse"><rect width="4" height="1.5" fill="#000" fill-opacity=".25"/></pattern>',
         under: '<rect width="1280" height="720" fill="url(#noirVig)"/><rect width="1280" height="720" fill="url(#redGlow)"/>' +
           '<rect width="1280" height="720" fill="url(#noirBottom)"/>' + cracks + '<rect width="1280" height="720" fill="url(#scan)"/>',
-        text: [{ lines, font: 'impact', box: { x: 90, y: 395, w: 1100, h: 240 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 76, lh: 0.98, ls: 0.015, fills: [p.light, p.a], shadow: 'glitch', shadowColor: p.a, glitch: [p.b, p.a] }],
+        text: [{ lines, font: 'impact', box: { x: 90, y: 370, w: 1100, h: 220 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 76, lh: 0.98, ls: 0.015, fills: [p.light, p.a], shadow: 'glitch', shadowColor: p.a, glitch: [p.b, p.a] }],
         decorate(info) {
           const b = info.bbox;
           const cx = b.x + b.w / 2;
