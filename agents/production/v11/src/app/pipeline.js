@@ -55,6 +55,9 @@ class ProductionPipeline {
       clips, captions: stat(job.captionsAss), thumbnail,
       hasOriginalCommentary: job.hasOriginalCommentary !== false,
       realisticAiDisclosed: job.realisticAiDisclosed ?? null,
+      // Reuse-risk preflight depends on prior channel videos; exclude this job so its own
+      // checkpoint writes do not invalidate themselves, but include every other video.
+      channelHistory: this.ledger.historyByVideo().filter(video => video.videoId !== job.jobId),
       outPath: path.resolve(job.outPath), config: this.cfg
     };
     return crypto.createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
