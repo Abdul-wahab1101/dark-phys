@@ -17,7 +17,7 @@ async function render(file,voice,music,out){
   const {runApprovedProduction}=require('../agents/production/v11-integration');
   const result=await runApprovedProduction({plan:p,manifest,narrationPath:voice,musicPath:music,outputPath:out,projectDir:base});
   console.log('v11 production result:',result.status,'| resumed stages:',(result.resumed||[]).join(', ')||'none','|',result.renderProfile.reason);
-  if(result.report&&result.report.status==='blocked')process.exitCode=2;
+  if(result.status==='blocked')process.exitCode=2;
   return;
  }
 
