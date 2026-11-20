@@ -13,7 +13,7 @@ const { assessReuse } = require('../core/reuse-risk');
 const { planShots, shotArgs } = require('./shot-planner');
 const { ChunkedRenderer } = require('./chunked-renderer');
 const { buildReport, toMarkdown } = require('./report');
-const { hashFile, safeName } = require('../infra/file-utils');
+const { hashFile, safeName, replaceFileSync } = require('../infra/file-utils');
 const { analyzeThumbnail } = require('../infra/thumbnail-pixels');
 
 const ORDER = ['audio-clean', 'hook', 'shot-plan', 'preflight', 'interrupts', 'render-shots', 'mux', 'loudness', 'finalize'];
@@ -194,7 +194,7 @@ class ProductionPipeline {
     const part = path.join(dir, 'muxed.part.mp4'), out = path.join(dir, 'muxed.mp4');
     await this.runner.run([...inputs, '-filter_complex', vf + ';' + af, '-map', '[v]', '-map', '[a]', '-t', total.toFixed(2),
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'muxed.part.mp4'], { cwd: dir, label: 'mux' });
-    fs.renameSync(part, out);
+    replaceFileSync(part, out);
     return { outputs: [out], data: { path: out } };
   }
 
