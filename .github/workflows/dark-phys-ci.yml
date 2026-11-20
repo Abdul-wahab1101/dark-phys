@@ -48,7 +48,7 @@ jobs:
   video-tools-and-doctor:
     name: Video tools + Universal Doctor
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -58,10 +58,10 @@ jobs:
         with:
           node-version: '20'
       - name: Install FFmpeg and Python imaging dependency
-        timeout-minutes: 8
+        timeout-minutes: 15
         run: |
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
-          sudo apt-get install -y --no-install-recommends ffmpeg
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y --no-install-recommends ffmpeg
           ffmpeg -version
           python -m pip install --upgrade pip pillow
       - name: Compile and test native video tools
@@ -233,8 +233,8 @@ jobs:
       - name: Install FFmpeg and OpenMontage test dependencies
         working-directory: engines/OpenMontage
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y ffmpeg
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
       - name: Run FFmpeg vertical-render tests
