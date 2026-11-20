@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {analyzeAnalytics,mapDropoffs}=require('../agents/production/analytics-learning');
+const retention=[{elapsedVideoTimeRatio:0,audienceWatchRatio:1},{elapsedVideoTimeRatio:.2,audienceWatchRatio:.94},{elapsedVideoTimeRatio:.4,audienceWatchRatio:.78},{elapsedVideoTimeRatio:.6,audienceWatchRatio:.74}];
+const drops=mapDropoffs(retention,[{startRatio:.3,endRatio:.5,title:'Evidence'}]);assert.equal(drops.length,1);assert.equal(drops[0].scriptBeat,'Evidence');
+const rows=Array.from({length:14},(_,i)=>({videoId:'v'+i,views:100+i,impressions:1000,ctr:.05,averageViewDurationSeconds:120,averageViewPercentage:35,retention}));
+let report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(rows.map(x=>[x.videoId,[{startRatio:.3,endRatio:.5,title:'Evidence'}]]))});
+assert.equal(report.metrics.videoCount,14);assert.equal(report.learningGate.eligible,false);assert.equal(report.recommendations.length,0);assert.equal(report.learningGate.ruleChangesAllowed,false);
+rows.push({videoId:'v14',views:200,impressions:2000,ctr:.06,averageViewDurationSeconds:150,averageViewPercentage:40,retention});
+report=analyzeAnalytics({videos:rows,scriptBeatsByVideo:Object.fromEntries(rows.map(x=>[x.videoId,[{startRatio:.3,endRatio:.5,title:'Evidence'}]]))});
+assert.equal(report.learningGate.eligible,true);assert.equal(report.recommendations[0].automaticChange,false);assert(report.metrics.meanCtr>0);
+console.log('PASS CTR, AVD, retention drop-off mapping and strict 15-video learning threshold');
