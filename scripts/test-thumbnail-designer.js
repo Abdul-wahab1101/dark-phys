@@ -66,6 +66,8 @@ async function placeholderBackground(file, i) {
   const oldToken = process.env.CLOUDFLARE_API_TOKEN;
   const oldAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
   let visionRequest = null;
+  const visionTestImage = path.join(outDir, 'vision-request-test.png');
+  await placeholderBackground(visionTestImage, 0);
   try {
     process.env.CLOUDFLARE_API_TOKEN = 'test-token';
     process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account';
@@ -73,13 +75,14 @@ async function placeholderBackground(file, i) {
       visionRequest = { url: String(url), body: JSON.parse(options.body) };
       return { ok: true, json: async () => ({ result: { response: JSON.stringify({ score: 91, passed: true, subjectQuality: 9, clutter: 1, focalPoint: 9, textReadability: 9, composition: 9, curiosity: 9, concerns: [] }) } }) };
     };
-    const visionReview = await agent.inspectThumbnailVisual(sheetFiles[0], { hook: 'WHO PULLS YOUR STRINGS?', designFamily: 'test' });
+    const visionReview = await agent.inspectThumbnailVisual(visionTestImage, { hook: 'WHO PULLS YOUR STRINGS?', designFamily: 'test' });
     ok(visionReview.available && visionReview.passed && visionReview.score === 91, 'Cloudflare Vision response is parsed into a visual quality review');
     ok(visionRequest?.url.includes('@cf/meta/llama-3.2-11b-vision-instruct') && visionRequest?.body.messages?.[0]?.content?.some(p => p.type === 'image_url' && p.image_url.url.startsWith('data:image/jpeg;base64,')), 'Cloudflare Vision request includes the actual thumbnail image');
   } finally {
     global.fetch = originalFetch;
     if (oldToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN; else process.env.CLOUDFLARE_API_TOKEN = oldToken;
     if (oldAccount === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID; else process.env.CLOUDFLARE_ACCOUNT_ID = oldAccount;
+    try { fs.unlinkSync(visionTestImage); } catch (_) {}
   }
 
 
