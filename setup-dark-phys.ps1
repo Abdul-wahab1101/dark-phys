@@ -65,6 +65,19 @@ Write-Host "Installing Dark Phys reviewed thumbnail engine into the upstream pro
 node (Join-Path $Root "scripts\apply-thumbnail-upgrade.js") --engine $Youtube
 if ($LASTEXITCODE -ne 0) { throw "Could not safely apply the Dark Phys thumbnail upgrade to the YouTube agent." }
 
+# Existing isolated channel workspaces have their own copied agent files; upgrade them too.
+$ChannelWorkspaces = Join-Path $Root "channel-workspaces"
+if (Test-Path $ChannelWorkspaces) {
+  foreach ($Workspace in Get-ChildItem -Path $ChannelWorkspaces -Directory) {
+    $WorkspaceEngine = Join-Path $Workspace.FullName "engine"
+    if (Test-Path (Join-Path $WorkspaceEngine "index.js")) {
+      Write-Host "Upgrading thumbnail pipeline for channel workspace: $($Workspace.Name)"
+      node (Join-Path $Root "scripts\\apply-thumbnail-upgrade.js") --engine $WorkspaceEngine
+      if ($LASTEXITCODE -ne 0) { throw "Thumbnail upgrade failed for channel workspace $($Workspace.Name)." }
+    }
+  }
+}
+
 if ($IncludeOpenMontage) {
   $OpenMontage = Join-Path $Engines "OpenMontage"
   $OpenMontageCommit = "2e003e65fa99a0f329478a2c1cdcf26bc481933a"
