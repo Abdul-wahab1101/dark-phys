@@ -19,9 +19,9 @@ try {
   assert.equal(prepared.assets[0].licenseId, 'pixabay-content-license'); assert.equal(prepared.job.script, 'An original opening.');
   assert.equal(prepared.job.outPath, path.join(root, 'out', 'final.mp4')); assert.equal(prepared.root, path.join(root, '.dark-phys-v11-state'));
   assert.equal(prepared.profile.width > 0, true);
-  const musicPrepared = buildV11Job({ plan: { ...plan, musicRights: { source: 'Original score', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' }, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })) }, manifest, narrationPath: narration, musicPath: music, outputPath: path.join(root, 'out', 'music.mp4'), projectDir: root });
+  const musicPrepared = buildV11Job({ plan: { ...plan, musicRights: { source: 'Original score', licenseId: 'own', licenseUrl: 'https://example.test/music-license', commercialUseVerified: true, reviewStatus: 'approved' }, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })) }, manifest, narrationPath: narration, musicPath: music, outputPath: path.join(root, 'out', 'music.mp4'), projectDir: root });
   const actMusic = path.join(root, 'act-two.mp3'); fs.writeFileSync(actMusic, 'act two music fixture');
-  const actPrepared = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), musicSegments: [{ act: 'Act II', path: actMusic, startSeconds: 0, endSeconds: 5, mood: 'tension', rights: { source: 'Original act score', licenseId: 'own', commercialUseVerified: true, reviewStatus: 'approved' } }] }, manifest, narrationPath: narration, outputPath: path.join(root, 'out', 'act-music.mp4'), projectDir: root });
+  const actPrepared = buildV11Job({ plan: { ...plan, scenes: plan.scenes.map(s => ({ ...s, durationSeconds: 5 })), musicSegments: [{ act: 'Act II', path: actMusic, startSeconds: 0, endSeconds: 5, mood: 'tension', rights: { source: 'Original act score', licenseId: 'own', licenseUrl: 'https://example.test/act-music-license', commercialUseVerified: true, reviewStatus: 'approved' } }] }, manifest, narrationPath: narration, outputPath: path.join(root, 'out', 'act-music.mp4'), projectDir: root });
   assert.equal(actPrepared.job.musicSegments[0].mood, 'tension');
   assert.equal(actPrepared.assets[1].kind, 'audio');
   assert.equal(actPrepared.job.musicAssetIds.length, 1);
