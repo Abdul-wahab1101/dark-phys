@@ -1255,7 +1255,7 @@ class ThumbnailDesignerAgent {
     };
     const headlines = [];
     const seenTypes = new Set();
-    const distinctPool = options2.filter(h => h.score > -5);
+    const distinctPool = options2.filter(h => h.score > -5 && h.wc <= 5);
     for (const h of distinctPool) {
       if (headlines.length >= 3) break;
       if (headlines.some(x => similar(x.text, h.text))) continue;
@@ -1296,6 +1296,12 @@ class ThumbnailDesignerAgent {
         scene,
         paletteIdx: palIdx,
         composition: fam.legacy,
+        visualStrategy: [
+          { id: 'cinematic-closeup', direction: 'extreme close-up portrait, face or key object fills 55-65 percent of frame, off-centre rule-of-thirds placement, intimate perspective', camera: 'tight 85mm portrait close-up, shallow depth of field, slight three-quarter angle', lighting: 'dramatic split key light, controlled rim light, deep but detailed shadows', placement: 'main subject anchored to the right third; preserve clean negative space for headline on the left' },
+          { id: 'dramatic-split', direction: 'dramatic two-world split-screen, clear left-versus-right visual contrast, distinct subjects or emotional states on each side, strong diagonal divider', camera: 'wide 35mm cinematic two-shot, slightly low camera angle', lighting: 'contrasting warm practical light on one half and cool hard light on the other', placement: 'two visual halves must be unmistakably different; keep headline area clean and avoid tiny details' },
+          { id: 'conceptual-story', direction: 'surreal conceptual visual metaphor with one instantly understandable symbolic object, bold scale contrast and cinematic depth', camera: 'wide 50mm environmental composition with foreground-to-background depth', lighting: 'sculpted volumetric backlight with a focused highlight on the metaphor object', placement: 'single metaphor object dominates one side, human subject if relevant on the opposite third' }
+        ][i],
+        subjectPlacement: ['right-third close-up', 'balanced opposing halves', 'metaphor-led asymmetrical composition'][i],
         selectionScore: Number(c.score.toFixed(2))
       };
     });
@@ -1384,14 +1390,19 @@ class ThumbnailDesignerAgent {
 
     const colorWords = 'dominant colours ' + pal.dark + ' deep tones with accents of ' + pal.a + ' and ' + pal.b;
 
+    const strategy = plan.visualStrategy || {};
     const full = [
       fam.promptStyle + '.',
+      strategy.direction || '',
+      'Camera variation: ' + (strategy.camera || fam.camera) + '.',
+      'Lighting variation: ' + (strategy.lighting || fam.light) + '.',
+      'Subject placement: ' + (strategy.placement || fam.comp) + '.',
       'Subject: ' + scene.subject + '.',
       'Expression and body language: ' + scene.pose + '.',
       'Setting: ' + scene.env + '.',
       'Story idea: ' + (analysis.visualMetaphor || 'a visual metaphor for human psychology') + ', mood of ' + (concept.emotion || 'tension and curiosity') + '.',
-      'Camera: ' + fam.camera + '.',
-      'Lighting: ' + fam.light + '.',
+      'Camera: ' + (strategy.camera || fam.camera) + '.',
+      'Lighting: ' + (strategy.lighting || fam.light) + '.',
       'Colour palette: ' + colorWords + '.',
       'Composition: ' + fam.comp + '; focal point is ' + scene.focal + '.',
       'Negative space: ' + negative + ' so a headline can sit there.',
@@ -2337,6 +2348,110 @@ class ThumbnailDesignerAgent {
     return localVariants.map(item => ({ ...item, provider: 'local-footage-fallback' }));
   }
 
+  /* ------------------------- AI visual review + quality ranking ------------------------- */
+
+  async inspectThumbnailVisual(file, variant) {
+    const result = {
+      available: false, passed: false, score: 0, concerns: [],
+      subjectQuality: null, clutter: null, focalPoint: null,
+      textReadability: null, composition: null, curiosity: null,
+      provider: null
+    };
+    const token = process.env.CLOUDFLARE_API_TOKEN;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    if (!token || !accountId) return result;
+
+    try {
+      const imageBuffer = await sharp(file).resize(768, 432, { fit: 'cover' }).jpeg({ quality: 72 }).toBuffer();
+      const dataUrl = 'data:image/jpeg;base64,' + imageBuffer.toString('base64');
+      const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Act as a strict professional YouTube thumbnail art director. Inspect this actual 16:9 thumbnail at small-screen size. Return ONLY valid JSON with keys score (0-100), passed (boolean), subjectQuality (0-10), clutter (0-10 where 10 means very cluttered), focalPoint (0-10), textReadability (0-10), composition (0-10), curiosity (0-10), concerns (array of short strings). Penalize generic stock-looking visuals, weak facial expression, repeated/template-like layout, unclear focal point, too many words, text-image repetition, poor contrast, cramped edges, outdated meme/poster aesthetics, and clutter. Reward modern cinematic art direction, strong emotion/tension, one clear focal hook, visual storytelling and a curiosity gap. Text visible in image: ' + String(variant.hook || '') + '. Design family: ' + String(variant.designFamily || '') + '. Do not guess CTR; assess creative potential only.' },
+              { type: 'image_url', image_url: { url: dataUrl } }
+            ]
+          }]
+        }),
+        signal: AbortSignal.timeout(90000)
+      });
+      if (!response.ok) throw new Error('Vision API HTTP ' + response.status);
+      const payload = await response.json();
+      const raw = payload.result?.response || payload.result?.output || payload.result?.choices?.[0]?.message?.content || '';
+      const match = String(raw).match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Vision model did not return JSON');
+      const parsed = JSON.parse(match[0]);
+      result.available = true;
+      result.provider = 'cloudflare-workers-ai-llama-3.2-vision';
+      result.score = Math.max(0, Math.min(100, Number(parsed.score) || 0));
+      result.passed = parsed.passed === true && result.score >= 68;
+      for (const key of ['subjectQuality', 'clutter', 'focalPoint', 'textReadability', 'composition', 'curiosity']) {
+        result[key] = Number.isFinite(Number(parsed[key])) ? Math.max(0, Math.min(10, Number(parsed[key]))) : null;
+      }
+      result.concerns = Array.isArray(parsed.concerns) ? parsed.concerns.slice(0, 8).map(String) : [];
+    } catch (error) {
+      this.logger.warn('AI thumbnail visual review unavailable: ' + error.message);
+      result.error = error.message;
+    }
+    return result;
+  }
+
+  async scoreThumbnailCandidate(variant) {
+    const visual = await this.inspectThumbnailVisual(variant.path, variant);
+    const layout = variant.layout || {};
+    const wordCount = String(variant.hook || '').trim().split(/\s+/).filter(Boolean).length;
+    const checks = variant.qualityChecks || {};
+    const safe = (layout.blockBounds || [layout.textBounds].filter(Boolean)).every(b =>
+      !(b.x < 1280 && b.x + b.w > 1040 && b.y < 720 && b.y + b.h > 600)
+    );
+    const wordsScore = wordCount >= 2 && wordCount <= 5 ? 100 : Math.max(0, 100 - Math.abs(wordCount - 4) * 24);
+    const technical = (checks.correctDimensions ? 20 : 0) + (checks.underTwoMB ? 15 : 0) +
+      (checks.notBlank ? 15 : 0) + (checks.textFit ? 15 : 0) + (checks.contrastOk ? 15 : 0) +
+      (checks.readableAtSmallSize ? 10 : 0) + (safe ? 10 : 0);
+    const heuristic = Math.round((technical * 0.65) + (wordsScore * 0.35));
+    const score = visual.available ? Math.round(visual.score * 0.72 + heuristic * 0.28) : heuristic;
+    const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
+      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !safe || wordCount > 5;
+    return {
+      score, passed: !hardReject && (!visual.available || visual.passed),
+      rejectionReasons: [
+        ...(hardReject ? ['technical, text, or mobile-safe-zone validation failed'] : []),
+        ...(visual.available && !visual.passed ? visual.concerns : []),
+        ...(wordCount > 5 ? ['headline exceeds five words'] : [])
+      ],
+      visualReview: visual,
+      technicalScore: heuristic,
+      mobileSafeZone: safe,
+      headlineWordCount: wordCount
+    };
+  }
+
+  async reviewAndRankVariants(variants) {
+    const reviewed = [];
+    for (const variant of variants) {
+      const review = await this.scoreThumbnailCandidate(variant);
+      reviewed.push({ ...variant, reviewScore: review.score, reviewPassed: review.passed, review });
+    }
+    const diversity = await this.measureVariantDiversity(reviewed);
+    const families = new Set(reviewed.map(v => v.designFamilyId));
+    const layouts = new Set(reviewed.map(v => v.layoutClass));
+    const strategies = new Set(reviewed.map(v => v.concept?.variantPlans?.[v.planIndex]?.visualStrategy?.id || v.visualStrategy?.id || v.composition));
+    const duplicateComposition = families.size < 3 || layouts.size < 3 ||
+      (diversity.minPairwiseImageDifference !== null && diversity.minPairwiseImageDifference < 0.075);
+    if (duplicateComposition) {
+      for (const v of reviewed) {
+        v.reviewPassed = false;
+        v.review.rejectionReasons.push('candidate set repeats a visual family/layout or looks too similar');
+      }
+    }
+    reviewed.sort((a, b) => b.reviewScore - a.reviewScore);
+    return { variants: reviewed, diversity, duplicateComposition, allPassed: reviewed.length === 3 && reviewed.every(v => v.reviewPassed) };
+  }
+
   async generateThumbnail(script) {
     if (!script || !(script.title || script.topic)) {
       throw new Error('A script with a title or topic is required');
@@ -2344,26 +2459,56 @@ class ThumbnailDesignerAgent {
 
     await this.initialize();
     await this.resolveWorkspace(script);
-
-    this.logger.info(`V5 thumbnail design engine: ${script.title || script.topic}`);
+    this.logger.info(`V6 visual-quality thumbnail engine: ${script.title || script.topic}`);
 
     const concept = await this.generateConcept(script);
-    const prompt = await this.createPrompt(concept);
-    const variants = await this.generateABVariants(concept, script);
+    let prompt = await this.createPrompt(concept);
+    let bestReview = null;
+    let variants = [];
+    let regenerationRounds = 0;
 
-    if (variants.length !== 3) {
-      throw new Error(`Expected 3 thumbnail variants; generated ${variants.length}`);
+    // Generate and inspect the actual image pixels. Weak sets get up to two fresh attempts.
+    for (let round = 0; round < 3; round++) {
+      if (round > 0) {
+        regenerationRounds++;
+        const plans = await this.ensurePlans(concept, script);
+        const scenes = concept.profile?.scenes || [];
+        concept.variantPlans = plans.map((p, i) => {
+          const nextScene = scenes[(scenes.indexOf(p.scene) + round + i + 1) % Math.max(1, scenes.length)] || p.scene;
+          return {
+            ...p, scene: nextScene,
+            paletteIdx: (p.paletteIdx + round + i + 1) % FAMILIES[p.familyId].palettes.length,
+            visualStrategy: {
+              ...(p.visualStrategy || {}),
+              direction: (p.visualStrategy?.direction || '') + '; fresh alternate take, change camera distance, silhouette, gesture and foreground depth; avoid previous framing',
+              camera: round % 2 ? 'dynamic 24mm low-angle wide cinematic frame' : 'intimate 85mm portrait with strong foreground separation',
+              lighting: round % 2 ? 'hard directional chiaroscuro with atmospheric haze' : 'soft motivated key light with bold coloured rim and deep negative fill'
+            }
+          };
+        });
+        prompt = await this.createPrompt(concept);
+      }
+
+      variants = await this.generateABVariants(concept, script);
+      if (variants.length !== 3) throw new Error(`Expected 3 thumbnail variants; generated ${variants.length}`);
+      variants.forEach((v, i) => { v.planIndex = i; });
+      const reviewed = await this.reviewAndRankVariants(variants);
+      bestReview = reviewed;
+      variants = reviewed.variants;
+      if (reviewed.allPassed) break;
+      this.logger.warn(`Thumbnail candidate set rejected on round ${round + 1}; regenerating weak/repeated visual concepts.`);
     }
 
+    // Keep all three comparison candidates, ranked by their real review score.
     const primary = variants[0];
-    const diversity = await this.measureVariantDiversity(variants);
     const usedCloudflare = variants.some(v => v.provider === 'cloudflare-workers-ai');
-
-    await this.writeFamilyHistory((await this.readFamilyHistory()).concat([{
+    const familyHistory = (await this.readFamilyHistory()).concat([{
       title: concept.title,
       families: variants.map(v => v.designFamilyId),
-      at: new Date().toISOString()
-    }]));
+      at: new Date().toISOString(),
+      visualScores: variants.map(v => v.reviewScore)
+    }]);
+    await this.writeFamilyHistory(familyHistory);
 
     const thumbnailData = {
       path: primary.path,
@@ -2371,12 +2516,19 @@ class ThumbnailDesignerAgent {
       prompt,
       variants,
       variantCount: variants.length,
+      recommendedCandidate: primary.label,
+      comparison: variants.map((v, i) => ({
+        rank: i + 1, label: v.label, designFamily: v.designFamily,
+        headline: v.hook, score: v.reviewScore, passed: v.reviewPassed,
+        concerns: v.review?.rejectionReasons || []
+      })),
+      regenerationRounds,
       dimensions: primary.dimensions,
       fileSize: primary.fileSize,
       createdAt: new Date().toISOString(),
       generationMode: variants.every(v => v.provider === 'cloudflare-workers-ai')
-        ? 'cloudflare-flux-design-engine-v5'
-        : (usedCloudflare ? 'mixed-cloudflare-and-local-v5' : 'local-design-engine-v5-fallback'),
+        ? 'cloudflare-flux-design-engine-v6'
+        : (usedCloudflare ? 'mixed-cloudflare-and-local-v6' : 'local-design-engine-v6-fallback'),
       paidApiUsed: false,
       imageProvider: primary.provider || 'local-footage-fallback',
       imageModel: primary.model || null,
@@ -2387,20 +2539,23 @@ class ThumbnailDesignerAgent {
       workspace: this.projectRoot,
       qualityChecks: {
         allVariantsValid: variants.every(item => item.qualityChecks && item.qualityChecks.valid),
-        variantCount: variants.length,
-        diversity,
+        allCandidatesPassedVisualGate: variants.every(v => v.reviewPassed),
+        visionInspectionAvailable: variants.some(v => v.review?.visualReview?.available),
+        visualScores: variants.map(v => v.reviewScore),
+        diversity: bestReview?.diversity,
+        duplicateCompositionRejected: bestReview?.duplicateComposition,
+        regenerationRounds,
+        mobileSafeZonesChecked: true,
         ocrVerified: false,
-        visualReviewed: false,
-        note: 'Programmatic checks only (dimensions, size, decode, text bounds, measured contrast, variant difference). No OCR was run and no visual quality or CTR claim is made; inspect the images manually.'
+        visualReviewed: variants.some(v => v.review?.visualReview?.available),
+        note: 'Actual image vision review is attempted with Cloudflare Llama 3.2 Vision when credentials/model access are available; technical and layout checks always run. Vision unavailability is reported, never falsely marked as verified. Scores estimate creative quality, not guaranteed CTR.'
       }
     };
 
     if (this.db && typeof this.db.saveThumbnail === 'function') {
       await this.db.saveThumbnail(thumbnailData);
     }
-
-    this.logger.info('V5 generated three thumbnail variants: ' + thumbnailData.designFamilies.join(' | '));
-
+    this.logger.info('V6 ranked thumbnail candidates: ' + thumbnailData.comparison.map(v => v.rank + ':' + v.score).join(' | '));
     return thumbnailData;
   }
 
