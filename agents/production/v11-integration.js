@@ -44,7 +44,7 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
   const script = plan.scenes.map(scene => String(scene.narration || '').trim()).filter(Boolean).join(' ');
   if (!script) throw new Error('Scene plan has no narration text.');
   const jobId = 'dark-phys-' + String(plan.projectId || 'project') + '-' + crypto.createHash('sha256').update(output).digest('hex').slice(0, 10);
-  const job = { jobId, title: String(plan.title || 'Dark Phys video'), description: String(plan.description || ''),
+  const job = { scenePlan: plan.scenes, jobId, title: String(plan.title || 'Dark Phys video'), description: String(plan.description || ''),
     script, narrationPath: narration, clips, outPath: output, hasOriginalCommentary: true,
     ...(music ? { musicPath: music } : {}),
     ...(plan.captionsAss ? { captionsAss: path.resolve(plan.captionsAss) } : {}),
