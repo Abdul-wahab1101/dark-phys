@@ -19,7 +19,7 @@ assert.equal(low.checks.find(x=>x.id==='thumbnail_runtime').status,'block');
 assert(low.checks.some(x=>x.id==='memory'&&x.status==='warn'));
 assert(low.checks.some(x=>x.id==='disk_space'&&x.status==='block'));
 assert(low.nextActions.length>0);
-assert.deepEqual(parseEnvKeys('/fake',()=> 'A=1\n#B=2\n export C=3\nD = 4\n'),['A','D']);
+assert.deepEqual(parseEnvKeys('/fake',()=> 'A=1\\n#B=2\\nexport C=3\\nD = 4\\nE=\\nF=\\"\\"\\n'),['A','C','D']);
 
 const oldRuntime=check({root,env:{},platform:'linux',nodeVersion:'18.16.0',totalmem:16*1024**3,freemem:8*1024**3,runner:(cmd)=>({status:0,stdout:cmd==='python3'?'Python 3.9.12':'ok',stderr:''}),exists,statfs,readFile:()=>''});
 assert.equal(oldRuntime.checks.find(x=>x.id==='node').status,'block');
