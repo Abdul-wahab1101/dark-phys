@@ -136,8 +136,10 @@ class NarrationEngine {
     const selected = this.provider();
     if (selected === 'ElevenLabs') return this.legacy.synthesize(text, outputPath, options);
     const ext = path.extname(outputPath).toLowerCase();
+    const pronunciation = applyPronunciationDictionary(text, options.pronunciationDictionary || {});
     const tempWav = ext === '.wav' ? outputPath : outputPath + '.gemini-source.wav';
-    const result = await this.gemini.synthesize(text, tempWav, options);
+    const result = await this.gemini.synthesize(pronunciation.text, tempWav, options);
+    result.pronunciationApplied = pronunciation.applied;
     if (ext === '.wav') return result;
     const destination = path.resolve(outputPath);
     await fs.mkdir(path.dirname(destination), { recursive: true });
