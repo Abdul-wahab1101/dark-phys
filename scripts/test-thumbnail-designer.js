@@ -134,6 +134,12 @@ async function placeholderBackground(file, i) {
       const dest = path.join(outDir, `family-${String(i + 1).padStart(2, '0')}-${fam.id}.jpg`);
       fs.copyFileSync(composed.path, dest); fs.unlinkSync(composed.path);
       const q = composed.qualityChecks;
+      const safeBounds = composed.layout?.blockBounds?.length ? composed.layout.blockBounds : [composed.layout?.textBounds].filter(Boolean);
+      const mobileSafe = safeBounds.length > 0 && safeBounds.every(b => {
+        const valid = [b.x, b.y, b.w, b.h].every(Number.isFinite) && b.x >= 0 && b.y >= 0 && b.w > 0 && b.h > 0 && b.x + b.w <= 1280 && b.y + b.h <= 720;
+        return valid && !(b.x + b.w > 1040 && b.y + b.h > 600) && !(b.x + b.w > 1110 && b.y < 120);
+      });
+      ok(mobileSafe, `${fam.id}: mobile timestamp and top-right overlay safe zones`);
       ok(q.valid, `${fam.id}: ${composed.dimensions.width}x${composed.dimensions.height}, ${(composed.fileSize / 1024).toFixed(0)}KB, fit=${q.textFit}, contrast=${q.contrastRatio}${composed.layout.autoPanelAdded ? ' (auto panel)' : ''}, minFont=${q.minFontSize}, fonts=${composed.layout.fontsUsed.join('/')}` + (q.problems.length ? ' PROBLEMS: ' + q.problems : ''));
       sheetFiles.push(dest);
     } catch (e) { ok(false, `${fam.id}: ${e.message}`); }
