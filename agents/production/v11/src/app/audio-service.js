@@ -1,6 +1,7 @@
 'use strict';
 /** Audio operations on top of the ffmpeg runner: dead-air/filler cutting and two-pass loudness. */
 const pacing = require('../core/pacing');
+const { replaceFileSync } = require('../infra/file-utils');
 const loud = require('../core/loudness');
 
 class AudioService {
@@ -42,7 +43,7 @@ class AudioService {
     args.push('-map', '0:a:0', '-af', filter, '-ar', '48000');
     args.push(...(info.hasVideo ? ['-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart'] : ['-c:a', 'pcm_s16le']), part);
     await this.runner.run(args, { label: 'loudness-normalize' });
-    fs.renameSync(part, output);
+    replaceFileSync(part, output);
     const after = await this.verify(output);
     return { before, after, assessment: loud.assessLoudness(after, { target: this.opts.target }) };
   }
