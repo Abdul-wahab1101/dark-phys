@@ -28,22 +28,40 @@ function validateDraft(draft,knownSourceIds,knownClaimIds=new Set()){
  return {ok:errors.length===0,errors};
 }
 class ViralScriptGenerator{
- constructor({apiKey=process.env.DARK_PHYS_LLM_API_KEY,baseUrl=process.env.DARK_PHYS_LLM_BASE_URL||'https://api.openai.com/v1',model=process.env.DARK_PHYS_LLM_MODEL,fetchImpl=globalThis.fetch,timeoutMs=120000}={}){
-  this.apiKey=apiKey;this.baseUrl=String(baseUrl).replace(/\/$/,'');this.model=model;this.fetch=fetchImpl;this.timeoutMs=timeoutMs;
+ constructor({apiKey=process.env.DARK_PHYS_LLM_API_KEY,baseUrl=process.env.DARK_PHYS_LLM_BASE_URL||'https://api.openai.com/v1',model=process.env.DARK_PHYS_LLM_MODEL,accountId=process.env.CLOUDFLARE_ACCOUNT_ID,cloudflareToken=process.env.CLOUDFLARE_API_TOKEN,cloudflareModel=process.env.CLOUDFLARE_TEXT_MODEL||'@cf/openai/gpt-oss-20b',fetchImpl=globalThis.fetch,timeoutMs=120000}={}) {
+  this.apiKey=apiKey||cloudflareToken; this.baseUrl=String(baseUrl).replace(/\/$/,'');
+  this.model=model||cloudflareModel; this.accountId=accountId; this.cloudflareToken=cloudflareToken;
+  this.provider=apiKey?'openai-compatible':cloudflareToken&&accountId?'cloudflare-workers-ai':'openai-compatible';
+  this.fetch=fetchImpl; this.timeoutMs=timeoutMs;
  }
- async request(prompt,language){
-  if(!this.apiKey)throw new Error('DARK_PHYS_LLM_API_KEY is not configured; add provider credentials during final API setup');
-  if(!this.model)throw new Error('DARK_PHYS_LLM_MODEL is not configured');
-  if(typeof this.fetch!=='function')throw new Error('Node.js fetch is unavailable; use Node 18+');
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),this.timeoutMs);
-  try{
-   const response=await this.fetch(this.baseUrl+'/chat/completions',{method:'POST',headers:{authorization:'Bearer '+this.apiKey,'content-type':'application/json'},body:JSON.stringify({model:this.model,temperature:0.75,response_format:{type:'json_object'},messages:[{role:'system',content:'You are a rigorous documentary scriptwriter. Output JSON only. Never invent facts, studies, quotes, statistics, sources or cases. Use only the supplied claims and sources. Keep all claims traceable. Generated work is an unverified draft for human review.'},{role:'user',content:prompt+'\n\nReturn JSON with keys titleOptions (array of 5 strings), hooks (array of 3 strings), narration (full original script), chapters (array of {time,title,purpose}), visualPlan (array of {time,visual,assetType}), sourceReferences (array of {sourceId,claimIds}), claimsToVerify (array of strings). Do not include a claim unless it is supported by the supplied source register. Language must be '+(language==='ur-Latn'?'natural Pakistani Roman Urdu':'clear international English')+'.'}]}),signal:controller.signal});
-   const body=await response.json().catch(()=>({}));
-   if(!response.ok)throw new Error('LLM provider '+response.status+': '+(body.error?.message||response.statusText));
+ async request(prompt,language) {
+  if(!this.apiKey) throw new Error('Configure DARK_PHYS_LLM_API_KEY or CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN locally');
+  if(!this.model) throw new Error('DARK_PHYS_LLM_MODEL or CLOUDFLARE_TEXT_MODEL is not configured');
+  if(typeof this.fetch!=='function') throw new Error('Node.js fetch is unavailable; use Node 18+');
+  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),this.timeoutMs);
+  const messages=[
+   {role:'system',content:'You are a rigorous documentary scriptwriter. Output JSON only. Never invent facts, studies, quotes, statistics, sources or cases. Use only supplied claims and sources. Keep all claims traceable. Generated work is an unverified draft for human review.'},
+   {role:'user',content:prompt+'\n\nReturn the exact requested JSON schema. Do not include a claim unless supported by the supplied source register. Language must be '+(language==='ur-Latn'?'natural Pakistani Roman Urdu':'clear international English')+'.'}
+  ];
+  try {
+   let response, body;
+   if(this.provider==='cloudflare-workers-ai') {
+    const endpoint='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(this.accountId)+'/ai/run/'+this.model.split('/').map(encodeURIComponent).join('/');
+    response=await this.fetch(endpoint,{method:'POST',headers:{authorization:'Bearer '+this.cloudflareToken,'content-type':'application/json'},body:JSON.stringify({messages,max_tokens:4096,temperature:0.55,response_format:{type:'json_object'}}),signal:controller.signal});
+    body=await response.json().catch(()=>({}));
+    if(!response.ok||body.success===false) throw new Error('Cloudflare Workers AI '+response.status+': '+(body.errors||[]).map(x=>x.message||x.code).join('; '));
+    const result=body.result||{};
+    const content=result.response||result.output_text||result.generated_text||result.text||result.choices?.[0]?.message?.content;
+    if(!content) throw new Error('Cloudflare Workers AI returned no extractable text');
+    return parseJson(typeof content==='string'?content:JSON.stringify(content));
+   }
+   response=await this.fetch(this.baseUrl+'/chat/completions',{method:'POST',headers:{authorization:'Bearer '+this.apiKey,'content-type':'application/json'},body:JSON.stringify({model:this.model,temperature:0.55,response_format:{type:'json_object'},messages}),signal:controller.signal});
+   body=await response.json().catch(()=>({}));
+   if(!response.ok) throw new Error('LLM provider '+response.status+': '+(body.error?.message||response.statusText));
    const content=body.choices?.[0]?.message?.content;
-   if(!content)throw new Error('LLM provider returned an empty completion');
+   if(!content) throw new Error('LLM provider returned an empty completion');
    return parseJson(content);
-  }finally{clearTimeout(timer);}
+  } finally { clearTimeout(timer); }
  }
  async generate(pkg,{format='long-form',durationSec=600}={}){
   const validation=validateResearch(pkg);
