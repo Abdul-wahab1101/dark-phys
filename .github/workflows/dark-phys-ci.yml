@@ -83,6 +83,7 @@ jobs:
           node scripts/test-thumbnail-designer.js
           node scripts/test-thumbnail-cli-integration.js
           node scripts/test-thumbnail-upgrade-install.js
+          node scripts/test-local-env.js
       - name: Compile Universal Doctor
         run: python -m compileall -q agents/universal-doctor
       - name: Validate Doctor backup CLI
