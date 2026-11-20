@@ -138,6 +138,27 @@ test('checkpoint fingerprint changes when review, rights, captions, thumbnail or
   } finally { h.rm(dir); }
 });
 
+test('sound design plan mixes timed SFX and voice-ducked music into the final render', async () => {
+  const dir = h.tmp();
+  try {
+    const s = setup(dir);
+    const sfx = path.join(dir, 'impact.wav');
+    h.makeTone(sfx, { seconds: 1.2, freq: 880, volume: 0.18 });
+    s.job.soundDesignPlan = {
+      music: { gainDb: -25, fadeInSeconds: 1, fadeOutSeconds: 2 },
+      cues: [{ id: 'impact-1', path: sfx, atSeconds: 1.1, gainDb: -18 }],
+      mix: { targetIntegratedLufs: -14, truePeakDbtp: -1.5 }
+    };
+    const r = await s.pipeline.run(s.job);
+    assert.ok(['ready', 'review'].includes(r.status), r.status + ' ' + JSON.stringify(r.report.mustFix));
+    assert.equal(r.data.mux.soundDesign.cueCount, 1);
+    assert.equal(r.data.mux.soundDesign.musicDucking, true);
+    const info = await new FfmpegRunner().probe(s.job.outPath);
+    assert.equal(info.hasAudio, true);
+    assert.ok(Math.abs(r.data.loudness.after.integrated - -14) <= 1.0);
+  } finally { h.rm(dir); }
+});
+
 test('workspace creation failure releases the job lock for a safe retry', async () => {
   const dir = h.tmp();
   try {
