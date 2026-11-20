@@ -172,7 +172,12 @@ jobs:
         run: |
           node --check scripts/phase5-operator.js
           node scripts/test-phase5-operator.js
-      - name: Test Phase 7 production readiness\n        run: |\n          node --check scripts/phase7-readiness.js\n          node scripts/test-phase7-readiness.js\n          node scripts/phase7-readiness.js --help\n      - name: Test Phase 6 Viral Intelligence Engine
+      - name: Test Phase 7 production readiness
+        run: |
+          node --check scripts/phase7-readiness.js
+          node scripts/test-phase7-readiness.js
+          node scripts/phase7-readiness.js
+      - name: Test Phase 6 Viral Intelligence Engine
         run: |
           node --check agents/viral-intelligence-engine.js
           node --check agents/viral-intelligence-sources.js
