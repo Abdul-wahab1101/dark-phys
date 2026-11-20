@@ -262,7 +262,15 @@ class ProductionPipeline {
     await this.runner.run([...inputs, '-filter_complex', vf + ';' + af, '-map', '[v]', '-map', '[a]', '-t', total.toFixed(2),
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', 'muxed.part.mp4'], { cwd: dir, label: 'mux' });
     replaceFileSync(part, out);
-    return { outputs: [out], data: { path: out, soundDesign: { cueCount: cues.length, musicDucking: Boolean(job.musicPath), targetLufs: soundPlan.mix && soundPlan.mix.targetIntegratedLufs || -14 } } };
+    const cueSheetPath = path.resolve(job.outPath).replace(/\\.[^.]+$/, '') + '.sound-cue-sheet.json';
+    fs.mkdirSync(path.dirname(cueSheetPath), { recursive: true });
+    fs.writeFileSync(cueSheetPath, JSON.stringify({ version: 1, jobId: job.jobId, durationSeconds: total,
+      musicActs: soundPlan.musicActs || [], musicSegments: soundPlan.musicSegments || [],
+      silenceWindows: soundPlan.silenceWindows || [], cues, cueSheet: soundPlan.cueSheet || [] }, null, 2));
+    return { outputs: [out, cueSheetPath], data: { path: out, soundDesign: { cueCount: cues.length,
+      musicDucking: musicTracks.length > 0, musicActCount: (soundPlan.musicActs || []).length,
+      silenceWindowCount: (soundPlan.silenceWindows || []).length, cueSheetPath,
+      targetLufs: soundPlan.mix && soundPlan.mix.targetIntegratedLufs || -14 } } };
   }
 
   async stage_loudness({ job, dir }) {
