@@ -6,7 +6,7 @@ async function main(argv = process.argv.slice(2)) {
   const inputFile = argv.find(x => !x.startsWith('--'));
   if (!inputFile || argv.includes('--help')) {
     console.log('Usage: node scripts/script-engine-v2.js research-package.json [--short] [--duration=600]');
-    console.log('Requires DARK_PHYS_LLM_API_KEY and DARK_PHYS_LLM_MODEL. Input must contain verified source register, claims, bilingual narration placeholders and researcher-rated viralFactors.');
+    console.log('Uses DARK_PHYS_LLM_API_KEY + DARK_PHYS_LLM_MODEL, or configured Cloudflare Workers AI credentials as fallback. Input must contain verified source register, claims, bilingual narration placeholders and researcher-rated viralFactors.');
     return inputFile ? 0 : 1;
   }
   const pkg = JSON.parse(fs.readFileSync(path.resolve(inputFile), 'utf8'));
