@@ -55,6 +55,8 @@ function planShorts({transcript,scenes=[],count=3,minSeconds=20,maxSeconds=60,ta
 function renderShort({input,short,output,ffmpeg=process.env.FFMPEG_PATH||'ffmpeg',subtitlePath}={}){
  if(!input||!short||!output)throw new Error('input, short and output are required.');
  if(!fs.existsSync(input))throw new Error('Source video not found: '+input);
+ if(path.resolve(input)===path.resolve(output))throw new Error('Short output must not overwrite the source long video.');
+ fs.mkdirSync(path.dirname(path.resolve(output)),{recursive:true});
  const duration=Number(short.endSeconds)-Number(short.startSeconds);
  if(!Number.isFinite(duration)||duration<15||duration>60)throw new Error('Short duration must be 15-60 seconds.');
  const srt=subtitlePath||output.replace(/\.[^.]+$/,'')+'.srt';
