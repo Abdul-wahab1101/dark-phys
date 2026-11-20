@@ -35,12 +35,14 @@ function check({root=process.cwd(),env=process.env,platform=process.platform,nod
   const bundled=exists(path.join(app,'node_modules','ffmpeg-static'));
   add('youtube_engine',appInstalled?'pass':'warn',appInstalled?'YouTube Automation Agent checkout found':'YouTube Automation Agent not installed',appInstalled?null:'Run .\\setup-dark-phys.ps1 after prerequisites');
   add('youtube_dependencies',depsInstalled?'pass':'warn',depsInstalled?'Node dependencies found':'Node dependencies not installed',depsInstalled?null:'Run .\\setup-dark-phys.ps1');
+  const rootSharp=exists(path.join(root,'node_modules','sharp'));
+  add('thumbnail_runtime',rootSharp?'pass':'block',rootSharp?'Root Sharp thumbnail runtime found':'Root Sharp dependency missing; thumbnail generation will fail to load',rootSharp?null:'Run .\\setup-dark-phys.ps1 to install the required root thumbnail dependency');
   add('ffmpeg',ffmpeg||bundled?'pass':'warn',ffmpeg|| (bundled?'Bundled ffmpeg-static dependency found':'FFmpeg not found on PATH or in engine dependencies'),ffmpeg||bundled?null:'Install FFmpeg or complete the engine dependency setup');
   const openmontage=exists(path.join(root,'engines','OpenMontage'));
   add('openmontage',openmontage?'pass':'info',openmontage?'OpenMontage checkout found':'OpenMontage is optional and not installed',openmontage?null:'Install only when advanced rendering is needed');
   const envFiles=[path.join(root,'.env'),path.join(app,'.env')];
   const envKeys=[...new Set(envFiles.flatMap(file=>parseEnvKeys(file,readFile)))];
-  const keyNames=['OPENAI_API_KEY','GEMINI_API_KEY','GOOGLE_API_KEY','DARK_PHYS_LLM_API_KEY','YOUTUBE_DATA_API_KEY','PIXABAY_API_KEY','PIXABAY_API_KEY_2'];
+  const keyNames=['OPENAI_API_KEY','GEMINI_API_KEY','GOOGLE_API_KEY','DARK_PHYS_LLM_API_KEY','YOUTUBE_DATA_API_KEY','PIXABAY_API_KEY','PIXABAY_API_KEY_2','CLOUDFLARE_API_TOKEN','CLOUDFLARE_ACCOUNT_ID','CLOUDFLARE_TEXT_MODEL','CLOUDFLARE_IMAGE_MODEL','ELEVENLABS_API_KEY'];
   const present=keyNames.filter(k=>Boolean(env[k]&&String(env[k]).trim())||envKeys.includes(k));
   const absent=keyNames.filter(k=>!present.includes(k));
   add('credentials', 'info', present.length+' recognised credential variable(s) present; '+absent.length+' absent. Values are never displayed.', 'Configure only the providers you choose during final setup; never commit .env');
