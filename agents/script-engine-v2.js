@@ -20,6 +20,7 @@ function validateEditorialDraft(draft, pkg, format) {
     if (!Array.isArray(draft.caseStudy.sourceIds) || !draft.caseStudy.sourceIds.length || draft.caseStudy.sourceIds.some(id => !pkg.sources.some(s => String(s.id) === String(id)))) errors.push('Documented caseStudy must cite known source IDs');
   } else if (draft.caseStudy.type !== 'hypothetical' || !/hypothetical|illustrative/i.test(String(draft.caseStudy.label || ''))) errors.push('caseStudy must be documented with sources or explicitly labelled hypothetical');
   if (!Array.isArray(draft.acts) || (format === 'short' ? draft.acts.length < 3 || draft.acts.length > 4 : draft.acts.length < 3 || draft.acts.length > 5)) errors.push('Insufficient story acts');
+  else if (draft.acts.some(a => !String(a.id || '').trim() || !String(a.title || '').trim() || !String(a.narration || '').trim())) errors.push('Every act needs id, title and section narration for TTS handoff');
   if (!Array.isArray(draft.openLoops) || !draft.openLoops.length) errors.push('At least one resolved open loop is required');
   else if (draft.openLoops.some(x => !String(x.setup || '').trim() || !String(x.payoffAct || '').trim() || !draft.acts?.some(a => String(a.id) === String(x.payoffAct)))) errors.push('Every open loop needs a setup and a valid payoffAct');
   if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) errors.push('Sentence-by-sentence visual intent plan is required');
@@ -64,7 +65,7 @@ class ScriptEngineV2 {
     for (const lang of LANGS) {
       const prompt = buildWriterPrompt(pkg, lang, mode) + '\n\nEDITORIAL SYSTEM V2 REQUIREMENTS:\n' +
         JSON.stringify({ format: mode, brief, audience: pkg.audience || 'curious documentary viewers' }) +
-        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy {type:documented|hypothetical,summary,label,sourceIds}, acts (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
+        '\nReturn JSON only with titleOptions (3), hooks (3), centralQuestion (exactly one question), caseStudy {type:documented|hypothetical,summary,label,sourceIds}, acts [{id,title,purpose,narration}] (3–5 for long, 3–4 for short), openLoops (each with setup and payoffAct), narration, chapters, visualPlan, sentenceVisuals [{sentence,visualIntent,footageQuery,sourceType,durationSeconds}], sourceReferences, claimLedger [{claimId,sourceIds,exactSupportToVerify}], claimsToVerify. ' +
         (mode === 'short' ? 'Make one complete standalone vertical Short, 20–60 seconds, one idea only.' :
           'Make an 8–12 minute documentary with cold open, promise, 3–5 main acts, rehooks roughly every 60–90 seconds, and a satisfying payoff.') +
         ' Use exactly one central question and one case. Never invent a real case, study, statistic, quote or source. Mark unsupported material [NEEDS SOURCE].';
@@ -78,7 +79,7 @@ class ScriptEngineV2 {
         'Act as a strict documentary script editor. Audit this draft against the supplied evidence register. Do not add facts. Return JSON only: {score:0-100, strengths:[], weaknesses:[], unsupportedClaims:[], repetition:[], pacingIssues:[], requiredChanges:[]}. Score evidence integrity, clarity, originality, hook, narrative progression, retention and payoff. Draft: ' + JSON.stringify(draft) +
         '\nEvidence claims: ' + JSON.stringify(pkg.claims) + '\nSources: ' + JSON.stringify(pkg.sources), lang);
       const polish = await this.writer.request(
-        'Revise this script using the critic notes. Preserve every supported meaning and source ID; remove unsupported claims instead of guessing. Improve spoken rhythm and natural read-aloud flow. Tighten narration by approximately 15% without removing essential evidence or caveats. Keep exactly one central question and one case. Return the complete JSON draft schema: titleOptions, hooks, centralQuestion, caseStudy, acts, openLoops, narration, chapters, visualPlan, sourceReferences, claimLedger, claimsToVerify. Draft: ' + JSON.stringify(draft) +
+        'Revise this script using the critic notes. Preserve every supported meaning and source ID; remove unsupported claims instead of guessing. Improve spoken rhythm and natural read-aloud flow. Tighten narration by approximately 15% without removing essential evidence or caveats. Keep exactly one central question and one case. Return the complete JSON draft schema: titleOptions, hooks, centralQuestion, caseStudy, acts [{id,title,purpose,narration}], openLoops, narration, chapters, visualPlan, sourceReferences, claimLedger, claimsToVerify. Draft: ' + JSON.stringify(draft) +
         '\nCritic: ' + JSON.stringify(critic) + '\nTarget language: ' + lang, lang);
       const finalCheck = validateEditorialDraft(polish, pkg, mode);
       const before = words(draft.narration).length, after = words(polish.narration).length;
