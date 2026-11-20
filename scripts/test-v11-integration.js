@@ -15,7 +15,7 @@ try {
     provider: 'Pixabay', sourcePage: 'https://pixabay.com/videos/test/', creator: 'Test creator',
     license: 'Pixabay Content License', retrievedAt: '2026-11-20T00:00:00.000Z' }];
   const prepared = buildV11Job({ plan, manifest, narrationPath: narration, outputPath: path.join(root, 'out', 'final.mp4'), projectDir: root });
-  assert.equal(prepared.job.clips.length, 1); assert.equal(prepared.job.clips[0].assetId, 'pixabay-77');
+  assert.equal(prepared.job.clips.length, 1); assert.equal(prepared.job.scenePlan[0].id, 'scene-001'); assert.equal(prepared.job.clips[0].sceneId, 'scene-001'); assert.equal(prepared.job.clips[0].assetId, 'pixabay-77');
   assert.equal(prepared.assets[0].licenseId, 'pixabay-content-license'); assert.equal(prepared.job.script, 'An original opening.');
   assert.equal(prepared.job.outPath, path.join(root, 'out', 'final.mp4')); assert.equal(prepared.root, path.join(root, '.dark-phys-v11-state'));
   assert.equal(prepared.profile.width > 0, true);
