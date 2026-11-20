@@ -7,7 +7,7 @@ async function main(argv = process.argv.slice(2)) {
   if (!inputFile || argv.includes('--help')) {
     console.log('Usage: node scripts/script-engine-v2.js research-package.json [--short] [--duration=600]');
     console.log('Uses DARK_PHYS_LLM_API_KEY + DARK_PHYS_LLM_MODEL, or configured Cloudflare Workers AI credentials as fallback. Input must contain verified source register, claims, bilingual narration placeholders and researcher-rated viralFactors.');
-    return inputFile ? 0 : 1;
+    return (inputFile || argv.includes('--help')) ? 0 : 1;
   }
   const pkg = JSON.parse(fs.readFileSync(path.resolve(inputFile), 'utf8'));
   const duration = Number((argv.find(x => x.startsWith('--duration=')) || '').split('=')[1]) || 600;
