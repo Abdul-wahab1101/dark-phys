@@ -39,7 +39,8 @@ function stylePrompt(text, direction, language) {
 }
 class GeminiTTS {
   constructor(options = {}) {
-    const llmIsGoogle = /generativelanguage\\.googleapis\\.com/i.test(process.env.DARK_PHYS_LLM_BASE_URL || '') || String(process.env.DARK_PHYS_LLM_PROVIDER || '').toLowerCase() === 'gemini';\n    this.apiKey = options.apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || (llmIsGoogle ? process.env.DARK_PHYS_LLM_API_KEY : '') || '';
+    const llmIsGoogle = /generativelanguage\.googleapis\.com/i.test(process.env.DARK_PHYS_LLM_BASE_URL || '') || String(process.env.DARK_PHYS_LLM_PROVIDER || '').toLowerCase() === 'gemini';
+    this.apiKey = options.apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || (llmIsGoogle ? process.env.DARK_PHYS_LLM_API_KEY : '') || '';
     this.model = options.model || process.env.GEMINI_TTS_MODEL || MODEL;
     this.voice = options.voice || process.env.GEMINI_TTS_VOICE || VOICES.documentary;
     this.fetch = options.fetch || globalThis.fetch;
