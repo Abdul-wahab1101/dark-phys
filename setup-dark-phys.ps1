@@ -13,8 +13,8 @@ Require-Command git "Install Git for Windows: https://git-scm.com/download/win"
 Require-Command node "Install Node.js 20 LTS: https://nodejs.org/"
 Require-Command npm "Install Node.js with npm."
 Require-Command python "Install Python 3.10+: https://www.python.org/downloads/"
-$NodeMajor = [int]((node -p "process.versions.node.split('.')[0]"))
-if ($NodeMajor -lt 18) { throw "Node.js 18.17+ is required by the YouTube agent. Install Node 20 LTS." }
+$NodeVersion = [version](node -p "process.versions.node")
+if ($NodeVersion -lt [version]"18.17.0") { throw "Node.js 18.17+ is required by the YouTube agent. Install Node 20 LTS. Current: $NodeVersion" }
 $Py = python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
 $Parts = $Py.Split('.')
 if ([int]$Parts[0] -lt 3 -or ([int]$Parts[0] -eq 3 -and [int]$Parts[1] -lt 10)) { throw "Python 3.10+ is required." }
@@ -28,8 +28,10 @@ if (-not (Test-Path (Join-Path $Youtube ".git"))) {
 } else { Write-Host "YouTube agent already cloned; keeping your local changes." }
 Push-Location $Youtube
 try {
-  npm install
+  if (Test-Path "package-lock.json") { npm ci } else { npm install }
+  if ($LASTEXITCODE -ne 0) { throw "YouTube agent dependency installation failed." }
   npx playwright install chromium
+  if ($LASTEXITCODE -ne 0) { throw "Playwright Chromium installation failed." }
   if (-not (Test-Path ".env")) {
     if (Test-Path ".env.example") { Copy-Item ".env.example" ".env" }
     else { throw "Upstream .env.example is missing; check the YouTube agent checkout." }
