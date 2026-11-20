@@ -17,7 +17,7 @@ function draft(text) {
   return { titleOptions: ['Memory Explained', 'Why Recall Changes', 'The Memory Question'],
     hooks: ['What changes when we remember?', 'Memory is not a recording.', 'The detail you overlook'],
     centralQuestion: 'How can recall change over time?',
-    caseStudy: 'Hypothetical illustration: a person recalls a conversation after hearing new details.',
+    caseStudy: { type: 'hypothetical', label: 'Hypothetical illustration', summary: 'A person recalls a conversation after hearing new details.' },
     acts: [{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }, { id: 'a4' }],
     openLoops: [{ setup: 'Why confidence can differ from accuracy', payoffAct: 'a4' }],
     narration: text, chapters: [{ time: '0:00', title: 'Opening', purpose: 'Hook' }],
