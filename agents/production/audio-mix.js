@@ -14,7 +14,9 @@ function buildAudioFilter(options = {}) {
   const voice = '[1:a]volume=' + voiceGain + 'dB,highpass=f=80,' +
     'equalizer=f=240:t=q:w=1:g=-2,equalizer=f=3200:t=q:w=1:g=1.5,' +
     'acompressor=threshold=0.10:ratio=3:attack=12:release=180:makeup=2';
-  if (options.voiceProcessing === false) {
+  if (options.voiceProcessing === false && options.duckMusic === false) {
+    chains.push('[1:a]volume=' + voiceGain + 'dB[voicemix]');
+  } else if (options.voiceProcessing === false) {
     chains.push('[1:a]volume=' + voiceGain + 'dB,asplit=2[voicekey][voicemix]');
   } else if (options.duckMusic === false) {
     chains.push(voice + '[voicemix]');
