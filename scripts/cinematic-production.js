@@ -9,7 +9,10 @@ async function discover(file){const p=JSON.parse(await fs.readFile(file,'utf8'))
  const dest=path.join(path.dirname(path.resolve(file)),'asset-selection.json');await fs.writeFile(dest,JSON.stringify({...p,approvalRequired:true,scenes},null,2)+'\n');console.log('Shortlist:',dest,'— select asset IDs and confirm rights manually.');}
 async function download(file){const p=JSON.parse(await fs.readFile(file,'utf8')),pool=new PixabayPool(),dir=path.join(path.dirname(path.resolve(file)),'footage');await fs.mkdir(dir,{recursive:true});const manifest=[];
  for(const s of p.scenes){if(!s.selectedAssetId||s.rightsApproved!==true)throw new Error(s.id+' requires selectedAssetId and rightsApproved=true');const r=await pool.search(s.footageQuery,{perPage:20}),item=r.items.find(x=>x.id===Number(s.selectedAssetId));if(!item)throw new Error('Selected ID is no longer in current results: '+s.selectedAssetId);const d=await pool.download(item,{filename:s.id});manifest.push({...d.record,sceneId:s.id,rightsApprovedByUser:true,sourceCredit:s.sourceCredit||{required:true},visualIntent:s.visualIntent||s.visual||'',footageQuery:s.footageQuery||'',shotType:s.shotType||'',movement:s.movement||'',colourGrade:s.colourGrade||''});}
- await fs.writeFile(path.join(dir,'approved-assets.json'),JSON.stringify(manifest,null,2)+'\n');console.log('Approved real video clips downloaded:',manifest.length);}
+ await fs.writeFile(path.join(dir,'approved-assets.json'),JSON.stringify(manifest,null,2)+'\n');
+ const credits=['# Footage source credits','','Review each source page and applicable license before publication.','',...manifest.map(x=>'- **'+x.sceneId+'** — '+(x.creator||'Creator not recorded')+' — '+(x.provider||'Pixabay')+' — '+(x.sourcePage||'Source URL missing')+' — '+(x.license||'License requires review')),''];
+ await fs.writeFile(path.join(dir,'source-credits.md'),credits.join('\n'),'utf8');
+ console.log('Approved real video clips downloaded:',manifest.length,'| source credits:',manifest.length);}
 async function render(file,voice,music,out){
  const base=path.dirname(path.resolve(file)),p=JSON.parse(await fs.readFile(file,'utf8')),manifest=JSON.parse(await fs.readFile(path.join(base,'footage','approved-assets.json'),'utf8'));
  if(!manifest.length)throw new Error('No approved footage manifest');
