@@ -143,3 +143,19 @@ test('file replacement: an existing completed output is replaced without losing 
     assert.deepEqual(fs.readdirSync(dir), ['final.mp4']);
   } finally { h.rm(dir); }
 });
+
+test('checkpoint reset preserves the active job lock', () => {
+  const dir = h.tmp();
+  try {
+    const cp = new CheckpointStore(dir);
+    const release = cp.acquire('same-job');
+    cp.save(cp.fresh('same-job'));
+    cp.reset('same-job');
+    assert.equal(fs.existsSync(cp.file('same-job')), false);
+    assert.equal(fs.existsSync(cp.lockFile('same-job')), true);
+    assert.throws(() => cp.acquire('same-job'), /already running/);
+    release();
+    const next = cp.acquire('same-job');
+    next();
+  } finally { h.rm(dir); }
+});
