@@ -11,8 +11,8 @@ const pkg = {
   narration: { en: 'English research notes supplied for validation.', 'ur-Latn': 'Roman Urdu research notes validation ke liye di gayi hain.' },
   viralFactors: { audience_fit: 4, demand_evidence: 4, freshness: 4, curiosity: 5, story_depth: 4, visual_potential: 4, differentiation: 4, evidence_quality: 5, series_potential: 3 }
 };
-const narration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(25);
-const shortNarration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(22);
+const narration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(75);
+const shortNarration = ('A carefully sourced sentence explains how memory recall can be shaped by context and later information. ').repeat(8);
 function draft(text) {
   return { titleOptions: ['Memory Explained', 'Why Recall Changes', 'The Memory Question'],
     hooks: ['What changes when we remember?', 'Memory is not a recording.', 'The detail you overlook'],
@@ -42,6 +42,7 @@ function draft(text) {
   assert.equal(result.approval.autoPublish, false);
   assert.equal(evidenceWarnings(pkg).singleSourceClaims.length, 0);
   assert.equal(validateEditorialDraft(draft(narration), pkg, 'long-form').ok, true);
+  assert.equal(validateEditorialDraft(draft(shortNarration), pkg, 'short').ok, true);
   assert.equal(banListReview(draft(narration), pkg).passed, true);
   assert.equal(banListReview({ ...draft(narration), narration: 'I am a doctor and I can diagnose you.' }, pkg).passed, false);
   assert.equal(banListReview({ ...draft(narration), hooks: ['Like and subscribe now', 'Second hook', 'Third hook'] }, pkg).passed, false);
