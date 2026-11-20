@@ -61,11 +61,13 @@ def main(argv=None) -> int:
         return run()
     if a.cmd == "health":
         import tempfile
-        d = Doctor(tempfile.mkdtemp(prefix="doctor_probe_"), data_dir=tempfile.mkdtemp())
-        h = d.self_health()
-        for k, v in h["checks"].items():
-            print(("OK   " if v["ok"] else "FAIL ") + f"{k}: {v['detail']}")
-        return 0 if h["ok"] else 1
+        # Keep health probes self-contained: repeated checks must not leak temp projects/data folders.
+        with tempfile.TemporaryDirectory(prefix="doctor_probe_") as project_dir, tempfile.TemporaryDirectory(prefix="doctor_data_probe_") as data_dir:
+            d = Doctor(project_dir, data_dir=data_dir)
+            h = d.self_health()
+            for k, v in h["checks"].items():
+                print(("OK   " if v["ok"] else "FAIL ") + f"{k}: {v['detail']}")
+            return 0 if h["ok"] else 1
     if not a.args:
         ap.error("PATH required")
     project = a.args[0]
