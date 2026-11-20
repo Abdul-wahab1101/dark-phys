@@ -78,6 +78,7 @@ class ElevenLabsNarration {
   }
   async synthesizeSections(sections, outputPath, options = {}) {
     if (!Array.isArray(sections) || !sections.length) throw new Error('Narration sections are required.');
+    if (path.extname(outputPath).toLowerCase() !== '.mp3') throw new Error('Section-wise narration output must use an .mp3 extension.');
     const destination = path.resolve(outputPath), workDir = destination + '.sections';
     await fs.mkdir(workDir, { recursive: true });
     const outputs = [];
@@ -139,6 +140,7 @@ class NarrationEngine {
     const selected = this.provider();
     if (selected === 'ElevenLabs') return this.legacy.synthesize(text, outputPath, options);
     const ext = path.extname(outputPath).toLowerCase();
+    if (!['.mp3', '.wav'].includes(ext)) throw new Error('Narration output must use an .mp3 or .wav extension.');
     const pronunciation = applyPronunciationDictionary(text, options.pronunciationDictionary || {});
     const tempWav = ext === '.wav' ? outputPath : outputPath + '.gemini-source.wav';
     const result = await this.gemini.synthesize(pronunciation.text, tempWav, options);
