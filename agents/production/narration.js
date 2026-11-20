@@ -56,16 +56,19 @@ class ElevenLabsNarration {
     const direction = options.direction || 'story';
     const voiceSettings = { ...(DEFAULT_DIRECTIONS[direction] || DEFAULT_DIRECTIONS.story), ...(options.voiceSettings || {}) };
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), options.timeoutMs || 120000);
-    let response;
+    let response, bytes;
     try {
       response = await this.fetch(API + encodeURIComponent(this.voiceId) + '?output_format=mp3_44100_128', {
         method: 'POST', headers: { 'xi-api-key': this.apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
         body: JSON.stringify({ text: pronunciation.text, model_id: this.modelId, voice_settings: voiceSettings }),
         signal: controller.signal
       });
+      if (!response.ok) throw new Error('ElevenLabs narration failed with HTTP ' + response.status + '. Check voice access, quota and API configuration.');
+      bytes = Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error('ElevenLabs narration request timed out after ' + (options.timeoutMs || 120000) + ' ms.');
+      throw error;
     } finally { clearTimeout(timeout); }
-    if (!response.ok) throw new Error('ElevenLabs narration failed with HTTP ' + response.status + '. Check voice access, quota and API configuration.');
-    const bytes = Buffer.from(await response.arrayBuffer());
     if (bytes.length < 256) throw new Error('ElevenLabs returned an empty or invalid narration audio payload.');
     const destination = path.resolve(outputPath);
     await fs.mkdir(path.dirname(destination), { recursive: true });
