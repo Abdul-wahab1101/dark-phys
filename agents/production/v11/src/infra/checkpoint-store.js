@@ -6,6 +6,8 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const LOCAL_LOCKS = new Set();
 const { writeFileAtomic, isPidAlive, safeName } = require('./file-utils');
 
 class CheckpointStore {
@@ -19,15 +21,27 @@ class CheckpointStore {
 
   acquire(jobId) {
     const lock = this.lockFile(jobId);
+    if (LOCAL_LOCKS.has(lock)) throw new Error('job ' + jobId + ' is already running in this process');
     for (let attempt = 0; attempt < 2; attempt++) {
+      const token = crypto.randomBytes(16).toString('hex');
       try {
-        fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, at: this.now() }), { flag: 'wx' });
-        return () => { try { fs.unlinkSync(lock); } catch (_) { /* already released */ } };
+        fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, at: this.now(), token }), { flag: 'wx' });
+        LOCAL_LOCKS.add(lock);
+        let released = false;
+        return () => {
+          if (released) return;
+          released = true;
+          LOCAL_LOCKS.delete(lock);
+          try {
+            const owner = JSON.parse(fs.readFileSync(lock, 'utf8'));
+            if (owner.token === token) fs.unlinkSync(lock);
+          } catch (_) { /* lock already released or replaced by another owner */ }
+        };
       } catch (e) {
         if (e.code !== 'EEXIST') throw e;
         let owner = null;
         try { owner = JSON.parse(fs.readFileSync(lock, 'utf8')); } catch (_) { /* unreadable lock */ }
-        if (owner && owner.pid !== process.pid && isPidAlive(owner.pid)) throw new Error('job ' + jobId + ' is already running (pid ' + owner.pid + ')');
+        if (owner && isPidAlive(owner.pid)) throw new Error('job ' + jobId + ' is already running (pid ' + owner.pid + ')');
         try { fs.unlinkSync(lock); } catch (_) { /* raced */ }
       }
     }
@@ -69,7 +83,15 @@ class CheckpointStore {
 
   reset(jobId) { try { fs.unlinkSync(this.file(jobId)); } catch (_) { /* no checkpoint yet */ } }
 
-  clear(jobId) { for (const f of [this.file(jobId), this.lockFile(jobId)]) { try { fs.unlinkSync(f); } catch (_) { /* none */ } } }
+  clear(jobId) {
+    const lock = this.lockFile(jobId);
+    if (LOCAL_LOCKS.has(lock)) throw new Error('cannot clear a running job: ' + jobId);
+    try {
+      const owner = JSON.parse(fs.readFileSync(lock, 'utf8'));
+      if (owner && isPidAlive(owner.pid)) throw new Error('cannot clear a job owned by a live process: ' + jobId);
+    } catch (e) { if (e.message && e.message.startsWith('cannot clear')) throw e; }
+    for (const file of [this.file(jobId), lock]) { try { fs.unlinkSync(file); } catch (_) { /* none */ } }
+  }
 
   listJobs() { return fs.readdirSync(this.dir).filter(n => n.endsWith('.json')).map(n => n.slice(0, -5)); }
 }
