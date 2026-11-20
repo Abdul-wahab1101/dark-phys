@@ -23,6 +23,7 @@ if (-not $OpenMontage.Contains("22.23.4") -or -not $OpenMontage.Contains("NodeCo
 if (-not $OpenMontage.Contains("npm ci")) { throw "OpenMontage installer must use the lockfile for reproducible composer dependencies." }
 if (-not $Setup.Contains("18.17.0") -or -not $Setup.Contains("npm ci")) { throw "Main installer must enforce Node 18.17+ and use npm ci when a lockfile exists." }
 if (-not $Setup.Contains("npm install --no-save --no-package-lock sharp")) { throw "Main installer must install the root-level Sharp dependency required by the thumbnail agent." }
+if (-not $Setup.Contains("apply-thumbnail-upgrade.js")) { throw "Main installer must patch the actual upstream thumbnail pipeline." }
 if (-not $Start.Contains("npm start")) { throw "Normal launcher does not invoke npm start." }
 if (-not $Start.Contains("phase7-readiness.js")) { throw "Normal launcher must run the Phase 7 readiness gate." }
 if (-not $Lite.Contains("phase7-readiness.js")) { throw "Lightweight launcher must run the Phase 7 readiness gate." }
