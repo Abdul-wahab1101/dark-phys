@@ -190,12 +190,14 @@ function applyThumbnailUpgrade({ root = path.resolve(__dirname, '..'), engine } 
   const backupDir = path.join(engineRoot, '.dark-phys-backups');
   const backups = {
     designer: path.join(backupDir, 'thumbnail-designer-agent.upstream.js'),
+    families: path.join(backupDir, 'thumbnail-families-extra.upstream.js'),
     production: path.join(backupDir, 'production-management-agent.upstream.js'),
     index: path.join(backupDir, 'index.upstream.js'),
     dashboard: path.join(backupDir, 'dashboard-app.upstream.js')
   };
   fs.mkdirSync(backupDir, { recursive: true });
   if (fs.existsSync(upstreamDesigner) && !fs.existsSync(backups.designer)) fs.copyFileSync(upstreamDesigner, backups.designer);
+  if (fs.existsSync(extraFamilies) && !fs.existsSync(backups.families)) fs.copyFileSync(extraFamilies, backups.families);
   if (!fs.existsSync(backups.production)) fs.copyFileSync(productionFile, backups.production);
   if (!fs.existsSync(backups.index)) fs.copyFileSync(indexFile, backups.index);
   if (!fs.existsSync(backups.dashboard)) fs.copyFileSync(dashboardFile, backups.dashboard);
