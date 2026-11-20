@@ -159,3 +159,21 @@ test('checkpoint reset preserves the active job lock', () => {
     next();
   } finally { h.rm(dir); }
 });
+
+test('temp cleanup never removes another active job from the same process', () => {
+  const base = h.tmp();
+  try {
+    let clock = 1_000_000_000;
+    const tm = new TempManager({ baseDir: base, now: () => clock });
+    const first = tm.create('long-running-job');
+    fs.writeFileSync(path.join(first, '.yt-work.json'), JSON.stringify({ jobId: 'long-running-job', pid: process.pid, heartbeat: clock - 10 * 3600e3 }));
+    const second = tm.create('triggering-job');
+    const result = tm.cleanupStale();
+    assert.equal(fs.existsSync(first), true);
+    assert.ok(result.kept.some(x => x.dir === first && x.why === 'active in this process'));
+    tm.release(first);
+    const afterRelease = tm.cleanupStale();
+    assert.equal(fs.existsSync(first), false);
+    tm.remove(second);
+  } finally { h.rm(base); }
+});
