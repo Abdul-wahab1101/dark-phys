@@ -154,6 +154,10 @@ class ProductionPipeline {
       : planShots({ clips, totalSec: total, seed: job.jobId });
     const usage = [...plan.usage];
     if (job.musicAssetId) usage.push({ assetId: job.musicAssetId, secondsUsed: total, uses: 1 });
+    for (const assetId of (Array.isArray(job.musicAssetIds) ? job.musicAssetIds : [])) {
+      const segment = (job.musicSegments || []).find(x => x.assetId === assetId);
+      usage.push({ assetId, secondsUsed: segment ? Math.max(0, Number(segment.endSeconds) - Number(segment.startSeconds)) : total, uses: 1 });
+    }
     this.ledger.setUsage(job.jobId, usage);
     const hookText = data['audio-clean'].segments.filter(s => s.start < cfg.hookWindowSec).map(s => s.text).join(' ');
     this.ledger.recordVideo(job.jobId, { title: job.title, scriptText: job.script || '', hookText });
@@ -204,25 +208,35 @@ class ProductionPipeline {
     const labels = [];
     const voiceChain = '[1:a]highpass=f=80,equalizer=f=240:t=q:w=1:g=-2,' +
       'equalizer=f=3200:t=q:w=1:g=1.5,acompressor=threshold=0.10:ratio=3:attack=12:release=180:makeup=2';
+    const musicTracks = Array.isArray(job.musicSegments) && job.musicSegments.length
+      ? job.musicSegments
+      : (job.musicPath && fs.existsSync(job.musicPath) ? [{ path: job.musicPath, startSeconds: 0, endSeconds: total, gainDb: soundPlan.music && soundPlan.music.gainDb, fadeInSeconds: soundPlan.music && soundPlan.music.fadeInSeconds, fadeOutSeconds: soundPlan.music && soundPlan.music.fadeOutSeconds }] : []);
     let nextInput = 2;
-    let musicLabel = null;
-    if (job.musicPath && fs.existsSync(job.musicPath)) {
-      const ext = path.extname(job.musicPath) || '.mp3';
-      fs.copyFileSync(job.musicPath, path.join(dir, 'music' + ext));
-      inputs.push('-stream_loop', '-1', '-i', 'music' + ext);
-      const musicGain = Number.isFinite(Number(soundPlan.music && soundPlan.music.gainDb))
-        ? Math.max(-48, Math.min(0, Number(soundPlan.music.gainDb))) : -25;
-      const fadeIn = Number(soundPlan.music && soundPlan.music.fadeInSeconds) || 1.5;
-      const fadeOut = Number(soundPlan.music && soundPlan.music.fadeOutSeconds) || 2.5;
-      chains.push(voiceChain + ',asplit=2[vo][sc]');
+    if (musicTracks.length) {
+      const sidechainLabels = musicTracks.map((_, index) => '[sc' + index + ']').join('');
+      chains.push(voiceChain + ',asplit=' + (musicTracks.length + 1) + '[vo]' + sidechainLabels);
+      labels.push('[vo]');
       const silenceWindows = Array.isArray(soundPlan.silenceWindows) ? soundPlan.silenceWindows : [];
       const silenceExpression = silenceWindows.reduce((expr, window) =>
         'if(between(t,' + Math.max(0, Number(window.startSeconds) || 0).toFixed(2) + ',' + Math.max(0, Number(window.endSeconds) || 0).toFixed(2) + '),0,' + expr + ')', '1');
-      chains.push('[' + nextInput + ':a]volume=' + musicGain + 'dB,volume=\'' + silenceExpression + '\',afade=t=in:st=0:d=' + fadeIn +
-        ',afade=t=out:st=' + Math.max(0, total - fadeOut).toFixed(2) + ':d=' + fadeOut + '[mb]');
-      chains.push('[mb][sc]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[md]');
-      labels.push('[vo]', '[md]');
-      nextInput++;
+      musicTracks.forEach((track, index) => {
+        if (!track.path || !fs.existsSync(track.path)) throw new Error('Act-wise music track missing: ' + (track.path || 'path not set'));
+        const startAt = Math.max(0, Number(track.startSeconds) || 0);
+        const endAt = Math.min(total, Number(track.endSeconds) > startAt ? Number(track.endSeconds) : total);
+        const duration = Math.max(0.1, endAt - startAt);
+        const delay = Math.round(startAt * 1000);
+        const gain = Number.isFinite(Number(track.gainDb)) ? Math.max(-48, Math.min(0, Number(track.gainDb))) : -25;
+        const fadeIn = Math.min(duration / 2, Math.max(0.05, Number(track.fadeInSeconds) || 0.5));
+        const fadeOut = Math.min(duration / 2, Math.max(0.05, Number(track.fadeOutSeconds) || 0.8));
+        inputs.push('-stream_loop', '-1', '-i', track.path);
+        const bed = 'mb' + index, ducked = 'md' + index;
+        chains.push('[' + nextInput + ':a]atrim=duration=' + duration.toFixed(2) + ',asetpts=PTS-STARTPTS,volume=' + gain +
+          'dB,afade=t=in:st=0:d=' + fadeIn.toFixed(2) + ',afade=t=out:st=' + Math.max(0, duration - fadeOut).toFixed(2) +
+          ':d=' + fadeOut.toFixed(2) + ',adelay=' + delay + '|' + delay + ',volume=\'' + silenceExpression + '\[' + bed + ']');
+        chains.push('[' + bed + '][sc' + index + ']sidechaincompress=threshold=0.025:ratio=8:attack=20:release=450:makeup=1[' + ducked + ']');
+        labels.push('[' + ducked + ']');
+        nextInput++;
+      });
     } else {
       chains.push(voiceChain + '[vo]');
       labels.push('[vo]');
