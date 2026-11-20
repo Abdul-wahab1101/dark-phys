@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { ScriptEngineV2, validateEditorialDraft, evidenceWarnings } = require('../agents/script-engine-v2');
 const { planScenes, splitSentences } = require('../agents/production/scene-planner');
 const { applyPronunciationDictionary, DEFAULT_DIRECTIONS } = require('../agents/production/narration');
+const { planSceneShots, shotArgs } = require('../agents/production/v11/src/app/shot-planner');
 const pkg = {
   topic: 'How memory can change during recall', audience: 'Psychology documentary viewers', researchAgeDays: 5,
   sources: [{ id: 's1', title: 'Peer-reviewed memory research', url: 'https://example.org/paper' }, { id: 's2', title: 'University research overview', url: 'https://example.org/overview' }],
@@ -50,6 +51,10 @@ function draft(text) {
   assert.equal(scenes.scenes.length, 2);
   assert.ok(scenes.scenes.every(s => s.durationSeconds <= 4 && s.sourceCredit.required));
   assert.notEqual(scenes.scenes[0].shotType, scenes.scenes[1].shotType);
+  const timeline = planSceneShots({ scenes: scenes.scenes, clips: scenes.scenes.map(s => ({ sceneId: s.id, assetId: s.id, path: s.id + '.mp4', duration: 8 })), totalSec: 10 });
+  assert.deepEqual(timeline.shots.slice(0, 2).map(s => s.sceneId), ['scene-001', 'scene-002']);
+  assert.ok(timeline.shots.every(s => s.dur <= 4));
+  assert.ok(shotArgs(timeline.shots[0], { width: 1280, height: 720 }).join(' ').includes('eq=contrast=1.04'));
   assert.equal(splitSentences('One. Two?').length, 2);
   const pronunciation = applyPronunciationDictionary('Read the API and OpenAI docs.', { API: 'A P I', OpenAI: 'Open A I' });
   assert.equal(pronunciation.applied.length, 2);
