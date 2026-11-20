@@ -67,6 +67,8 @@ class CheckpointStore {
     for (const n of order.slice(Math.max(0, i))) delete state.stages[n];
   }
 
+  reset(jobId) { try { fs.unlinkSync(this.file(jobId)); } catch (_) { /* no checkpoint yet */ } }
+
   clear(jobId) { for (const f of [this.file(jobId), this.lockFile(jobId)]) { try { fs.unlinkSync(f); } catch (_) { /* none */ } } }
 
   listJobs() { return fs.readdirSync(this.dir).filter(n => n.endsWith('.json')).map(n => n.slice(0, -5)); }
