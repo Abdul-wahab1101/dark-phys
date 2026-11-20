@@ -129,7 +129,11 @@ test('checkpoint fingerprint changes when review, rights, captions, thumbnail or
     assert.notEqual(s.pipeline.fingerprint(s.job), base, 'render configuration is part of the checkpoint fingerprint');
     s.pipeline.cfg.width = originalWidth;
     s.ledger.register({ assetId: 'pix-1', kind: 'video', source: 'pixabay', sourceUrl: 'https://pixabay.com/v/pix-1', author: 'Tester', licenseId: 'cc-by-nc-4.0' });
-    assert.notEqual(s.pipeline.fingerprint(s.job), base, 'updated licence ledger forces preflight to run again');
+    const afterRightsChange = s.pipeline.fingerprint(s.job);
+    assert.notEqual(afterRightsChange, base, 'updated licence ledger forces preflight to run again');
+    s.ledger.recordVideo('another-channel-video', { title: 'Earlier video', scriptText: 'A different script', hookText: 'Different hook' });
+    s.ledger.recordUsage('another-channel-video', 'pix-1', { secondsUsed: 2, uses: 1 });
+    assert.notEqual(s.pipeline.fingerprint(s.job), afterRightsChange, 'new channel history forces reuse-risk preflight to run again');
   } finally { h.rm(dir); }
 });
 
