@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { ElevenLabsNarration } = require('../agents/production/narration');
+const { NarrationEngine } = require('../agents/production/narration');
 function directionFor(act, index, total) {
   const label = String(act.id || '') + ' ' + String(act.title || '') + ' ' + String(act.purpose || '');
   if (index === 0 || /hook|cold.open/i.test(label)) return 'hook';
@@ -20,13 +20,13 @@ async function main(argv = process.argv.slice(2)) {
   }
   const raw = await fs.readFile(inputFile, 'utf8');
   const dictionary = dictionaryPath ? JSON.parse(await fs.readFile(path.resolve(dictionaryPath), 'utf8')) : {};
-  const engine = new ElevenLabsNarration();
+  const engine = new NarrationEngine();
   let data = null;
   try { data = JSON.parse(raw); } catch (_) { /* plain narration text */ }
   let result;
   if (data && Array.isArray(data.sections)) {
     result = await engine.synthesizeSections(data.sections, output, {
-      pronunciationDictionary: dictionary, targetLufs: data.targetLufs == null ? -14 : data.targetLufs
+      pronunciationDictionary: dictionary, targetLufs: data.targetLufs == null ? -14 : data.targetLufs, language
     });
   } else if (data && data.scripts && data.scripts[language]) {
     const draft = data.scripts[language];
@@ -39,9 +39,9 @@ async function main(argv = process.argv.slice(2)) {
       direction: directionFor(act, index, acts.length), voiceSettings: act.voiceSettings
     }));
     if (!sections.length || sections.some(section => !String(section.text || '').trim())) throw new Error('Approved Script Engine output is missing section narration in one or more acts.');
-    result = await engine.synthesizeSections(sections, output, { pronunciationDictionary: dictionary, targetLufs: -14 });
+    result = await engine.synthesizeSections(sections, output, { pronunciationDictionary: dictionary, targetLufs: -14, language });
   } else {
-    result = await engine.synthesize(raw, output, { pronunciationDictionary: dictionary, direction: 'story' });
+    result = await engine.synthesize(raw, output, { pronunciationDictionary: dictionary, direction: 'story', language });
     result.loudness = await engine.normalizeLoudness(output, -14);
   }
   console.log(JSON.stringify(result, null, 2));
