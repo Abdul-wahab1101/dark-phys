@@ -4,18 +4,9 @@ const fs=require('node:fs');
 const readline=require('node:readline');
 const p=require('../agents/production/phase4-packaging');
 const {buildPackagingTests}=require('../agents/production/packaging-experiments');
-function loadLocalEnv(){
- for(const file of [path.resolve('.env'),path.resolve(__dirname,'../.env'),path.resolve(__dirname,'../engines/youtube-automation-agent/.env')]){
-  if(!fs.existsSync(file))continue;
-  for(const line of fs.readFileSync(file,'utf8').split(/\r?\n/)){
-   const m=line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-   if(!m||Object.prototype.hasOwnProperty.call(process.env,m[1]))continue;
-   let value=m[2].trim();if((value.startsWith('"')&&value.endsWith('"'))||(value.startsWith("'")&&value.endsWith("'")))value=value.slice(1,-1);
-   process.env[m[1]]=value;
-  }
- }
-}
+const {loadLocalEnv}=require('../agents/production/local-env');
 loadLocalEnv();
+
 function arg(name,fallback=''){const i=process.argv.indexOf('--'+name);return i<0?fallback:process.argv[i+1];}
 let approvalReadline=null,approvalLines=null;
 async function ask(question){if(!approvalReadline){approvalReadline=readline.createInterface({input:process.stdin,output:process.stdout});approvalLines=approvalReadline[Symbol.asyncIterator]();}process.stdout.write(question);const next=await approvalLines.next();if(next.done)throw new Error('Approval input ended before all confirmations were answered');return next.value.trim();}
