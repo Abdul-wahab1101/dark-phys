@@ -5,7 +5,7 @@ const readline=require('node:readline');
 const p=require('../agents/production/phase4-packaging');
 const {buildPackagingTests}=require('../agents/production/packaging-experiments');
 function loadLocalEnv(){
- for(const file of [path.resolve('.env'),path.resolve(__dirname,'../.env')]){
+ for(const file of [path.resolve('.env'),path.resolve(__dirname,'../.env'),path.resolve(__dirname,'../engines/youtube-automation-agent/.env')]){
   if(!fs.existsSync(file))continue;
   for(const line of fs.readFileSync(file,'utf8').split(/\r?\n/)){
    const m=line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
@@ -39,6 +39,29 @@ function starterPackage(){
   seo:{}
  };
 }
+async function generateThumbnails({title,subtitle='',outputDir='uploads/thumbnail-concepts',workspacePath='',agentFactory}={}){
+ if(!String(title||'').trim())throw new Error('A video title is required for thumbnail generation');
+ const createAgent=agentFactory||(()=>{const {ThumbnailDesignerAgent}=require('../agents/thumbnail-designer-agent');return new ThumbnailDesignerAgent(null,{});});
+ const agent=createAgent();
+ const input={title:String(title).trim(),script:String(subtitle||'')};
+ if(workspacePath)input.workspacePath=path.resolve(workspacePath);
+ const result=await agent.generateThumbnail(input);
+ if(!Array.isArray(result.variants)||result.variants.length!==3)throw new Error('Thumbnail engine must return exactly three reviewed candidates');
+ const unique=(key)=>new Set(result.variants.map(v=>v[key]).filter(Boolean)).size;
+ if(!result.variants.every(v=>v.reviewPassed===true)||result.qualityChecks?.allCandidatesPassedVisualGate!==true)throw new Error('Thumbnail quality gate did not approve all three candidates; refusing to export weak designs');
+ if(unique('designFamilyId')!==3||unique('layoutClass')!==3||unique('visualStrategyId')!==3)throw new Error('Thumbnail candidates do not have three unique design families, layouts and visual strategies');
+ const dir=path.resolve(outputDir);fs.mkdirSync(dir,{recursive:true});
+ const variants=result.variants.map((variant,index)=>{
+  if(!variant.path||!fs.existsSync(variant.path))throw new Error('Approved thumbnail image is missing: '+(variant.path||'unknown'));
+  const destination=path.join(dir,'candidate-'+(index+1)+'.jpg');
+  fs.copyFileSync(variant.path,destination);
+  return {...variant,path:destination};
+ });
+ const saved={...result,path:variants[0].path,variants,outputDir:dir,provider:result.imageProvider||'thumbnail-designer-agent',designVersion:'visual-review-v6'};
+ p.writeJson(path.join(dir,'concepts.json'),saved);
+ return saved;
+}
+
 async function main(){
  const command=process.argv[2],file=path.resolve(arg('file','uploads/phase4-package.json'));
  if(command==='init'){
@@ -49,11 +72,11 @@ async function main(){
   return;
  }
  if(command==='thumbnails'){
-  const ai=require('../agents/production/cloudflare-workers-ai');
-  const result=await ai.generateThumbnailConcepts({accountId:process.env.CLOUDFLARE_ACCOUNT_ID,token:process.env.CLOUDFLARE_API_TOKEN,textModel:process.env.CLOUDFLARE_TEXT_MODEL,imageModel:process.env.CLOUDFLARE_IMAGE_MODEL,title:arg('title'),subtitle:arg('subtitle'),outputDir:arg('output','uploads/thumbnail-concepts')});
-  p.writeJson(path.join(path.resolve(arg('output','uploads/thumbnail-concepts')),'concepts.json'),result);
-  console.log('Generated '+result.concepts.length+' Cloudflare AI thumbnail variations:',path.resolve(arg('output','uploads/thumbnail-concepts')));
-  console.log('Review the three JPGs and manually select one. No automatic publishing.');
+  const result=await generateThumbnails({title:arg('title'),subtitle:arg('subtitle'),outputDir:arg('output','uploads/thumbnail-concepts'),workspacePath:arg('workspace')});
+  console.log('Generated three approved, visually reviewed thumbnail candidates:',result.outputDir);
+  console.log('Recommended:',result.recommendedCandidate,'| scores:',result.comparison.map(v=>v.score).join(', '));
+  if(!result.qualityChecks.visionInspectionAvailable)console.log('WARNING: Cloudflare Vision was unavailable; technical/layout heuristics were used, not AI visual review.');
+  console.log('Select the final thumbnail manually. No automatic publishing.');
   return;
  }
  if(command==='build'){
@@ -114,4 +137,5 @@ async function main(){
  }
  console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|verify --file uploads/phase4-package.json [--reviewer name] [--thumbnail-concepts uploads/thumbnail-concepts/concepts.json]');
 }
-main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
+if(require.main===module)main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
+module.exports={main,generateThumbnails};
