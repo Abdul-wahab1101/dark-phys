@@ -171,6 +171,8 @@ class ProductionPipeline {
   async stage_preflight({ job, data }) {
     const hashes = new Map();
     for (const c of job.clips) hashes.set(c.assetId, await hashFile(c.path));
+    if (job.musicAssetId && job.musicPath) hashes.set(job.musicAssetId, await hashFile(job.musicPath));
+    for (const track of (job.musicSegments || [])) hashes.set(track.assetId, await hashFile(track.path));
     const license = this.ledger.auditVideo(job.jobId, { description: job.description || '', hashOf: id => hashes.get(id) || null, realisticAiDisclosed: job.realisticAiDisclosed === undefined ? null : job.realisticAiDisclosed });
     const reuse = assessReuse({
       videoId: job.jobId, durationSec: data['shot-plan'].totalSec,
