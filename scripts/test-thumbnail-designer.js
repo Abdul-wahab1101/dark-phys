@@ -60,7 +60,9 @@ async function placeholderBackground(file, i) {
     ok(new Set(concept.variantPlans.map(p => p.familyId)).size === 3, 'three distinct families for: ' + v.title);
     ok(new Set(concept.variantPlans.map(p => p.headline)).size === 3, 'three distinct headlines for: ' + v.title);
     ok(concept.variantPlans.every(p => p.headline.replace(/[^\w ]/g, '') !== v.title.toUpperCase().replace(/[^\w ]/g, '')), 'headline != title');
-    ok(concept.variantPlans.every(p => p.headline.split(/\s+/).length <= 6), 'headline <= 6 words');
+    ok(concept.variantPlans.every(p => p.headline.split(/\s+/).length <= 5), 'headline <= 5 words');
+    ok(new Set(concept.variantPlans.map(p => p.visualStrategy?.id)).size === 3, 'three different visual strategies (close-up / split / conceptual)');
+    ok(new Set(concept.variantPlans.map(p => p.familyId)).size === 3, 'three non-repeating design families');
     const prompt = agent.buildImagePrompt(concept, concept.variantPlans[0], 1);
     ok(prompt.length < 2000 && !/\b(text|letters|words|caption|logo|watermark)\b/i.test(prompt.replace(/wordless/gi, '')), 'prompt has no text-generation request, length ' + prompt.length);
   }
@@ -116,6 +118,10 @@ async function placeholderBackground(file, i) {
     });
     console.log('diversity:', JSON.stringify(result.qualityChecks.diversity));
     ok(result.qualityChecks.diversity.distinctFamilies === 3, 'three distinct families in end-to-end run');
+    ok(new Set(result.variants.map(v => v.layoutClass)).size === 3, 'three distinct composition/layout classes');
+    ok(result.variants.every(v => Number.isFinite(v.reviewScore) && v.reviewScore >= 0 && v.reviewScore <= 100), 'every candidate receives a 0-100 quality score');
+    ok(result.comparison.length === 3 && result.recommendedCandidate === result.variants[0].label, 'three-way comparison and best-candidate recommendation');
+    ok(result.qualityChecks.mobileSafeZonesChecked === true, 'mobile timestamp safe-zone validation enabled');
   } catch (e) { ok(false, 'end-to-end generation: ' + e.message); }
 
   console.log(`\nOutput folder: ${outDir}\n${failures ? failures + ' FAILURE(S)' : 'ALL CHECKS PASSED'} (programmatic checks only; look at the images yourself)`);
