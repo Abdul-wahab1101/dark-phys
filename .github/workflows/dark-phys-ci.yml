@@ -162,6 +162,15 @@ jobs:
           node scripts/test-openmontage-return.js
           node scripts/test-phase3-render.js
           node scripts/cinematic-production.js
+      - name: Test Script Engine v2, Scene Planner v2 and Narration v2
+        run: |
+          node --check agents/script-engine-v2.js
+          node --check agents/production/scene-planner.js
+          node --check agents/production/narration.js
+          node --check scripts/script-engine-v2.js
+          node --check scripts/plan-scenes.js
+          node --check scripts/narrate.js
+          node scripts/test-production-engines-v2.js
       - name: Test Original Content Studio
         run: |
           node --check agents/original-content-studio.js
