@@ -132,3 +132,14 @@ test('checkpoint fingerprint changes when review, rights, captions, thumbnail or
     assert.notEqual(s.pipeline.fingerprint(s.job), base, 'updated licence ledger forces preflight to run again');
   } finally { h.rm(dir); }
 });
+
+test('workspace creation failure releases the job lock for a safe retry', async () => {
+  const dir = h.tmp();
+  try {
+    const s = setup(dir);
+    s.temp.create = () => { throw new Error('simulated disk full'); };
+    await assert.rejects(s.pipeline.run(s.job), /simulated disk full/);
+    const release = s.checkpoints.acquire(s.job.jobId);
+    release();
+  } finally { h.rm(dir); }
+});
