@@ -13,8 +13,14 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
   const narration = path.resolve(narrationPath), output = path.resolve(outputPath);
   const base = path.resolve(projectDir || path.dirname(output));
   if (!fs.existsSync(narration)) throw new Error('Approved narration file not found: ' + narration);
+  if (path.extname(output).toLowerCase() !== '.mp4') throw new Error('The v11 production output must use an .mp4 extension.');
   const music = musicPath ? path.resolve(musicPath) : '';
   if (music && !fs.existsSync(music)) throw new Error('Music file not found: ' + music);
+  const canonical = p => process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p);
+  if ([narration, music, ...manifest.map(record => record.downloadedFile ? (path.isAbsolute(record.downloadedFile) ? record.downloadedFile : path.resolve(process.cwd(), record.downloadedFile)) : '')]
+    .filter(Boolean).some(input => canonical(input) === canonical(output))) {
+    throw new Error('Output path must not overwrite narration, music or an approved source clip.');
+  }
 
   const scenes = new Map(plan.scenes.map(scene => [String(scene.id), scene]));
   const clips = [], assets = [], covered = new Set();
