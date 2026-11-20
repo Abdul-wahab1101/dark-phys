@@ -47,9 +47,12 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     const rights = plan.musicRights || {};
     const musicHash = crypto.createHash('sha256').update(fs.readFileSync(music)).digest('hex');
     musicAssetId = 'music-' + musicHash.slice(0, 16);
+    const proofPath = rights.proofPath ? (path.isAbsolute(rights.proofPath) ? rights.proofPath : path.resolve(base, rights.proofPath)) : '';
+    const rightsApproved = rights.commercialUseVerified === true && rights.reviewStatus === 'approved' &&
+      (String(rights.licenseUrl || '').startsWith('https://') || (proofPath && fs.existsSync(proofPath)));
     assets.push({ assetId: musicAssetId, kind: 'audio', source: rights.source || 'Unverified local music file',
       sourceUrl: rights.sourceUrl || null, author: rights.creator || null,
-      licenseId: rights.licenseId || 'unknown', licenseUrl: rights.licenseUrl || null,
+      licenseId: rightsApproved ? (rights.licenseId || 'unknown') : 'unknown', licenseUrl: rights.licenseUrl || null,
       retrievedAt: rights.retrievedAt || undefined, sha256: musicHash });
   }
   const musicTracks = (Array.isArray(plan.musicSegments) ? plan.musicSegments : []).map((segment, index) => {
@@ -58,8 +61,12 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
     const rights = segment.rights || plan.musicRights || {};
     const trackHash = crypto.createHash('sha256').update(fs.readFileSync(trackPath)).digest('hex');
     const assetId = 'music-' + trackHash.slice(0, 16);
+    const proofPath = rights.proofPath ? (path.isAbsolute(rights.proofPath) ? rights.proofPath : path.resolve(base, rights.proofPath)) : '';
+    const rightsApproved = rights.commercialUseVerified === true && rights.reviewStatus === 'approved' &&
+      (String(rights.licenseUrl || '').startsWith('https://') || (proofPath && fs.existsSync(proofPath)));
     assets.push({ assetId, kind: 'audio', source: rights.source || 'Unverified act-wise music file',
-      sourceUrl: rights.sourceUrl || null, author: rights.creator || null, licenseId: rights.licenseId || 'unknown',
+      sourceUrl: rights.sourceUrl || null, author: rights.creator || null,
+      licenseId: rightsApproved ? (rights.licenseId || 'unknown') : 'unknown',
       licenseUrl: rights.licenseUrl || null, retrievedAt: rights.retrievedAt || undefined, sha256: trackHash });
     return { ...segment, path: trackPath, assetId };
   });
