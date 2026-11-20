@@ -2373,11 +2373,11 @@ class ThumbnailDesignerAgent {
         body: JSON.stringify({
           messages: [{
             role: 'user',
-            content: [
-              { type: 'text', text: 'Act as a strict professional YouTube thumbnail art director. Inspect this actual 16:9 thumbnail at small-screen size. Return ONLY valid JSON with keys score (0-100), passed (boolean), subjectQuality (0-10), clutter (0-10 where 10 means very cluttered), focalPoint (0-10), textReadability (0-10), composition (0-10), curiosity (0-10), concerns (array of short strings). Penalize generic stock-looking visuals, weak facial expression, repeated/template-like layout, unclear focal point, too many words, text-image repetition, poor contrast, cramped edges, outdated meme/poster aesthetics, and clutter. Reward modern cinematic art direction, strong emotion/tension, one clear focal hook, visual storytelling and a curiosity gap. Text visible in image: ' + String(variant.hook || '') + '. Design family: ' + String(variant.designFamily || '') + '. Do not guess CTR; assess creative potential only.' },
-              { type: 'image_url', image_url: { url: dataUrl } }
-            ]
-          }]
+            content: 'Act as a strict professional YouTube thumbnail art director. Inspect this actual 16:9 thumbnail at small-screen size. Return ONLY valid JSON with keys score (0-100), passed (boolean), subjectQuality (0-10), clutter (0-10 where 10 means very cluttered), focalPoint (0-10), textReadability (0-10), composition (0-10), curiosity (0-10), concerns (array of short strings). Penalize generic stock-looking visuals, weak facial expression, repeated/template-like layout, unclear focal point, too many words, text-image repetition, poor contrast, cramped edges, outdated meme/poster aesthetics, and clutter. Reward modern cinematic art direction, strong emotion/tension, one clear focal hook, visual storytelling and a curiosity gap. Text visible in image: ' + String(variant.hook || '') + '. Design family: ' + String(variant.designFamily || '') + '. Do not guess CTR; assess creative potential only.'
+          }],
+          image: dataUrl,
+          max_tokens: 400,
+          temperature: 0.2
         }),
         signal: AbortSignal.timeout(90000)
       });
