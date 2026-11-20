@@ -21,7 +21,8 @@ try {
   assert.equal(prepared.profile.width > 0, true);
   assert.throws(() => buildV11Job({ plan, manifest: [{ ...manifest[0], rightsApprovedByUser: false }],
     narrationPath: narration, outputPath: path.join(root, 'out', 'bad.mp4'), projectDir: root }), /Rights approval/);
-  assert.throws(() => buildV11Job({ plan, manifest: [{ ...manifest[0], license: 'unknown' }],
-    narrationPath: narration, outputPath: path.join(root, 'out', 'unknown.mp4'), projectDir: root }), /scene-001/);
+  const unknownLicense = buildV11Job({ plan, manifest: [{ ...manifest[0], license: 'unknown' }],
+    narrationPath: narration, outputPath: path.join(root, 'out', 'unknown.mp4'), projectDir: root });
+  assert.equal(unknownLicense.assets[0].licenseId, 'unknown', 'unknown licenses are passed to the pipeline for a blocking preflight');
   console.log('PASS v11 adapter: existing scene plan + approved Pixabay manifest -> unified production job');
 } finally { fs.rmSync(root, { recursive: true, force: true }); }
