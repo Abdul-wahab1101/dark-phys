@@ -26,6 +26,8 @@ jobs:
           out=pathlib.Path('/tmp/dark-phys-audit')
           archives=[
             ('youtube-agent-upgrade-v6 (1).zip','youtube-agent-upgrade-v6'),
+            ('youtube-agent-upgrade-v10.zip','youtube-agent-upgrade-v10'),
+            ('youtube-agent-upgrade-v11.zip','youtube-agent-upgrade-v11'),
             ('UniversalDoctorAgent (1).zip','UniversalDoctorAgent')
           ]
           report=[]
