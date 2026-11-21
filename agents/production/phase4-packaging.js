@@ -2,6 +2,7 @@
 const crypto=require('node:crypto');
 const fs=require('node:fs');
 const path=require('node:path');
+const monetizationSafety=require('./monetization-safety');
 
 function clean(s){return String(s??'').replace(/\s+/g,' ').trim();}
 function slug(s){return clean(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
@@ -116,13 +117,17 @@ function complianceReview(input={}){
  const text=[input.title,input.description,input.script,input.narration,input.captions,input.thumbnailText,tagText].filter(Boolean).join(' ');
  const flags=PATTERNS.filter(([,re])=>re.test(text)).map(([code])=>({code,severity:'review',status:'human_review_required'}));
  const originality=originalityReview(input);
+ const history=input.channelHistory||((input.previousScripts||[]).map((script,i)=>({id:'previous-'+(i+1),script})));
+ const safety=monetizationSafety.buildReport({...input,channelHistory:history,uploadHistory:input.uploadHistory||[]});
  const checks=[
   {id:'community_guidelines',status:'human_review_required',detail:'Review full context, narration, visuals, metadata and thumbnail against current YouTube Community Guidelines.'},
   {id:'advertiser_suitability',status:'human_review_required',detail:'Review the complete video, spoken language, on-screen text, title, description and thumbnail against current advertiser-friendly guidelines.'},
   {id:'factual_accuracy',status:'human_review_required',detail:'Verify every factual claim against primary sources and remove unsupported or misleading claims.'},
-  ...originality.checks
+  ...originality.checks,
+  {id:'scene_originality',status:'human_review_required',detail:'Review each scene for narrative purpose, original visual contribution, source rights, factual context and viewer value.'},
+  {id:'synthetic_media_disclosure',status:'human_review_required',detail:'Record the disclosure decision for realistic synthetic media and reject deceptive depictions of real people or events.'}
  ];
- return {automatedScreening:'advisory_only',flags,originality,checks,status:'human_review_required',passed:false,requiresHumanReview:true,disclaimer:'No automated keyword or similarity check can determine YouTube policy compliance or monetization eligibility.'};
+ return {automatedScreening:'advisory_only',flags,originality,monetizationSafety:safety,checks,status:'human_review_required',passed:false,requiresHumanReview:true,disclaimer:'No automated keyword or similarity check can determine YouTube policy compliance or monetization eligibility.'};
 }
 function importAssetManifest(manifest=[]){
  const rows=Array.isArray(manifest)?manifest:(Array.isArray(manifest?.assets)?manifest.assets:[]);
@@ -194,9 +199,12 @@ function createApproval(pkg,reviewer,checks={}){
  const seo=checkSeo(pkg.seo||{});
  const chapter=checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0));
  if(!rights.passed)throw new Error('Rights review blocked: '+rights.errors.join('; '));
+ if(pkg.monetizationSafety?.autoHold)throw new Error('Monetization safety HOLD: resolve high/critical risk flags before approval');
+ if(pkg.syntheticDisclosure?.required&&!['yes','disclose','required'].includes(String(pkg.syntheticDisclosure?.decision||'').toLowerCase()))throw new Error('Realistic synthetic media requires a recorded disclosure decision');
+ if(pkg.syntheticDisclosure?.deceptiveRealScene)throw new Error('Deceptive synthetic depiction of a real person/event blocks approval');
  if(!seo.passed)throw new Error('SEO metadata blocked: '+seo.errors.join('; '));
  if(!chapter.passed)throw new Error('Chapter review blocked: '+chapter.errors.join('; '));
- const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed'];
+ const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed','sceneOriginality','syntheticDisclosure'];
  if(required.some(k=>checks[k]!==true))throw new Error('Every human review confirmation must be true');
  if(!pkg.finalVideo||!/^([a-f0-9]{64})$/i.test(String(pkg.finalVideoSha256||''))||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video file hash and SEO metadata are required');
  if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file does not exist');
@@ -216,4 +224,4 @@ function verifyApproval(pkg,approval){
 }
 function loadJson(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 function writeJson(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
-module.exports={buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters};
+module.exports={buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters,monetizationSafety};
