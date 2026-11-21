@@ -6,8 +6,12 @@ const METHOD_START = '  async processThumbnail(thumbnail, script) {';
 const METHOD_END = '\n  calculatePublishTime(strategy) {';
 const MARKER = 'DARK_PHYS_REVIEWED_THUMBNAIL_ENGINE';
 
-function read(file) { return fs.readFileSync(file, 'utf8'); }
-function write(file, value) { fs.writeFileSync(file, value, 'utf8'); }
+function read(file) { return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'); }
+function write(file, value) {
+  const original = fs.readFileSync(file, 'utf8');
+  const newline = original.includes('\r\n') ? '\r\n' : '\n';
+  fs.writeFileSync(file, value.replace(/\r?\n/g, newline), 'utf8');
+}
 
 function upgradedProcessThumbnailMethod() {
   return `  async processThumbnail(thumbnail, script) {
