@@ -36,6 +36,9 @@ def main():
     episode.add_argument("--scenes-json", default=""); episode.add_argument("--approved-at", default=None)
     history = sub.add_parser("episode-history", help="Show prior episodes for a channel")
     history.add_argument("--channel", required=True); history.add_argument("--limit", type=int, default=100)
+    angle = sub.add_parser("check-angle", help="Compare an editorial angle with prior channel episodes")
+    angle.add_argument("--channel", required=True); angle.add_argument("--editorial-angle", required=True)
+    angle.add_argument("--threshold", type=float, default=0.62)
     upload = sub.add_parser("record-upload", help="Record a manually confirmed published upload")
     upload.add_argument("--channel", required=True); upload.add_argument("--video-id", required=True)
     upload.add_argument("--published-at", required=True)
@@ -79,6 +82,11 @@ def main():
         emit({"recorded": True, "video_id": args.video_id, "channel_id": args.channel})
     elif args.command == "episode-history":
         emit(intel.episode_history(args.channel, args.limit))
+    elif args.command == "check-angle":
+        matches = intel.find_angle_duplicates(args.channel, args.editorial_angle, args.threshold)
+        emit({"possible_reuse": bool(matches), "matches": matches})
+        if matches:
+            raise SystemExit(2)
     elif args.command == "record-upload":
         intel.record_upload(args.channel, args.video_id, args.published_at)
         emit({"recorded": True, "video_id": args.video_id, "channel_id": args.channel})
