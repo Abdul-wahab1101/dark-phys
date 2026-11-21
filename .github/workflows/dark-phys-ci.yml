@@ -266,6 +266,8 @@ jobs:
           node scripts/viral-generate.js --help
       - name: Test final video quality gate
         run: node scripts/test-quality-check.js
+      - name: Audit every first-party agent/script syntax and local handoff import
+        run: node scripts/test-agent-syntax.js
       - name: Test agent coordination and recovery
         run: node scripts/test-agent-coordination.js
   openmontage:
