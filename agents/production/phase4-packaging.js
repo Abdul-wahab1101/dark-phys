@@ -201,12 +201,13 @@ function createApproval(pkg,reviewer,checks={}){
  if(!rights.passed)throw new Error('Rights review blocked: '+rights.errors.join('; '));
  if(pkg.monetizationSafety?.autoHold)throw new Error('Monetization safety HOLD: resolve high/critical risk flags before approval');
  const sceneRows=pkg.monetizationSafety?.sections?.sceneOriginality?.scenes||pkg.sceneOriginalityChecklist||[];
+ if(!sceneRows.length)throw new Error('A scene manifest and per-scene originality checklist are required before approval');
  if(sceneRows.some(scene=>scene.checklistComplete!==true))throw new Error('Every scene must complete the scene-by-scene originality and viewer-value checklist');
  if(pkg.syntheticDisclosure?.required&&!['yes','disclose','required'].includes(String(pkg.syntheticDisclosure?.decision||'').toLowerCase()))throw new Error('Realistic synthetic media requires a recorded disclosure decision');
  if(pkg.syntheticDisclosure?.deceptiveRealScene)throw new Error('Deceptive synthetic depiction of a real person/event blocks approval');
  if(!seo.passed)throw new Error('SEO metadata blocked: '+seo.errors.join('; '));
  if(!chapter.passed)throw new Error('Chapter review blocked: '+chapter.errors.join('; '));
- const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed','sceneOriginality','syntheticDisclosure'];
+ const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed','sceneOriginality','syntheticDisclosure','audioQuality'];
  if(required.some(k=>checks[k]!==true))throw new Error('Every human review confirmation must be true');
  if(!pkg.finalVideo||!/^([a-f0-9]{64})$/i.test(String(pkg.finalVideoSha256||''))||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video file hash and SEO metadata are required');
  if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file does not exist');
