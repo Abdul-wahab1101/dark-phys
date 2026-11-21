@@ -150,6 +150,27 @@ class ChannelIntelligence:
               FOREIGN KEY(topic_id) REFERENCES topics(id)
             );
             CREATE INDEX IF NOT EXISTS idx_evidence_topic ON research_evidence(topic_id);
+            CREATE TABLE IF NOT EXISTS channel_episodes (
+              video_id TEXT PRIMARY KEY,
+              channel_id TEXT NOT NULL,
+              title TEXT NOT NULL,
+              script_text TEXT NOT NULL,
+              editorial_angle TEXT NOT NULL DEFAULT '',
+              template_id TEXT NOT NULL DEFAULT '',
+              layout_id TEXT NOT NULL DEFAULT '',
+              structure_fingerprint TEXT NOT NULL DEFAULT '',
+              scenes_json TEXT NOT NULL DEFAULT '[]',
+              approved_at TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_episodes_channel ON channel_episodes(channel_id, approved_at DESC);
+            CREATE TABLE IF NOT EXISTS channel_uploads (
+              video_id TEXT PRIMARY KEY,
+              channel_id TEXT NOT NULL,
+              published_at TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_uploads_channel ON channel_uploads(channel_id, published_at DESC);
             """)
             columns = {row[1] for row in db.execute("PRAGMA table_info(topics)")}
             if "script_text" not in columns:
@@ -237,6 +258,61 @@ class ChannelIntelligence:
             if db.total_changes == 0:
                 raise KeyError(f"Unknown topic id: {topic_id}")
         return digest
+
+
+    def record_episode(self, channel_id: str, video_id: str, title: str, script: str,
+                       editorial_angle: str = "", template_id: str = "", layout_id: str = "",
+                       structure_fingerprint: str = "", scenes: list[dict[str, Any]] | None = None,
+                       approved_at: str | None = None) -> None:
+        self.get_channel(channel_id)
+        if not video_id.strip() or not title.strip():
+            raise ValueError("video_id and title are required")
+        normalized = normalize_text(script)
+        if len(normalized) < 80:
+            raise ValueError("Episode history requires at least 80 normalized script characters")
+        json_scenes = json.dumps(scenes or [], ensure_ascii=False)
+        with self._connect() as db:
+            db.execute("""INSERT INTO channel_episodes
+              (video_id,channel_id,title,script_text,editorial_angle,template_id,layout_id,structure_fingerprint,scenes_json,approved_at,created_at)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+              (video_id.strip(), channel_id, title.strip(), normalized, editorial_angle.strip(),
+               template_id.strip(), layout_id.strip(), structure_fingerprint.strip(), json_scenes,
+               approved_at or utc_now(), utc_now()))
+
+    def episode_history(self, channel_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        self.get_channel(channel_id)
+        if not 1 <= int(limit) <= 500:
+            raise ValueError("limit must be between 1 and 500")
+        with self._connect() as db:
+            rows = db.execute("SELECT * FROM channel_episodes WHERE channel_id=? ORDER BY approved_at DESC LIMIT ?",
+                              (channel_id, int(limit))).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["scenes"] = json.loads(item.pop("scenes_json"))
+            result.append(item)
+        return result
+
+    def record_upload(self, channel_id: str, video_id: str, published_at: str) -> None:
+        self.get_channel(channel_id)
+        if not video_id.strip():
+            raise ValueError("video_id is required")
+        try:
+            datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            raise ValueError("published_at must be a valid ISO date/time")
+        with self._connect() as db:
+            db.execute("INSERT INTO channel_uploads (video_id,channel_id,published_at,created_at) VALUES (?,?,?,?)",
+                       (video_id.strip(), channel_id, published_at, utc_now()))
+
+    def upload_history(self, channel_id: str, limit: int = 200) -> list[dict[str, Any]]:
+        self.get_channel(channel_id)
+        if not 1 <= int(limit) <= 1000:
+            raise ValueError("limit must be between 1 and 1000")
+        with self._connect() as db:
+            rows = db.execute("SELECT video_id,channel_id,published_at FROM channel_uploads WHERE channel_id=? ORDER BY published_at DESC LIMIT ?",
+                              (channel_id, int(limit))).fetchall()
+        return [dict(row) for row in rows]
 
     def add_evidence(self, topic_id: int, source_type: str, source_url: str, note: str,
                      freshness_days: int | None = None, observed_at: str | None = None) -> int:
