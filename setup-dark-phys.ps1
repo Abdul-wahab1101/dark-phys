@@ -14,7 +14,7 @@ Require-Command node "Install Node.js 20 LTS: https://nodejs.org/"
 Require-Command npm "Install Node.js with npm."
 Require-Command python "Install Python 3.10+: https://www.python.org/downloads/"
 $NodeVersion = [version](node -p "process.versions.node")
-if ($NodeVersion -lt [version]"20.9.0") { throw "Node.js 20.9+ is required by sharp 0.35.5. Install Node 20 LTS or newer. Current: $NodeVersion" }
+if ($NodeVersion -lt [version]"20.17.0") { throw "Node.js 20.17+ is required for the patched sqlite3 prebuilt binaries. Install current Node 20 LTS or newer. Current: $NodeVersion" }
 $Py = python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
 $Parts = $Py.Split('.')
 if ([int]$Parts[0] -lt 3 -or ([int]$Parts[0] -eq 3 -and [int]$Parts[1] -lt 10)) { throw "Python 3.10+ is required." }

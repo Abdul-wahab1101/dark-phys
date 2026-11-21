@@ -13,7 +13,8 @@ const POLICY = Object.freeze({
   sharp: '0.35.5',
   'form-data': '4.0.6',
   ws: '8.23.0',
-  'body-parser': '1.20.9'
+  'body-parser': '1.20.9',
+  sqlite3: '6.0.1'
 });
 
 function applyPolicy(engineDir) {
@@ -63,6 +64,13 @@ function main() {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error('npm lockfile regeneration failed with exit code ' + result.status);
+  // Apply non-breaking transitive security fixes to the generated lockfile.
+  // Do not use --force: incompatible major upgrades must be reviewed separately.
+  const auditFix = spawnSync(npm, ['audit', 'fix', '--package-lock-only', '--ignore-scripts', '--no-fund'], {
+    cwd: engineDir, stdio: 'inherit', shell: process.platform === 'win32'
+  });
+  if (auditFix.error) throw auditFix.error;
+  if (auditFix.status !== 0) console.warn('NOTICE: npm audit fix left advisories requiring separate review; the production audit gate will decide readiness.');
   verifyLockfile(engineDir);
   console.log('PASS upstream production dependency floors and regenerated npm lockfile:', JSON.stringify(POLICY));
 }

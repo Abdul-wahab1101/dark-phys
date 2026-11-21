@@ -9,7 +9,7 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dark-phys-deps-'));
 try {
   const manifest = {
     name: 'fixture-agent',
-    dependencies: { axios: '^1.7.0', sharp: '^0.34.5', 'form-data': '^4.0.4', express: '^4.18.2' },
+    dependencies: { axios: '^1.7.0', sharp: '^0.34.5', 'form-data': '^4.0.4', sqlite3: '^5.1.6', express: '^4.18.2' },
     devDependencies: { eslint: '^9.0.0' }
   };
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(manifest, null, 2));
@@ -20,6 +20,7 @@ try {
   assert.equal(patched.dependencies.axios, POLICY.axios);
   assert.equal(patched.dependencies.sharp, POLICY.sharp);
   assert.equal(patched.dependencies['form-data'], POLICY['form-data']);
+  assert.equal(patched.dependencies.sqlite3, POLICY.sqlite3);
   assert.equal(patched.dependencies.express, '^4.18.2', 'unrelated dependency unchanged');
 
   const packages = {};
