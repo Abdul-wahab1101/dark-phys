@@ -11,7 +11,7 @@ try {
   fs.writeFileSync(path.join(dir, 'test.js'), upstreamTest);
   assert.equal(patchSharpPackageJsonImport(dir), true);
   const patchedTest = fs.readFileSync(path.join(dir, 'test.js'), 'utf8');
-  assert.match(patchedTest, /require\\(sharpPackagePath\\)/);
+  assert.ok(patchedTest.includes('require(sharpPackagePath)'));
   assert.equal(fs.readFileSync(path.join(dir, '.dark-phys-backups', 'test.js'), 'utf8'), upstreamTest);
   assert.equal(patchSharpPackageJsonImport(dir), false, 'Sharp test patch is idempotent');
 
