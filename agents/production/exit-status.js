@@ -8,4 +8,9 @@ function productionExitCode(result = {}) {
   if (result.status === 'blocked') return 2;
   return 0;
 }
-module.exports = { productionExitCode };
+function queueExitCode(result = {}) {
+  if (result.status === 'held' || result.batchStopped === true) return 42;
+  if (result.status === 'failed') return 2;
+  return 0;
+}
+module.exports = { productionExitCode, queueExitCode };
