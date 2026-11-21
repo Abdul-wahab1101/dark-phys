@@ -2,7 +2,6 @@
 'use strict';
 const {loadLocalEnv}=require('../agents/production/local-env');
 loadLocalEnv();
-'use strict';
 const fs=require('node:fs');
 const path=require('node:path');
 const {YouTubeTrendSource}=require('../agents/viral-intelligence-sources');
