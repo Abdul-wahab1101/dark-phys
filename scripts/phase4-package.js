@@ -25,7 +25,9 @@ function starterPackage(){
    commercialUseVerified:false,modifications:'Describe edits or state none',attributionRequired:false,attributionReviewed:false,attributionText:'',reviewStatus:'pending'
   }],
   script:'Paste the complete final narration/script for advisory screening and originality comparison.',
-  previousScripts:[],recentTemplateIds:[],templateId:'documentary-v1',
+  channelId:'dark-phys-en',channelHistory:[],uploadHistory:[],scenes:[],
+  realisticSyntheticMedia:false,syntheticDisclosureDecision:'not_applicable',deceptiveRealScene:false,
+  audioAnalysis:{},previousScripts:[],recentTemplateIds:[],templateId:'documentary-v1',
   finalVideo:'uploads/final.mp4',
   seo:{}
  };
@@ -83,16 +85,24 @@ async function main(){
   pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts,youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
   if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
   pkg.compliance=p.complianceReview({...input,...pkg.seo});
+  pkg.monetizationSafety=pkg.compliance.monetizationSafety;
+  pkg.syntheticDisclosure={realisticSyntheticMedia:pkg.monetizationSafety.sections.syntheticMedia.realisticSyntheticMedia,decision:pkg.monetizationSafety.sections.syntheticMedia.disclosureDecision,required:pkg.monetizationSafety.sections.syntheticMedia.disclosureRequiredByReview,deceptiveRealScene:pkg.monetizationSafety.sections.syntheticMedia.deceptiveRealScene};
+  pkg.sceneOriginalityChecklist=pkg.monetizationSafety.sections.sceneOriginality.scenes;
+  const reportFiles=p.monetizationSafety.saveReport(pkg.monetizationSafety,path.join(path.dirname(file),'monetization-risk'));
   p.writeJson(file,pkg);
   console.log('Phase 4 package built:',file);
   console.log('Rights records:',pkg.rightsLedger.length,'; advisory flags:',pkg.compliance.flags.length,'; originality comparisons:',pkg.compliance.originality.comparisons.length);
+  console.log('Monetization risk report:',reportFiles.markdownPath);
+  console.log('Safety status:',pkg.monetizationSafety.status,'| auto-hold:',pkg.monetizationSafety.autoHold,'| stop batch:',pkg.monetizationSafety.stopBatch);
   console.log('All metadata, rights evidence and policy decisions still require human review.');
+  if(pkg.monetizationSafety.autoHold){console.error('BATCH HOLD: high/critical risk detected; resolve flags before continuing.');process.exitCode=42;}
   return;
  }
  if(command==='check'){
   const pkg=p.loadJson(file),rights=p.checkRights(pkg.rightsLedger||[]),seo=p.checkSeo(pkg.seo||{}),chapters=p.checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0)),compliance=pkg.compliance||p.complianceReview(pkg);
   const approval=p.verifyApproval(pkg,pkg.approval);
-  const report={rights,seo,chapters,compliance:{status:compliance.status,automatedScreening:compliance.automatedScreening,flags:compliance.flags,originality:compliance.originality,requiresHumanReview:true},approval,readyForHumanReview:rights.passed&&seo.passed&&chapters.passed};
+  const safety=pkg.monetizationSafety||compliance.monetizationSafety||null;
+  const report={rights,seo,chapters,compliance:{status:compliance.status,automatedScreening:compliance.automatedScreening,flags:compliance.flags,originality:compliance.originality,requiresHumanReview:true},monetizationSafety:safety,approval,readyForHumanReview:rights.passed&&seo.passed&&chapters.passed&&!safety?.autoHold};
   console.log(JSON.stringify(report,null,2));
   if(!report.readyForHumanReview)process.exitCode=2;
   return;
@@ -114,7 +124,9 @@ async function main(){
    ['inauthenticContent','Have you checked that this is not mass-produced or repetitively templated?'],
    ['claims','Are factual claims and sources verified?'],
    ['thumbnail','Is the selected thumbnail accurate, readable and non-misleading?'],
-   ['policyFlagsReviewed','Have all automated warning and similarity flags been reviewed in context?']
+   ['policyFlagsReviewed','Have all automated warning and similarity flags been reviewed in context?'],
+   ['sceneOriginality','Have you reviewed every scene for original contribution, purpose, rights and viewer value?'],
+   ['syntheticDisclosure','Have you confirmed the synthetic-media disclosure decision and checked for deceptive real-scene depictions?']
   ];
   const checks={};
   for(const [key,question] of items){checks[key]=(await ask(question+' Type YES to confirm: '))==='YES';if(!checks[key])throw new Error('Approval stopped: '+key+' was not confirmed');}
