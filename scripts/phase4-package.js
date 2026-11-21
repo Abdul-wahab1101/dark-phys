@@ -130,7 +130,8 @@ async function main(){
    ['thumbnail','Is the selected thumbnail accurate, readable and non-misleading?'],
    ['policyFlagsReviewed','Have all automated warning and similarity flags been reviewed in context?'],
    ['sceneOriginality','Have you reviewed every scene for original contribution, purpose, rights and viewer value?'],
-   ['syntheticDisclosure','Have you confirmed the synthetic-media disclosure decision and checked for deceptive real-scene depictions?']
+   ['syntheticDisclosure','Have you confirmed the synthetic-media disclosure decision and checked for deceptive real-scene depictions?'],
+   ['audioQuality','Have you listened to the final narration and checked cadence, repeated phrases, silence, loops and mixing?']
   ];
   const checks={};
   for(const [key,question] of items){checks[key]=(await ask(question+' Type YES to confirm: '))==='YES';if(!checks[key])throw new Error('Approval stopped: '+key+' was not confirmed');}
