@@ -212,7 +212,7 @@ function createApproval(pkg,reviewer,checks={}){
  if(!pkg.finalVideo||!/^([a-f0-9]{64})$/i.test(String(pkg.finalVideoSha256||''))||!pkg.seo?.title||!pkg.seo?.description)throw new Error('Final video file hash and SEO metadata are required');
  if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file does not exist');
  if(sha256(fs.readFileSync(pkg.finalVideo))!==pkg.finalVideoSha256)throw new Error('Final video changed before approval');
- const approval={status:'approved_for_manual_upload_only',reviewer:clean(reviewer),approvedAt:new Date().toISOString(),checks:{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,rights:true,chapters:true},publishingPermission:false,automatedUploadAllowed:false};
+ const approval={status:'approved_for_manual_upload_only',reviewer:clean(reviewer),approvedAt:new Date().toISOString(),checks:{guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,sceneOriginality:true,syntheticDisclosure:true,audioQuality:true,rights:true,chapters:true},publishingPermission:false,automatedUploadAllowed:false};
  approval.packageHash=sha256(approvalPayload(pkg,approval));
  return approval;
 }
@@ -220,7 +220,7 @@ function verifyApproval(pkg,approval){
  if(!pkg.finalVideo||!pkg.finalVideoSha256||!fs.existsSync(pkg.finalVideo))return {valid:false,reason:'Approved final video file is missing'};
  if(sha256(fs.readFileSync(pkg.finalVideo))!==pkg.finalVideoSha256)return {valid:false,reason:'Final video file changed after approval'};
  if(!approval||approval.status!=='approved_for_manual_upload_only'||approval.publishingPermission!==false||approval.automatedUploadAllowed!==false||!clean(approval.reviewer)||!Number.isFinite(Date.parse(approval.approvedAt)))return {valid:false,reason:'No valid manual-upload approval'};
- const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed','rights','chapters'];
+ const required=['guidelines','advertiserSuitability','originality','reusedContent','inauthenticContent','claims','thumbnail','policyFlagsReviewed','sceneOriginality','syntheticDisclosure','audioQuality','rights','chapters'];
  if(required.some(k=>approval.checks?.[k]!==true))return {valid:false,reason:'Approval is missing one or more human review confirmations'};
  const hash=sha256(approvalPayload(pkg,approval));
  return {valid:hash===approval.packageHash,reason:hash===approval.packageHash?'Approval matches current package and reviewer confirmations':'Package or approval record changed after approval; re-review required'};
