@@ -55,9 +55,11 @@ try {
 Write-Host "Installing Dark Phys root thumbnail runtime dependency (sharp)..."
 Push-Location $Root
 try {
-  npm install --no-save --no-package-lock sharp
+  npm install --no-save --no-package-lock sharp ffprobe-static @huggingface/transformers
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency installation failed." }
   node -e "const sharp=require('sharp'); if(typeof sharp!=='function') process.exit(1); console.log('PASS root Sharp runtime:', require('sharp/package.json').version)"
+  node -e "require('ffprobe-static'); require('@huggingface/transformers'); console.log('PASS FFprobe and semantic embedding runtimes')"
+  if ($LASTEXITCODE -ne 0) { throw "Dark Phys FFprobe or semantic embedding runtime cannot be loaded." }
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency cannot be loaded." }
 } finally { Pop-Location }
 

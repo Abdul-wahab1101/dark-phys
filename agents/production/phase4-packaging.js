@@ -129,6 +129,12 @@ function complianceReview(input={}){
  ];
  return {automatedScreening:'advisory_only',flags,originality,monetizationSafety:safety,checks,status:'human_review_required',passed:false,requiresHumanReview:true,disclaimer:'No automated keyword or similarity check can determine YouTube policy compliance or monetization eligibility.'};
 }
+async function complianceReviewAsync(input={}){
+ const result=complianceReview(input),history=input.channelHistory||((input.previousScripts||[]).map((script,i)=>({id:'previous-'+(i+1),script})));
+ result.monetizationSafety=await monetizationSafety.buildReportAsync({...input,channelHistory:history,uploadHistory:input.uploadHistory||[]});
+ result.originality={...result.originality,method:result.monetizationSafety.sections.semanticSimilarity.method,comparisons:result.monetizationSafety.sections.semanticSimilarity.comparisons,highestSimilarity:result.monetizationSafety.sections.semanticSimilarity.highest?.score??null,flags:result.monetizationSafety.sections.semanticSimilarity.flags,advisoryOnly:true};
+ return result;
+}
 function importAssetManifest(manifest=[]){
  const rows=Array.isArray(manifest)?manifest:(Array.isArray(manifest?.assets)?manifest.assets:[]);
  return rows.map((a,i)=>{
@@ -227,4 +233,4 @@ function verifyApproval(pkg,approval){
 }
 function loadJson(file){return JSON.parse(fs.readFileSync(file,'utf8'));}
 function writeJson(file,data){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(data,null,2)+'\n');}
-module.exports={buildSeo,checkSeo,checkChapters,complianceReview,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters,monetizationSafety};
+module.exports={buildSeo,checkSeo,checkChapters,complianceReview,complianceReviewAsync,originalityReview,rightsLedger,importAssetManifest,checkRights,createApproval,verifyApproval,loadJson,writeJson,sha256,requestThumbnailConcepts,parseTimestamp,suggestChapters,monetizationSafety};

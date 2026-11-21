@@ -132,7 +132,7 @@ jobs:
         working-directory: engines/youtube-automation-agent
         run: npm test
       - name: Install Dark Phys test dependencies
-        run: npm install --no-save sharp ffprobe-static
+        run: npm install --no-save sharp ffprobe-static @huggingface/transformers
       - name: Configure bundled FFprobe for production regression tests
         run: |
           node -e "const p=require('ffprobe-static'); const bin=p.path || p; if(!bin) process.exit(1); require('fs').accessSync(bin); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFPROBE_PATH='+bin+'\\n'); console.log('Using bundled FFprobe:', bin)"
@@ -209,6 +209,8 @@ jobs:
           node --check agents/production/monetization-safety.js
           node --check scripts/test-monetization-safety.js
           node scripts/test-monetization-safety.js
+          node --check agents/production/semantic-similarity.js
+          node scripts/test-semantic-similarity.js
           node scripts/phase4-package.js
       - name: Test isolated channel workspaces
         run: |

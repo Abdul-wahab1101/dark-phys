@@ -87,7 +87,7 @@ async function main(){
   if(!thumbnailConcepts.length&&fs.existsSync(conceptsFile)){const saved=p.loadJson(conceptsFile);thumbnailConcepts=Array.isArray(saved.concepts)?saved.concepts:[];}
   pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts,youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
   if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
-  pkg.compliance=p.complianceReview({...input,...pkg.seo,channelHistory,uploadHistory});
+  pkg.compliance=await p.complianceReviewAsync({...input,...pkg.seo,channelHistory,uploadHistory,audioPath:input.audioPath||undefined});
   pkg.monetizationSafety=pkg.compliance.monetizationSafety;
   pkg.syntheticDisclosure={realisticSyntheticMedia:pkg.monetizationSafety.sections.syntheticMedia.realisticSyntheticMedia,decision:pkg.monetizationSafety.sections.syntheticMedia.disclosureDecision,required:pkg.monetizationSafety.sections.syntheticMedia.disclosureRequiredByReview,deceptiveRealScene:pkg.monetizationSafety.sections.syntheticMedia.deceptiveRealScene};
   pkg.sceneOriginalityChecklist=pkg.monetizationSafety.sections.sceneOriginality.scenes;

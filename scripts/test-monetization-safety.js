@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const s=require('../agents/production/monetization-safety');
 const base='People can influence another person through repeated emotional pressure and subtle control in close relationships. This explanation describes warning signs and ways to set healthier boundaries.';
 assert(s.similarity(base,'In close partnerships repeated emotional pressure and coercion can shape another person choices. This explanation describes warning signs and ways to set healthier boundaries.').score>.35);
@@ -25,3 +25,26 @@ const pkg={script:base,scenes:[{id:'scene-1',assetId:'x'}],realisticSyntheticMed
 assert(s.audioReview({script:base,audioAnalysis:{cadenceWpm:230,silenceRatio:.25,loopSimilarity:.99}}).flags.length>=3);
 assert(s.audioReview({audioPath:'missing-audio-file.wav'}).flags.some(x=>x.code==='audio_analysis_failed'&&x.severity==='high'));
 console.log('PASS monetization safety analyzer, per-channel history, report persistence and quarantine');
+
+(async()=>{
+ const report=await s.buildReportAsync({channelId:'async-channel',script:base,channelHistory:[{id:'prior',script:base}]},{embedder:async()=>[1,0,0]});
+ assert.match(report.sections.semanticSimilarity.method,/sentence embeddings/);
+ assert.equal(report.sections.semanticSimilarity.comparisons[0].score,1);
+ assert(report.flags.some(x=>x.code==='semantic_episode_similarity_high'));
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'dp-render-audio-')),invalid=path.join(root,'invalid.mp4');
+ fs.writeFileSync(invalid,'not-a-real-mp4');
+ const failed=await s.reviewRenderedOutput({outputPath:invalid,channelId:'audio-failed',script:base,scenes:[]});
+ assert.equal(failed.audioPath,invalid);
+ assert(failed.report.sections.audioQuality.flags.some(x=>x.code==='audio_analysis_failed'));
+ assert(failed.quarantinePath&&fs.existsSync(failed.quarantinePath));
+ const real=path.join(root,'rendered-with-audio.mp4');
+ const made=spawnSync(s.resolveFfmpegBinary(),['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','testsrc2=size=160x90:rate=12:duration=5','-f','lavfi','-i','sine=frequency=440:duration=5','-shortest','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac',real],{encoding:'utf8',timeout:60000});
+ assert.equal(made.status,0,'FFmpeg must create a real rendered audio/video fixture: '+String(made.stderr||''));
+ const actual=await s.reviewRenderedOutput({outputPath:real,channelId:'audio-real',script:'A short narrated test episode with several words for cadence analysis.',scenes:[]});
+ assert.equal(actual.audioPath,real);
+ assert.equal(actual.report.sections.audioQuality.audioPath,real);
+ assert(Number.isFinite(actual.report.sections.audioQuality.silenceRatio),'actual rendered audio metrics must be populated');
+ assert.equal(actual.report.sections.audioQuality.flags.some(x=>x.code==='audio_analysis_failed'),false);
+ fs.rmSync(root,{recursive:true,force:true});
+ console.log('PASS transformer embedding report path and automatic real rendered-MP4 audio analysis/quarantine wiring');
+})().catch(error=>{console.error(error);process.exitCode=1;});

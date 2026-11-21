@@ -46,7 +46,7 @@ A scene cannot pass approval until all five are true. Prior episode scene manife
 
 ## Audio checks
 
-Set `audioPath` in the package to the rendered narration/final audio file to run local FFmpeg analysis. The analyzer estimates speech cadence from script length and duration, silence ratio from 100 ms RMS windows, and a coarse repeated-energy-pattern loop score. These heuristics are not speech recognition and do not establish audio quality. If analysis is requested but fails, the package receives a high-risk flag. A human listening check is mandatory regardless.
+The cinematic production adapter automatically passes the final rendered MP4 as `audioPath` after a successful render. Phase 4 package builds also inspect `finalVideo` for an audio stream and analyze it automatically when present. You may still set `audioPath` explicitly for a separate WAV/MP3 narration or mix. The analyzer estimates speech cadence from script length and duration, silence ratio from 100 ms RMS windows, and a coarse repeated-energy-pattern loop score. These heuristics are not speech recognition and do not establish audio quality. If analysis is requested but fails, the package receives a high-risk flag. A human listening check is mandatory regardless.
 
 ## Synthetic media
 
@@ -54,10 +54,10 @@ Set `realisticSyntheticMedia: true` (or mark relevant scenes with `realisticSynt
 
 ## Risk controls and limits
 
-- Script similarity is a deterministic lexical/concept proxy with a small synonym map, not a vector embedding model. It can miss conceptual reuse and produce false positives.
+- Episode and editorial-angle comparisons use local `Xenova/all-MiniLM-L6-v2` sentence embeddings (Transformers.js) with cosine similarity, chunked for long scripts. First use downloads/caches the model under the user's cache directory; setup installs the embedding runtime. Scores are editorial review signals, not policy verdicts.
 - Title/thumbnail framing uses mismatch, unsupported-claim metadata and sensational-phrase heuristics. Review context; do not treat a flag as a verdict.
 - Template fatigue compares the latest ten approved episodes. Default upload burst limits are 3 in 24 hours and 10 in 7 days; configure `maxPerDay` and `maxPerWeek` in the package when a different operational schedule is intended.
-- Repeated narration phrases, cadence, silence and audio-loop signals are screening aids. Audio metrics require a supplied audio file or measured metrics.
+- Repeated narration phrases, cadence, silence and audio-loop signals are screening aids. Rendered audio is automatically analyzed from the final MP4 by FFmpeg after the v11 render; Phase 4 can also inspect `finalVideo`. Audio metrics remain coarse RMS/cadence heuristics, not speech recognition.
 - Upload velocity depends on accurate published timestamps. Record a video only after it has actually been published.
 - High/critical risk flags hold the package and stop the queued batch. Review flags require human attention but do not automatically establish policy violations.
 - Human approval is bound to the final video hash and package contents. Any post-approval edit invalidates the approval.

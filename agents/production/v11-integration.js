@@ -117,6 +117,25 @@ async function runApprovedProduction(options) {
     if (changed) system.ledger.register(asset);
   }
   const result = await system.pipeline.run(prepared.job);
+  if (['ready', 'review'].includes(result.status) && fs.existsSync(path.resolve(options.outputPath))) {
+    const safety = require('./monetization-safety');
+    const channelId = String(options.channelId || options.plan.channelId || 'unassigned');
+    const history = safety.readChannelStore(channelId, options.historyRoot);
+    const reviewed = await safety.reviewRenderedOutput({
+      outputPath: options.outputPath, channelId, videoId: options.plan.projectId || path.basename(options.outputPath),
+      title: options.plan.title || prepared.job.title, script: prepared.job.script,
+      editorialAngle: options.plan.editorialAngle || '', scenes: options.plan.scenes,
+      templateId: options.plan.templateId || '', layoutId: options.plan.layoutId || '',
+      structureFingerprint: options.plan.structureFingerprint || '',
+      channelHistory: history.episodes, uploadHistory: history.uploads,
+      realisticSyntheticMedia: options.plan.realisticSyntheticMedia === true,
+      syntheticDisclosureDecision: options.plan.syntheticDisclosureDecision || 'not_applicable',
+      deceptiveRealScene: options.plan.deceptiveRealScene === true
+    });
+    return { ...result, status: reviewed.report.autoHold ? 'held_for_monetization_review' : result.status,
+      engine: 'v11', renderProfile: prepared.profile, monetizationSafety: reviewed.report,
+      riskReportFiles: reviewed.files, audioPath: reviewed.audioPath, quarantinePath: reviewed.quarantinePath };
+  }
   return { ...result, engine: 'v11', renderProfile: prepared.profile };
 }
 module.exports = { buildV11Job, runApprovedProduction };
