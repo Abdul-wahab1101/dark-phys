@@ -15,8 +15,8 @@ const temp=fs.mkdtempSync(path.join(os.tmpdir(),'phase4-evidence-'));const proof
 const rights=rightsLedger([{assetId:'clip-01',kind:'video',source:'Pixabay',sourceUrl:'https://pixabay.com/videos/example',creator:'Creator',license:'Pixabay Content License',licenseUrl:'https://pixabay.com/service/license-summary/',retrievedAt:'2026-11-19T10:00:00Z',proofPath:proof,commercialUseVerified:true,modifications:'Trimmed and color graded',attributionRequired:false,attributionReviewed:true,reviewStatus:'approved'}]);
 assert.equal(checkRights(rights).passed,true);assert.equal(checkRights([{source:'unknown'}]).passed,false);
 const videoPath=path.join(temp,'final.mp4');fs.writeFileSync(videoPath,'mock final video bytes');
-const pkg={finalVideo:videoPath,finalVideoSha256:sha256(fs.readFileSync(videoPath)),durationSeconds:600,seo,rightsLedger:rights,compliance:complianceReview({title:seo.title})};
-const checks={guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,sceneOriginality:true,syntheticDisclosure:true};
+const pkg={finalVideo:videoPath,finalVideoSha256:sha256(fs.readFileSync(videoPath)),durationSeconds:600,seo,rightsLedger:rights,scenes:[{id:'scene-1'}],sceneOriginalityChecklist:[{checklistComplete:true}],compliance:complianceReview({title:seo.title})};
+const checks={guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,sceneOriginality:true,syntheticDisclosure:true,audioQuality:true};
 const approval=createApproval(pkg,'reviewer',checks);
 assert.equal(verifyApproval(pkg,approval).valid,true);
 assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
