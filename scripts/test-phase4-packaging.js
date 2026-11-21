@@ -19,6 +19,7 @@ const pkg={finalVideo:videoPath,finalVideoSha256:sha256(fs.readFileSync(videoPat
 const checks={guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,sceneOriginality:true,syntheticDisclosure:true,audioQuality:true};
 const approval=createApproval(pkg,'reviewer',checks);
 assert.equal(verifyApproval(pkg,approval).valid,true);
+assert.equal(approval.checks.sceneOriginality,true);assert.equal(approval.checks.syntheticDisclosure,true);assert.equal(approval.checks.audioQuality,true);
 assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
 const changedChecks={...approval,checks:{...approval.checks,thumbnail:false}};
 assert.equal(verifyApproval(pkg,changedChecks).valid,false,'approval confirmation edits invalidate the approval hash');
