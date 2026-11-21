@@ -7,6 +7,7 @@ assert.equal(s.compareHistory({script:base,history:[{id:'old-1',script:base}]}).
 const scene=s.sceneReview({scenes:[{id:'a',assetId:'clip-x'},{id:'b',assetId:'clip-y'},{id:'c',assetId:'clip-z'}],previousVideos:[{id:'old',scenes:[{assetId:'clip-x'},{assetId:'clip-y'},{assetId:'clip-z'}]}]});
 assert.equal(scene.repeatedSequencesAcrossVideos.length,1);assert.equal(scene.scenes[0].reusedAsset,true);
 assert(s.templateFatigue({history:[{templateId:'doc'},{templateId:'doc'},{templateId:'doc'}],templateId:'doc'}).flags.length);
+assert(s.editorialAngleReview({editorialAngle:'Why people fear rejection',history:[{id:'old-angle',editorialAngle:'Why people fear rejection'}]}).flags.length);
 assert(s.framingReview({title:'Guaranteed secret they hide',script:base,thumbnailText:'Doctors hate this'}).flags.length>=2);
 assert(s.uploadVelocity({now:'2026-11-21T12:00:00Z',history:[1,2,3].map(n=>({publishedAt:'2026-11-21T0'+(7+n)+':00:00Z'}))}).flags.length);
 assert(s.audioReview({script:'the same repeated phrase is here. the same repeated phrase is here. the same repeated phrase is here.'}).flags.length);
@@ -14,6 +15,10 @@ assert.equal(s.syntheticReview({realisticSyntheticMedia:true}).flags[0].code,'re
 assert.equal(s.syntheticReview({realisticSyntheticMedia:true,syntheticDisclosureDecision:'disclose'}).flags.length,0);
 const report=s.buildReport({channelId:'dark-phys-en',script:base,channelHistory:[{id:'old',script:base}],scenes:[{id:'one',assetId:'x'}],realisticSyntheticMedia:true});
 assert.equal(report.autoHold,true);assert.equal(report.stopBatch,true);assert.match(s.renderMarkdown(report),/Monetization & Originality Risk Report/);
-const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dp-risk-'));const saved=s.saveReport(report,dir);assert(fs.existsSync(saved.jsonPath)&&fs.existsSync(saved.markdownPath));fs.rmSync(dir,{recursive:true,force:true});
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dp-risk-'));const saved=s.saveReport(report,dir);assert(fs.existsSync(saved.jsonPath)&&fs.existsSync(saved.markdownPath));
+const rec=s.recordApprovedEpisode({channelId:'channel-a',videoId:'vid-1',title:'Episode one',script:base,editorialAngle:'A new angle',scenes:[{assetId:'asset'}]},dir);assert.equal(rec.recorded,true);assert.equal(s.readChannelStore('channel-a',dir).episodes.length,1);
+const upload=s.recordPublishedUpload('channel-a','vid-1','2026-11-21T12:00:00Z',dir);assert.equal(upload.recorded,true);assert.equal(s.readChannelStore('channel-a',dir).uploads.length,1);
+fs.rmSync(dir,{recursive:true,force:true});
 const pkg={script:base,scenes:[{id:'scene-1',assetId:'x'}],realisticSyntheticMedia:true,channelHistory:[]};s.applyToPackage(pkg);assert(pkg.syntheticDisclosure&&pkg.sceneOriginalityChecklist&&pkg.monetizationSafety);
-console.log('PASS monetization safety analyzer, report persistence and quarantine');
+assert(s.audioReview({script:base,audioAnalysis:{cadenceWpm:230,silenceRatio:.25,loopSimilarity:.99}}).flags.length>=3);
+console.log('PASS monetization safety analyzer, per-channel history, report persistence and quarantine');
