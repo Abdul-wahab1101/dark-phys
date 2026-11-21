@@ -21,4 +21,5 @@ const upload=s.recordPublishedUpload('channel-a','vid-1','2026-11-21T12:00:00Z',
 fs.rmSync(dir,{recursive:true,force:true});
 const pkg={script:base,scenes:[{id:'scene-1',assetId:'x'}],realisticSyntheticMedia:true,channelHistory:[]};s.applyToPackage(pkg);assert(pkg.syntheticDisclosure&&pkg.sceneOriginalityChecklist&&pkg.monetizationSafety);
 assert(s.audioReview({script:base,audioAnalysis:{cadenceWpm:230,silenceRatio:.25,loopSimilarity:.99}}).flags.length>=3);
+assert(s.audioReview({audioPath:'missing-audio-file.wav'}).flags.some(x=>x.code==='audio_analysis_failed'&&x.severity==='high'));
 console.log('PASS monetization safety analyzer, per-channel history, report persistence and quarantine');
