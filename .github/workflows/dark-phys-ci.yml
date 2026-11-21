@@ -206,6 +206,9 @@ jobs:
           node scripts/test-phase4-packaging.js
           node scripts/test-packaging-experiments.js
           node scripts/test-phase4-cli.js
+          node --check agents/production/monetization-safety.js
+          node --check scripts/test-monetization-safety.js
+          node scripts/test-monetization-safety.js
           node scripts/phase4-package.js
       - name: Test isolated channel workspaces
         run: |
@@ -237,6 +240,7 @@ jobs:
           node --check agents/production/orchestration.js
           node --check scripts/production-queue.js
           node scripts/test-orchestration.js
+          node --check scripts/production-queue.js
       - name: Test Phase 7 production readiness
         run: |
           node --check scripts/phase7-readiness.js
