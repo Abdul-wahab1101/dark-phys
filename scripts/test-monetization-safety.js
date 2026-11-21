@@ -9,7 +9,7 @@ assert.equal(scene.repeatedSequencesAcrossVideos.length,1);assert.equal(scene.sc
 assert(s.templateFatigue({history:[{templateId:'doc'},{templateId:'doc'},{templateId:'doc'}],templateId:'doc'}).flags.length);
 assert(s.editorialAngleReview({editorialAngle:'Why people fear rejection',history:[{id:'old-angle',editorialAngle:'Why people fear rejection'}]}).flags.length);
 assert(s.framingReview({title:'Guaranteed secret they hide',script:base,thumbnailText:'Doctors hate this'}).flags.length>=2);
-assert(s.uploadVelocity({now:'2026-11-21T12:00:00Z',history:[1,2,3].map(n=>({publishedAt:'2026-11-21T0'+(7+n)+':00:00Z'}))}).flags.length);
+assert(s.uploadVelocity({now:'2026-11-21T12:00:00Z',history:[1,2,3].map(n=>({publishedAt:'2026-11-21T'+String(7+n).padStart(2,'0')+':00:00Z'}))}).flags.length);
 assert(s.audioReview({script:'the same repeated phrase is here. the same repeated phrase is here. the same repeated phrase is here.'}).flags.length);
 assert.equal(s.syntheticReview({realisticSyntheticMedia:true}).flags[0].code,'realistic_synthetic_disclosure_missing');
 assert.equal(s.syntheticReview({realisticSyntheticMedia:true,syntheticDisclosureDecision:'disclose'}).flags.length,0);
