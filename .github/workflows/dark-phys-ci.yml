@@ -132,7 +132,7 @@ jobs:
         working-directory: engines/youtube-automation-agent
         run: npm test
       - name: Install Dark Phys test dependencies
-        run: npm install --no-save sharp ffprobe-static @huggingface/transformers
+        run: npm install --no-save --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=60000 sharp ffprobe-static @huggingface/transformers
       - name: Configure bundled FFprobe for production regression tests
         run: |
           node -e "const p=require('ffprobe-static'); const bin=p.path || p; if(!bin) process.exit(1); require('fs').accessSync(bin); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFPROBE_PATH='+bin+'\\n'); console.log('Using bundled FFprobe:', bin)"
