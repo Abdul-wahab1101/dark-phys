@@ -138,6 +138,8 @@ jobs:
           node -e "const p=require('ffprobe-static'); const bin=p.path || p; if(!bin) process.exit(1); require('fs').accessSync(bin); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFPROBE_PATH='+bin+'\\n'); console.log('Using bundled FFprobe:', bin)"
       - name: Test video format planner
         run: node scripts/test-video-planner.js
+      - name: Test local environment loading and provider CLI wiring
+        run: node scripts/test-local-env.js
       - name: Test stock footage adapter
         run: |
           node --check agents/stock-footage/pixabay.js

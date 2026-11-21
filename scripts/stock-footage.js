@@ -1,4 +1,6 @@
 'use strict';
+const {loadLocalEnv}=require('../agents/production/local-env');
+loadLocalEnv();
 const { PixabayFootageClient } = require('../agents/stock-footage/pixabay');
 function parse(argv) {
   const out = { _: [] };

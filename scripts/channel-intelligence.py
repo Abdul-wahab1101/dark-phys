@@ -2,10 +2,39 @@
 """Dark Phys channel-intelligence CLI."""
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+def load_project_env():
+    """Load local .env files for CLI research adapters without overriding process env."""
+    candidates = [ROOT / ".env", ROOT / "engines" / "youtube-automation-agent" / ".env"]
+    for env_file in candidates:
+        try:
+            lines = env_file.read_text(encoding="utf-8-sig").splitlines()
+        except OSError:
+            continue
+        for raw in lines:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.startswith("export "):
+                line = line[7:].lstrip()
+            key, sep, value = line.partition("=")
+            key = key.strip()
+            if not sep or not key or not (key.replace("_", "a").isalnum() and not key[0].isdigit()):
+                continue
+            if key in os.environ:
+                continue
+            value = value.strip()
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+            if value:
+                os.environ[key] = value
+
+load_project_env()
 AGENT_DIR = ROOT / "agents" / "channel-intelligence"
 sys.path.insert(0, str(AGENT_DIR))
 from core import ChannelIntelligence
