@@ -23,6 +23,8 @@ function resolveLocal(from,spec){
  return null;
 }
 const failures=[];
+// This intentionally nonexistent import is a fixture string used to test the hygiene analyzer.
+const intentionalMissingFixtures=new Set(['agents/production/v11/tests/hygiene.test.js::./x']);
 for(const file of files){
  const checked=spawnSync(process.execPath,['--check',file],{encoding:'utf8',timeout:20000});
  if(checked.error||checked.status!==0)failures.push({file:path.relative(root,file),kind:'syntax',detail:String(checked.stderr||checked.error||'node --check failed').slice(-1200)});
@@ -30,7 +32,8 @@ for(const file of files){
  const pattern=/require\(\s*['"]((?:\.\.?\/)[^'"]+)['"]\s*\)/g;
  for(const match of source.matchAll(pattern)){
   const target=resolveLocal(file,match[1]);
-  if(!target)failures.push({file:path.relative(root,file),kind:'broken-local-import',specifier:match[1]});
+  const relative=path.relative(root,file);
+  if(!target&&!intentionalMissingFixtures.has(relative+'::'+match[1]))failures.push({file:relative,kind:'broken-local-import',specifier:match[1]});
  }
 }
 if(failures.length){console.error(JSON.stringify({checkedFiles:files.length,failures},null,2));process.exit(1);}
