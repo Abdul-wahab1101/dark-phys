@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import tempfile
+import sqlite3
 import unittest
 from pathlib import Path
 
@@ -71,6 +72,29 @@ class ChannelIntelligenceTests(unittest.TestCase):
         matches = self.intel.find_duplicates("dark-phys-en", "A completely different title", script=paraphrase)
         self.assertTrue(matches)
         self.assertTrue(matches[0]["script_near_duplicate"])
+
+    def test_channel_episode_and_upload_history_is_persistent_and_isolated(self):
+        script = ("An original documentary episode explains a distinct question with evidence, "
+                  "fresh examples, analysis and practical viewer value. " * 3)
+        self.intel.record_episode("dark-phys-en", "video-en-1", "A distinct episode", script,
+                                  "Why memory changes under stress", "doc-v2", "split-layout",
+                                  "scene-sequence-1", [{"id": "scene-1", "assetId": "clip-a"}])
+        history = self.intel.episode_history("dark-phys-en")
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["editorial_angle"], "Why memory changes under stress")
+        self.assertEqual(history[0]["scenes"][0]["assetId"], "clip-a")
+        self.assertEqual(self.intel.episode_history("dark-phys-ur"), [])
+        self.intel.record_upload("dark-phys-en", "video-en-1", "2026-11-21T12:00:00+00:00")
+        self.assertEqual(len(self.intel.upload_history("dark-phys-en")), 1)
+        self.assertEqual(self.intel.upload_history("dark-phys-ur"), [])
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.intel.record_episode("dark-phys-en", "video-en-1", "Duplicate", script)
+
+    def test_episode_history_rejects_short_script_and_bad_upload_time(self):
+        with self.assertRaises(ValueError):
+            self.intel.record_episode("dark-phys-en", "short", "Short", "too short")
+        with self.assertRaises(ValueError):
+            self.intel.record_upload("dark-phys-en", "bad-date", "not-a-date")
 
     def test_evidence_requires_source_url_and_known_type(self):
         topic_id = self.intel.add_topic("dark-phys-en","Research test")
