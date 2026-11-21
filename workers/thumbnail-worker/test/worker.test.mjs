@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import worker from '../src/index.mjs';
+const health=await worker.fetch(new Request('https://worker.test/health'),{});
+assert.equal(health.status,200);assert.equal((await health.json()).ok,true);
+const headers={'Content-Type':'application/json'};
+const request=(body,extra={})=>new Request('https://worker.test/v1/concepts',{method:'POST',headers:{...headers,...extra},body});
+const denied=await worker.fetch(request(JSON.stringify({title:'Memory and the Mind'})),{API_TOKEN:'secret'});assert.equal(denied.status,401);
+const unconfigured=await worker.fetch(request(JSON.stringify({title:'Memory and the Mind'})),{});assert.equal(unconfigured.status,503);
+const invalid=await worker.fetch(request(JSON.stringify({title:'x'}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(invalid.status,400);
+const malformed=await worker.fetch(request('{bad json',{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(malformed.status,400);
+const nonString=await worker.fetch(request(JSON.stringify({title:{text:'Memory and the Mind'}}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(nonString.status,400);
+const long=await worker.fetch(request(JSON.stringify({title:'This title is deliberately much too long to fit safely across four readable thumbnail headline lines'}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(long.status,400);
+const huge=await worker.fetch(request(JSON.stringify({title:'Memory and the Mind',subtitle:'x'.repeat(5000)}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(huge.status,413);
+const ok=await worker.fetch(request(JSON.stringify({title:'Why Memory Can Mislead You',subtitle:'Psychology Explained'}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(ok.status,200);const data=await ok.json();assert.equal(data.concepts.length,3);assert.deepEqual(data.concepts.map(x=>x.id),['cinematic','editorial','bold-contrast']);for(const c of data.concepts){assert.equal(c.width,1280);assert.equal(c.height,720);assert.match(c.svg,/<svg/);assert.match(c.svg,/WHY/);assert.match(c.svg,/Psychology Explained/);}assert.equal(data.requiresHumanSelection,true);
+const escaped=await worker.fetch(request(JSON.stringify({title:'Safe <Title>',subtitle:'& quoted'}),{Authorization:'Bearer secret'}),{API_TOKEN:'secret'});assert.equal(escaped.status,200);const escapedData=await escaped.json();assert.match(escapedData.concepts[0].svg,/SAFE &lt;TITLE&gt;/);assert.match(escapedData.concepts[0].svg,/&amp; quoted/);
+console.log('PASS Cloudflare Worker health, auth, body limits, input validation, SVG escaping, headline fit and three distinct thumbnail concepts');

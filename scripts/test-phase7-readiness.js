@@ -1,0 +1,31 @@
+'use strict';
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const {check,parseEnvKeys}=require('./phase7-readiness');
+const root=path.resolve(__dirname,'..');
+const goodRunner=(cmd)=>({status:0,stdout:cmd==='git'?'git version 2.45.0':cmd==='ffmpeg'?'ffmpeg version 7.0':cmd==='python3'?'Python 3.12.1':'v20.11.0',stderr:''});
+const exists=p=>p.includes('youtube-automation-agent')||p.includes('index.js')||p.includes('node_modules')||p.includes('ffmpeg-static')||p.endsWith('OpenMontage');
+const statfs=()=>({bavail:10000000,bsize:4096});
+const r=check({root,env:{DARK_PHYS_LLM_API_KEY:'secret-value'},platform:'linux',totalmem:16*1024**3,freemem:8*1024**3,runner:goodRunner,exists,statfs,readFile:()=> '# test\nPIXABAY_API_KEY=hidden\n'});
+assert.equal(r.verdict,'GO');
+assert.equal(r.checks.find(x=>x.id==='thumbnail_runtime').status,'pass');
+assert.equal(r.guardrails.secretValuesExposed,false);
+assert.equal(r.guardrails.networkRequests,0);
+assert.equal(r.checks.find(x=>x.id==='credentials').detail.includes('secret-value'),false);
+assert.equal(r.checks.find(x=>x.id==='credentials').detail.startsWith('2 recognised'),true);
+const low=check({root,env:{},platform:'linux',totalmem:4*1024**3,freemem:1*1024**3,runner:()=>({status:1,stdout:'',stderr:''}),exists:()=>false,statfs:()=>({bavail:100,bsize:4096}),readFile:()=>{throw Error('missing')}});
+assert.equal(low.verdict,'BLOCK');
+assert.equal(low.checks.find(x=>x.id==='thumbnail_runtime').status,'block');
+assert(low.checks.some(x=>x.id==='memory'&&x.status==='warn'));
+assert(low.checks.some(x=>x.id==='disk_space'&&x.status==='block'));
+assert(low.nextActions.length>0);
+assert.deepEqual(parseEnvKeys('/fake',()=> ['A=1','#B=2','export C=3','D = 4','E=','F=""'].join('\n')),['A','C','D']);
+
+const oldRuntime=check({root,env:{},platform:'linux',nodeVersion:'18.16.0',totalmem:16*1024**3,freemem:8*1024**3,runner:(cmd)=>({status:0,stdout:cmd==='python3'?'Python 3.9.12':'ok',stderr:''}),exists,statfs,readFile:()=>''});
+assert.equal(oldRuntime.checks.find(x=>x.id==='node').status,'block');
+assert.equal(oldRuntime.checks.find(x=>x.id==='python').status,'block');
+const rootEnv=check({root,env:{},platform:'linux',nodeVersion:'20.11.0',totalmem:16*1024**3,freemem:8*1024**3,runner:goodRunner,exists,statfs,readFile:(file)=>file===path.join(root,'.env')?'PIXABAY_API_KEY=private\nPIXABAY_API_KEY_2=private2\n':'DARK_PHYS_LLM_API_KEY=private\n'});
+assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.startsWith('3 recognised'),true);
+assert.equal(rootEnv.checks.find(x=>x.id==='credentials').detail.includes('private'),false);
+
+console.log('PASS Phase 7 readiness: prerequisites, engine/root-thumbnail dependency detection, optional credentials, resource warnings, secret redaction and read-only guardrails');

@@ -1,0 +1,99 @@
+'use strict';
+/**
+ * Per-job checkpoint file. Each stage records its outputs; on resume a stage counts as done only if its
+ * output files still exist with the same size. Writes are atomic, a corrupt file is quarantined, and a lock
+ * file stops two processes from running the same job.
+ */
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const LOCAL_LOCKS = new Set();
+const { writeFileAtomic, isPidAlive, safeName } = require('./file-utils');
+
+class CheckpointStore {
+  constructor(dir, { now = () => Date.now() } = {}) {
+    this.dir = dir; this.now = now;
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  file(jobId) { return path.join(this.dir, safeName(jobId) + '.json'); }
+  lockFile(jobId) { return path.join(this.dir, safeName(jobId) + '.lock'); }
+
+  acquire(jobId) {
+    const lock = this.lockFile(jobId);
+    if (LOCAL_LOCKS.has(lock)) throw new Error('job ' + jobId + ' is already running in this process');
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const token = crypto.randomBytes(16).toString('hex');
+      try {
+        fs.writeFileSync(lock, JSON.stringify({ pid: process.pid, at: this.now(), token }), { flag: 'wx' });
+        LOCAL_LOCKS.add(lock);
+        let released = false;
+        return () => {
+          if (released) return;
+          released = true;
+          LOCAL_LOCKS.delete(lock);
+          try {
+            const owner = JSON.parse(fs.readFileSync(lock, 'utf8'));
+            if (owner.token === token) fs.unlinkSync(lock);
+          } catch (_) { /* lock already released or replaced by another owner */ }
+        };
+      } catch (e) {
+        if (e.code !== 'EEXIST') throw e;
+        let owner = null;
+        try { owner = JSON.parse(fs.readFileSync(lock, 'utf8')); } catch (_) { /* unreadable lock */ }
+        if (owner && isPidAlive(owner.pid)) throw new Error('job ' + jobId + ' is already running (pid ' + owner.pid + ')');
+        try { fs.unlinkSync(lock); } catch (_) { /* raced */ }
+      }
+    }
+    throw new Error('could not lock job ' + jobId);
+  }
+
+  load(jobId) {
+    const f = this.file(jobId);
+    if (!fs.existsSync(f)) return this.fresh(jobId);
+    try {
+      const s = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (!s || typeof s !== 'object' || !s.stages) throw new Error('bad shape');
+      return s;
+    } catch (_) {
+      fs.renameSync(f, f + '.corrupt-' + this.now());
+      return this.fresh(jobId);
+    }
+  }
+
+  fresh(jobId) { return { jobId, version: 1, createdAt: this.now(), stages: {}, meta: {} }; }
+
+  save(state) { state.updatedAt = this.now(); writeFileAtomic(this.file(state.jobId), JSON.stringify(state, null, 2)); }
+
+  describeFiles(paths) {
+    return paths.map(p => { try { const s = fs.statSync(p); return { path: p, size: s.size, mtimeMs: s.mtimeMs }; } catch (_) { return { path: p, size: -1, mtimeMs: null }; } });
+  }
+
+  /** Is the recorded stage still trustworthy? */
+  isValid(stage) {
+    if (!stage || stage.status !== 'done') return false;
+    return (stage.outputs || []).every(o => { try { const s = fs.statSync(o.path); return s.size === o.size && o.size > 0 && (o.mtimeMs === undefined || s.mtimeMs === o.mtimeMs); } catch (_) { return false; } });
+  }
+
+  /** Invalidate a stage and everything after it. */
+  invalidateFrom(state, stageName, order) {
+    const i = order.indexOf(stageName);
+    for (const n of order.slice(Math.max(0, i))) delete state.stages[n];
+  }
+
+  reset(jobId) { try { fs.unlinkSync(this.file(jobId)); } catch (_) { /* no checkpoint yet */ } }
+
+  clear(jobId) {
+    const lock = this.lockFile(jobId);
+    if (LOCAL_LOCKS.has(lock)) throw new Error('cannot clear a running job: ' + jobId);
+    try {
+      const owner = JSON.parse(fs.readFileSync(lock, 'utf8'));
+      if (owner && isPidAlive(owner.pid)) throw new Error('cannot clear a job owned by a live process: ' + jobId);
+    } catch (e) { if (e.message && e.message.startsWith('cannot clear')) throw e; }
+    for (const file of [this.file(jobId), lock]) { try { fs.unlinkSync(file); } catch (_) { /* none */ } }
+  }
+
+  listJobs() { return fs.readdirSync(this.dir).filter(n => n.endsWith('.json')).map(n => n.slice(0, -5)); }
+}
+
+module.exports = { CheckpointStore };

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "channels": [
+    {
+      "id": "dark-phys-en",
+      "name": "Dark Phys",
+      "language": "en",
+      "locale": "en-US",
+      "region": "US",
+      "niche": "Dark Psychology & Human Behavior",
+      "audience": "English-speaking viewers interested in psychology, behavior, relationships and practical self-protection",
+      "voice": "Natural, clear international English",
+      "enabled": true,
+      "content_pillars": ["psychology explained", "manipulation and defense", "behavioral science", "real-world case studies"],
+      "style": {"format": "cinematic documentary explainer", "spelling": "US English", "examples": "globally understandable"}
+    },
+    {
+      "id": "dark-phys-ur",
+      "name": "Dark Phys Urdu",
+      "language": "ur-Latn",
+      "locale": "ur-PK",
+      "region": "PK",
+      "niche": "Dark Psychology & Human Behavior",
+      "audience": "Roman Urdu-speaking viewers in Pakistan and diaspora seeking practical, understandable psychology",
+      "voice": "Natural Pakistani Roman Urdu; not literal English translation",
+      "enabled": true,
+      "content_pillars": ["psychology asaan alfaaz mein", "manipulation ko samajhna aur bachao", "insani rawaiye", "real-life misaalein"],
+      "style": {"format": "cinematic documentary explainer", "spelling": "consistent Roman Urdu", "examples": "Pakistan-relevant where useful"}
+    }
+  ]
+}

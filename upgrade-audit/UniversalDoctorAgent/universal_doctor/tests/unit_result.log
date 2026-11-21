@@ -1,0 +1,25 @@
+test_call_arity (test_core.AnalysisPrecision.test_call_arity) ... ok
+test_guarded_optional_import_is_not_reported (test_core.AnalysisPrecision.test_guarded_optional_import_is_not_reported) ... ok
+test_hardcoded_success_only_when_failure_is_impossible (test_core.AnalysisPrecision.test_hardcoded_success_only_when_failure_is_impossible) ... ok
+test_infinite_loop_vs_worker_loop (test_core.AnalysisPrecision.test_infinite_loop_vs_worker_loop) ... ok
+test_no_false_positives_on_idiomatic_code (test_core.AnalysisPrecision.test_no_false_positives_on_idiomatic_code) ... ok
+test_star_import_disables_undefined_name (test_core.AnalysisPrecision.test_star_import_disables_undefined_name) ... ok
+test_backup_restore_is_byte_identical_and_detects_damage (test_core.FilesAndBackups.test_backup_restore_is_byte_identical_and_detects_damage) ... ok
+test_crlf_and_bom_preserved (test_core.FilesAndBackups.test_crlf_and_bom_preserved) ... ok
+test_bare_except (test_core.Fixers.test_bare_except) ... ok
+test_is_literal (test_core.Fixers.test_is_literal) ... ok
+test_missing_import_placement (test_core.Fixers.test_missing_import_placement) ... ok
+test_mutable_default_with_docstring (test_core.Fixers.test_mutable_default_with_docstring) ... ok
+test_mutation_candidates_include_the_right_fix (test_core.Fixers.test_mutation_candidates_include_the_right_fix) ... ok
+test_no_patch_for_unfixable (test_core.Fixers.test_no_patch_for_unfixable) ... ok
+test_none_comparison (test_core.Fixers.test_none_comparison) ... ok
+test_syntax_colon (test_core.Fixers.test_syntax_colon) ... ok
+test_timeout_and_yaml (test_core.Fixers.test_timeout_and_yaml) ... ok
+test_knowledge_remembers_failed_repairs (test_core.ParsersAndMemory.test_knowledge_remembers_failed_repairs) ... ok
+test_secret_scan_masks_values (test_core.ParsersAndMemory.test_secret_scan_masks_values) ... ok
+test_unittest_output_parser (test_core.ParsersAndMemory.test_unittest_output_parser) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.022s
+
+OK

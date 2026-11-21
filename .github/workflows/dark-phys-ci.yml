@@ -1,0 +1,324 @@
+name: Dark Phys CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [integration/dark-phys-final]
+  workflow_dispatch:
+concurrency:
+  group: dark-phys-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  channel-intelligence:
+    name: Channel intelligence tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and test Phase 1 intelligence foundation
+        run: |
+          python -m py_compile agents/channel-intelligence/core.py scripts/channel-intelligence.py tests/test_channel_intelligence.py
+          python -m unittest discover -s tests -p 'test_channel_intelligence.py' -v
+          python -m unittest discover -s tests -p 'test_channel_research.py' -v
+          python scripts/channel-intelligence.py --help
+          python scripts/channel-intelligence.py channels
+  windows-setup-and-launchers:
+    name: Windows setup + launcher validation
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Windows PowerShell scripts
+        shell: pwsh
+        run: |
+          ./scripts/test-windows-setup.ps1
+          $tokens = $null; $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path './scripts/start-openmontage-bridge.ps1'), [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
+          Write-Host 'PASS OpenMontage automatic bridge PowerShell syntax'
+      - name: Smoke-test Doctor dashboard on Windows
+        run: python scripts/test-dashboard-launch.py
+  video-tools-and-doctor:
+    name: Video tools + Universal Doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install FFmpeg and Python imaging dependency
+        timeout-minutes: 8
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "FFmpeg already available on runner; skipping apt install."
+          else
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 update
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=10 -o Acquire::https::Timeout=10 install -y --no-install-recommends ffmpeg
+          fi
+          ffmpeg -version
+          python -c "import PIL" 2>/dev/null || python -m pip install --disable-pip-version-check pillow
+      - name: Compile and test native video tools
+        run: |
+          python -m py_compile effects.py keyframes.py tests/test_video_tool_validation.py
+          python tests/test_video_tool_validation.py
+          python effects.py selftest --size 320x180
+          python keyframes.py selftest
+      - name: Install thumbnail renderer dependency
+        run: npm install --no-save sharp
+      - name: Test thumbnail designer and logger
+        run: |
+          node --check agents/thumbnail-designer-agent.js
+          node -e "const {Logger}=require('./utils/logger'); const {ThumbnailDesignerAgent,DESIGN_FAMILIES}=require('./agents/thumbnail-designer-agent'); const a=new ThumbnailDesignerAgent(null,{}); if(!(a.logger instanceof Logger)||DESIGN_FAMILIES.length<12) process.exit(1); console.log('PASS logger wiring and '+DESIGN_FAMILIES.length+' design families')"
+          node scripts/test-thumbnail-designer.js
+          node scripts/test-thumbnail-cli-integration.js
+          node scripts/test-thumbnail-upgrade-install.js
+          node scripts/test-local-env.js
+      - name: Compile Universal Doctor
+        run: python -m compileall -q agents/universal-doctor
+      - name: Validate Doctor backup CLI
+        run: python agents/universal-doctor/doctor.py --help
+      - name: Exercise Doctor backup/restore CLI
+        run: python scripts/test-doctor-backup-cli.py
+      - name: Doctor unit tests
+        run: python -m unittest discover -s agents/universal-doctor/tests -v
+      - name: Doctor dashboard HTTP launch smoke test
+        run: python scripts/test-dashboard-launch.py
+      - name: Doctor safety and recovery self-test
+        run: python agents/universal-doctor/doctor.py selftest
+      - name: Doctor health and integrity check
+        working-directory: agents/universal-doctor
+        run: |
+          python doctor.py health
+          python -c "from doctor_core.safety import verify_integrity; bad=verify_integrity(); print('integrity:', bad or 'OK'); raise SystemExit(bool(bad))"
+  youtube-automation:
+    name: YouTube automation + quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Checkout pinned YouTube Automation Agent
+        uses: actions/checkout@v4
+        with:
+          repository: darkzOGx/youtube-automation-agent
+          ref: e973d515aef90c467da2289144df737a3bd03859
+          path: engines/youtube-automation-agent
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: engines/youtube-automation-agent/package-lock.json
+      - name: Apply pinned upstream production dependency security floors
+        run: node scripts/patch-upstream-dependencies.js --engine engines/youtube-automation-agent
+      - name: Install upstream dependencies
+        working-directory: engines/youtube-automation-agent
+        run: npm ci
+      - name: Production-only npm security audit
+        working-directory: engines/youtube-automation-agent
+        run: npm audit --omit=dev --audit-level=high
+      - name: Test dependency security patch
+        run: node scripts/test-upstream-dependency-security.js
+      - name: Smoke-test main automation dashboard launch
+        run: node scripts/test-main-dashboard-launch.js
+      - name: Configure bundled FFmpeg
+        working-directory: engines/youtube-automation-agent
+        run: |
+          node -e "const p=require('ffmpeg-static'); if(!p) process.exit(1); require('fs').accessSync(p); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFMPEG_PATH='+p+'\\n'); console.log('Using bundled FFmpeg:', p)"
+      - name: Run upstream regression suite
+        working-directory: engines/youtube-automation-agent
+        run: npm test
+      - name: Install Dark Phys test dependencies
+        run: npm install --no-save --fetch-retries=5 --fetch-retry-factor=2 --fetch-retry-mintimeout=10000 --fetch-retry-maxtimeout=60000 sharp ffprobe-static @huggingface/transformers
+      - name: Configure bundled FFprobe for production regression tests
+        run: |
+          node -e "const p=require('ffprobe-static'); const bin=p.path || p; if(!bin) process.exit(1); require('fs').accessSync(bin); require('fs').appendFileSync(process.env.GITHUB_ENV, 'FFPROBE_PATH='+bin+'\\n'); console.log('Using bundled FFprobe:', bin)"
+      - name: Test video format planner
+        run: node scripts/test-video-planner.js
+      - name: Test local environment loading and provider CLI wiring
+        run: node scripts/test-local-env.js
+      - name: Test stock footage adapter
+        run: |
+          node --check agents/stock-footage/pixabay.js
+          node --check scripts/stock-footage.js
+          node scripts/test-stock-footage.js
+      - name: Test v11 production engine integrated with Dark Phys
+        run: |
+          node --check agents/production/v11-integration.js
+          node scripts/test-v11-integration.js
+          npm --prefix agents/production/v11 run ci
+          node scripts/stock-footage.js help
+          node --check agents/production/pixabay-pool.js
+          node --check agents/production/scene-planner.js
+          node --check agents/production/audio-mix.js
+          node --check agents/production/narration.js
+          node --check agents/production/gemini-tts.js
+          node --check agents/production/sound-design.js
+          node --check scripts/test-gemini-tts.js
+          node --check scripts/test-sound-design.js
+          node scripts/test-gemini-tts.js
+          node scripts/test-sound-design.js
+          node --check scripts/narrate.js
+          node --check agents/production/motion-graphics.js
+          node --check agents/production/render-profile.js
+          node --check agents/production/openmontage-return.js
+          node --check scripts/test-openmontage-return.js
+          node --check scripts/cinematic-production.js
+          node --check scripts/watch-openmontage-return.js
+          node scripts/test-phase3-production.js
+          node scripts/test-phase3-narration.js
+          node scripts/test-openmontage-return.js
+          node scripts/test-phase3-render.js
+          node scripts/cinematic-production.js
+      - name: Test Script Engine v2, Scene Planner v2 and Narration v2
+        run: |
+          node --check agents/local-secrets.js
+          node --check agents/script-engine-v2.js
+          node --check agents/production/scene-planner.js
+          node --check agents/production/narration.js
+          node --check scripts/script-engine-v2.js
+          node --check scripts/plan-scenes.js
+          node --check scripts/narrate.js
+          node scripts/script-engine-v2.js --help
+          node scripts/viral-generate.js --help
+          node scripts/narrate.js --help
+          node scripts/test-production-engines-v2.js
+          node scripts/test-channel-history-handoff.js
+      - name: Test Original Content Studio
+        run: |
+          node --check agents/original-content-studio.js
+          node --check scripts/content-studio.js
+          node scripts/test-content-studio.js
+          node scripts/content-studio.js --help
+          node --check scripts/research-content-studio.js
+          node scripts/research-content-studio.js --help
+      - name: Test Phase 4 packaging and monetization safety
+        run: |
+          node --check agents/production/phase4-packaging.js
+          node --check agents/production/packaging-experiments.js
+          node --check agents/production/cloudflare-workers-ai.js
+          node --check scripts/test-cloudflare-workers-ai.js
+          node scripts/test-cloudflare-workers-ai.js
+          node --check scripts/phase4-package.js
+          node --check workers/thumbnail-worker/src/index.mjs
+          node --check scripts/test-phase4-cli.js
+          node workers/thumbnail-worker/test/worker.test.mjs
+          node scripts/test-phase4-packaging.js
+          node scripts/test-packaging-experiments.js
+          node scripts/test-phase4-cli.js
+          node --check agents/production/monetization-safety.js
+          node --check scripts/test-monetization-safety.js
+          node scripts/test-monetization-safety.js
+          node --check agents/production/semantic-similarity.js
+          node scripts/test-semantic-similarity.js
+          node scripts/phase4-package.js
+      - name: Test isolated channel workspaces
+        run: |
+          node --check scripts/channel-workspace.js
+          node scripts/test-channel-workspace.js
+      - name: Test Phase 5 operator integration
+        run: |
+          node --check scripts/phase5-operator.js
+          node scripts/test-phase5-operator.js
+      - name: Test independent Shorts Factory
+        run: |
+          node --check agents/production/shorts-factory.js
+          node --check scripts/shorts-factory.js
+          node scripts/test-shorts-factory.js
+          node scripts/shorts-factory.js
+      - name: Test YouTube analytics learning gate
+        run: |
+          node --check agents/production/analytics-learning.js
+          node --check scripts/analytics-report.js
+          node scripts/test-analytics-learning.js
+      - name: Test Long and Shorts QC review
+        run: |
+          node --check agents/production/quality-control.js
+          node --check scripts/quality-control.js
+          node --check scripts/qc-review-page.js
+          node scripts/test-quality-control.js
+      - name: Test weekly production orchestration
+        run: |
+          node --check agents/production/orchestration.js
+          node --check scripts/production-queue.js
+          node scripts/test-orchestration.js
+          node --check scripts/production-queue.js
+      - name: Test Phase 7 production readiness
+        run: |
+          node --check scripts/phase7-readiness.js
+          node scripts/test-phase7-readiness.js
+          node scripts/phase7-readiness.js
+      - name: Test Phase 6 Viral Intelligence Engine
+        run: |
+          node --check agents/viral-intelligence-engine.js
+          node --check agents/viral-intelligence-sources.js
+          node --check agents/viral-script-generator.js
+          node --check scripts/viral-intelligence.js
+          node --check scripts/viral-trends.js
+          node --check scripts/viral-generate.js
+          node scripts/test-viral-intelligence.js
+          node scripts/test-viral-intelligence-sources.js
+          node scripts/test-viral-script-generator.js
+          node scripts/viral-intelligence.js --help
+          node scripts/viral-trends.js --help
+          node scripts/viral-generate.js --help
+      - name: Test final video quality gate
+        run: node scripts/test-quality-check.js
+      - name: Audit every first-party agent/script syntax and local handoff import
+        run: node scripts/test-agent-syntax.js
+      - name: Test agent coordination and recovery
+        run: node scripts/test-agent-coordination.js
+  openmontage:
+    name: OpenMontage bridge + real render checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Dark Phys
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+      - name: Test Dark Phys handoff bridge
+        run: node scripts/test-openmontage-handoff.js
+      - name: Checkout pinned OpenMontage
+        uses: actions/checkout@v4
+        with:
+          repository: OpenMontageInc/OpenMontage
+          ref: 2e003e65fa99a0f329478a2c1cdcf26bc481933a
+          path: engines/OpenMontage
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install FFmpeg and OpenMontage test dependencies
+        working-directory: engines/OpenMontage
+        run: |
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Run FFmpeg vertical-render tests
+        working-directory: engines/OpenMontage
+        run: pytest -q tests/tools/test_video_compose_vertical.py
+      - name: Install pinned Remotion composer dependencies
+        working-directory: engines/OpenMontage/remotion-composer
+        run: npm ci
+      - name: Render Remotion demo
+        working-directory: engines/OpenMontage
+        run: python render_demo.py world-in-numbers
+      - name: Render and probe a complete sample MP4
+        run: |
+          ffmpeg -y -f lavfi -i testsrc=size=640x360:rate=30 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 5 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest sample-dark-phys.mp4
+          ffprobe -v error -show_entries stream=codec_type,width,height -of json sample-dark-phys.mp4
+          python -c "import json,subprocess; d=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_streams','-of','json','sample-dark-phys.mp4'])); s=d['streams']; assert any(x['codec_type']=='video' and x['width']==640 and x['height']==360 for x in s); assert any(x['codec_type']=='audio' for x in s); print('PASS complete 5-second H.264/AAC sample MP4')"

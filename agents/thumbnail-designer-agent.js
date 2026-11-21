@@ -543,7 +543,7 @@ const FAMILIES = {
           '<pattern id="scan" width="4" height="6" patternUnits="userSpaceOnUse"><rect width="4" height="1.5" fill="#000" fill-opacity=".25"/></pattern>',
         under: '<rect width="1280" height="720" fill="url(#noirVig)"/><rect width="1280" height="720" fill="url(#redGlow)"/>' +
           '<rect width="1280" height="720" fill="url(#noirBottom)"/>' + cracks + '<rect width="1280" height="720" fill="url(#scan)"/>',
-        text: [{ lines, font: 'impact', box: { x: 90, y: 395, w: 1100, h: 240 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 76, lh: 0.98, ls: 0.015, fills: [p.light, p.a], shadow: 'glitch', shadowColor: p.a, glitch: [p.b, p.a] }],
+        text: [{ lines, font: 'impact', box: { x: 90, y: 370, w: 1100, h: 220 }, ha: 'middle', va: 'bottom', maxSize: 150, minSize: 76, lh: 0.98, ls: 0.015, fills: [p.light, p.a], shadow: 'glitch', shadowColor: p.a, glitch: [p.b, p.a] }],
         decorate(info) {
           const b = info.bbox;
           const cx = b.x + b.w / 2;
@@ -619,7 +619,7 @@ const FAMILIES = {
           '<text x="640" y="' + (question ? 352 : 350) + '" text-anchor="middle" font-family="' + c.fonts.impact.stack + '" font-weight="' + c.fonts.impact.weight + '" font-size="' + (question ? 70 : 52) + '" fill="#fff">' + (question ? '?' : 'VS') + '</text>',
         text: [
           { lines: l1, font: 'condensed', box: { x: 50, y: 470, w: 500, h: 190 }, ha: 'start', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.light], shadow: 'soft' },
-          { lines: l2, font: 'condensed', box: { x: 730, y: 470, w: 500, h: 190 }, ha: 'end', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.a], shadow: 'soft' }
+          { lines: l2, font: 'condensed', box: { x: 730, y: 420, w: 500, h: 180 }, ha: 'end', va: 'bottom', maxSize: 130, minSize: 56, lh: 1, ls: 0.02, fills: [p.a], shadow: 'soft' }
         ],
         decorate(info) {
           const pill = (x, text, color, anchor) => {
@@ -628,7 +628,7 @@ const FAMILIES = {
             return '<rect x="' + rx + '" y="40" width="' + w + '" height="42" rx="21" fill="' + p.dark + '" fill-opacity=".85" stroke="' + color + '" stroke-width="3"/>' +
               '<text x="' + (rx + w / 2) + '" y="69" text-anchor="middle" font-family="' + c.fonts.inter.stack + '" font-weight="800" font-size="20" letter-spacing="3" fill="' + color + '">' + esc(text) + '</text>';
           };
-          return pill(50, labels[0], '#fff', 'start') + pill(1230, labels[1], p.a, 'end');
+          return pill(50, labels[0], '#fff', 'start') + pill(640, labels[1], p.a, 'end');
         }
       };
     }
@@ -683,7 +683,7 @@ const FAMILIES = {
         under: '<rect width="1280" height="720" fill="url(#surTop)"/><rect width="1280" height="720" fill="url(#surBot)"/>' +
           '<circle cx="640" cy="235" r="190" fill="none" stroke="' + p.a + '" stroke-width="3" stroke-opacity=".85" filter="url(#glow)"/>' +
           '<circle cx="640" cy="235" r="150" fill="none" stroke="' + p.a + '" stroke-width="1.5" stroke-opacity=".5"/>' + orbs,
-        text: [{ lines, font: 'serif', box: { x: 100, y: 440, w: 1080, h: 200 }, ha: 'middle', va: 'bottom', maxSize: 104, minSize: 52, lh: 1.04, ls: 0.1, fills: [p.light, p.a], shadow: 'soft' }],
+        text: [{ lines, font: 'serif', box: { x: 100, y: 380, w: 1080, h: 200 }, ha: 'middle', va: 'bottom', maxSize: 104, minSize: 56, lh: 1.04, ls: 0.1, fills: [p.light, p.a], shadow: 'soft' }],
         decorate(info) {
           const b = info.bbox;
           const cx = b.x + b.w / 2;
@@ -863,6 +863,15 @@ const FAMILIES = {
   }
 };
 
+// v10: 12 extra design families live in their own file (same contract as the families above).
+try {
+  const extra = require('./thumbnail-families-extra');
+  Object.assign(FAMILIES, extra.create({ poly, starburst, dotsPattern, arrowSvg, jaggedPath, esc, mulberry32 }));
+  for (const tp of TOPIC_PROFILES) tp.fam = Object.assign({}, extra.TOPIC_FIT[tp.id] || {}, tp.fam || {});
+} catch (error) {
+  console.warn('[thumbnail-designer] extra families not loaded: ' + error.message);
+}
+
 const FAMILY_IDS = Object.keys(FAMILIES);
 
 const LEGACY_FAMILY_ALIASES = {
@@ -890,10 +899,9 @@ class ThumbnailDesignerAgent {
     this.templatesPath = path.join(__dirname, '..', 'data', 'thumbnail-templates');
     this.outputPath = path.join(__dirname, '..', 'uploads', 'thumbnails');
 
-    this.defaultWorkspace = path.resolve(
-      __dirname,
-      '../../OpenMontage-main/projects/youtube-handoff-prod_1794570422249_19sn4gk1vzj_zyfleek436i'
-    );
+    // The installed YouTube engine root is the portable default workspace.
+    // It keeps assets/visuals and assets/free-stock-broll channel-local.
+    this.defaultWorkspace = path.resolve(__dirname, '..');
 
     this.projectRoot = this.defaultWorkspace;
     this.visualsPath = path.join(this.projectRoot, 'assets', 'visuals');
@@ -1165,6 +1173,8 @@ class ThumbnailDesignerAgent {
 
     profile.headlines.forEach(h => pool.add(h));
     profile.hooks.forEach(h => pool.add(h.join(' ')));
+    // Topic-neutral but psychology/documentary-safe fallback hooks ensure title repetition can be rejected without leaving fewer than three candidates.
+    ['THE HIDDEN PATTERN', 'WHO BENEFITS MOST?', 'BEHIND THE SMILE', 'THE REAL MOTIVE', 'WHAT THEY HIDE', 'TRUST YOUR INSTINCTS', 'READ BETWEEN THE LINES', 'WATCH THE PATTERN'].forEach(h => pool.add(h));
 
     const kw = new Set(analysis.keywords.concat(String(title).toLowerCase().split(/\W+/)).filter(w => w.length > 3));
     const titleWords = new Set(titleUpper.split(/\s+/));
@@ -1208,6 +1218,9 @@ class ThumbnailDesignerAgent {
       let score = (profile.fam?.[id] || 0.8) * 3;
       if (fam.emotionFit.includes(analysis.emotionalAngle)) score += 1.5;
       score += rng() * 1.6;
+      const preferred = (script.formatPlan && script.formatPlan.thumbnailFamilies) || (script.metadata && script.metadata.formatPlan && script.metadata.formatPlan.thumbnailFamilies) || [];
+      if (preferred.includes(id)) score += 1.2;
+      if (fam.needsNumber) score += /\b\d{1,2}\b/.test(title) ? 2 : -3;
       const recentIdx = recent.findIndex(r => r.includes(id));
       if (recentIdx >= 0) score -= Math.max(0.8, 3.2 - recentIdx * 0.7);
       return { id, score };
@@ -1217,8 +1230,9 @@ class ThumbnailDesignerAgent {
     const usedCls = new Set();
     const usedSides = [];
     for (let slot = 0; slot < 3; slot++) {
-      const ranked = familyScores
-        .filter(f => !chosen.some(c => c.id === f.id))
+      const remainingFamilies = familyScores.filter(f => !chosen.some(c => c.id === f.id));
+      const distinctClassFamilies = remainingFamilies.filter(f => !usedCls.has(FAMILIES[f.id].cls));
+      const ranked = (distinctClassFamilies.length ? distinctClassFamilies : remainingFamilies)
         .map(f => {
           const fam = FAMILIES[f.id];
           let s = f.score;
@@ -1243,7 +1257,12 @@ class ThumbnailDesignerAgent {
     };
     const headlines = [];
     const seenTypes = new Set();
-    const distinctPool = options2.filter(h => h.score > -5);
+    const titleTokens = new Set(String(title).toUpperCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2));
+    const headlineTitleOverlap = (headline) => {
+      const words = String(headline).toUpperCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+      return words.length ? words.filter(w => titleTokens.has(w)).length / words.length : 1;
+    };
+    const distinctPool = options2.filter(h => h.score > -5 && h.wc >= 2 && h.wc <= 5 && headlineTitleOverlap(h.text) <= 0.8);
     for (const h of distinctPool) {
       if (headlines.length >= 3) break;
       if (headlines.some(x => similar(x.text, h.text))) continue;
@@ -1255,7 +1274,21 @@ class ThumbnailDesignerAgent {
       if (headlines.length >= 3) break;
       if (!headlines.includes(h) && !headlines.some(x => similar(x.text, h.text))) headlines.push(h);
     }
-    while (headlines.length < 3) headlines.push({ text: profile.hooks[headlines.length % 3].join(' '), score: 0, type: 'statement' });
+    const fallbackPool = [
+      ...profile.headlines,
+      ...profile.hooks.map(h => h.join(' ')),
+      'THE HIDDEN PATTERN', 'WHO BENEFITS MOST?', 'BEHIND THE SMILE',
+      'THE REAL MOTIVE', 'WHAT THEY HIDE', 'TRUST YOUR INSTINCTS',
+      'READ BETWEEN THE LINES', 'WATCH THE PATTERN'
+    ];
+    for (const text of fallbackPool) {
+      if (headlines.length >= 3) break;
+      const words = String(text).trim().split(/\s+/);
+      if (words.length < 2 || words.length > 5 || headlineTitleOverlap(text) > 0.8) continue;
+      if (headlines.some(h => similar(h.text, text))) continue;
+      headlines.push({ text, score: -1, wc: words.length, type: /\?$/.test(text) ? 'question' : 'statement' });
+    }
+    if (headlines.length < 3) throw new Error('Could not create three distinct curiosity-gap headlines without repeating the video title.');
 
     // Short headlines suit the split-screen family (two small labels); give it the shortest one.
     const splitSlot = chosen.findIndex(c => FAMILIES[c.id].cls === 'split');
@@ -1284,11 +1317,17 @@ class ThumbnailDesignerAgent {
         scene,
         paletteIdx: palIdx,
         composition: fam.legacy,
+        visualStrategy: [
+          { id: 'cinematic-closeup', direction: 'extreme close-up portrait, face or key object fills 55-65 percent of frame, off-centre rule-of-thirds placement, intimate perspective', camera: 'tight 85mm portrait close-up, shallow depth of field, slight three-quarter angle', lighting: 'dramatic split key light, controlled rim light, deep but detailed shadows', placement: 'main subject anchored to the right third; preserve clean negative space for headline on the left' },
+          { id: 'dramatic-split', direction: 'dramatic two-world split-screen, clear left-versus-right visual contrast, distinct subjects or emotional states on each side, strong diagonal divider', camera: 'wide 35mm cinematic two-shot, slightly low camera angle', lighting: 'contrasting warm practical light on one half and cool hard light on the other', placement: 'two visual halves must be unmistakably different; keep headline area clean and avoid tiny details' },
+          { id: 'conceptual-story', direction: 'surreal conceptual visual metaphor with one instantly understandable symbolic object, bold scale contrast and cinematic depth', camera: 'wide 50mm environmental composition with foreground-to-background depth', lighting: 'sculpted volumetric backlight with a focused highlight on the metaphor object', placement: 'single metaphor object dominates one side, human subject if relevant on the opposite third' }
+        ][i],
+        subjectPlacement: ['right-third close-up', 'balanced opposing halves', 'metaphor-led asymmetrical composition'][i],
         selectionScore: Number(c.score.toFixed(2))
       };
     });
 
-    return { plans, headlineOptions: options2.slice(0, 8).map(h => h.text), analysis, profile };
+    return { plans, headlineOptions: headlines.map(h => h.text), analysis, profile };
   }
 
   resolveFamilyId(designFamily, composition) {
@@ -1362,21 +1401,29 @@ class ThumbnailDesignerAgent {
     const pal = fam.palettes[plan.paletteIdx % fam.palettes.length];
     const scene = plan.scene;
     const analysis = concept.analysis || {};
-    const textSide = fam.textSide === 'left' ? 'left' : (fam.textSide === 'bottom' ? 'lower' : 'left');
     const negative = fam.textSide === 'left'
       ? 'The left 40 percent of the frame is calm, dark and nearly empty'
-      : 'The lower 30 percent of the frame is calm, dark and nearly empty';
+      : fam.textSide === 'right'
+        ? 'The right 45 percent of the frame is calm, dark and nearly empty'
+        : fam.textSide === 'top'
+          ? 'The upper 35 percent of the frame is calm, plain and nearly empty'
+          : 'The lower 30 percent of the frame is calm, dark and nearly empty';
 
     const colorWords = 'dominant colours ' + pal.dark + ' deep tones with accents of ' + pal.a + ' and ' + pal.b;
 
+    const strategy = plan.visualStrategy || {};
     const full = [
       fam.promptStyle + '.',
+      strategy.direction || '',
+      'Camera variation: ' + (strategy.camera || fam.camera) + '.',
+      'Lighting variation: ' + (strategy.lighting || fam.light) + '.',
+      'Subject placement: ' + (strategy.placement || fam.comp) + '.',
       'Subject: ' + scene.subject + '.',
       'Expression and body language: ' + scene.pose + '.',
       'Setting: ' + scene.env + '.',
       'Story idea: ' + (analysis.visualMetaphor || 'a visual metaphor for human psychology') + ', mood of ' + (concept.emotion || 'tension and curiosity') + '.',
-      'Camera: ' + fam.camera + '.',
-      'Lighting: ' + fam.light + '.',
+      'Camera: ' + (strategy.camera || fam.camera) + '.',
+      'Lighting: ' + (strategy.lighting || fam.light) + '.',
       'Colour palette: ' + colorWords + '.',
       'Composition: ' + fam.comp + '; focal point is ' + scene.focal + '.',
       'Negative space: ' + negative + ' so a headline can sit there.',
@@ -1711,6 +1758,8 @@ class ThumbnailDesignerAgent {
       .resize(W, H, { fit: 'cover', position: 'attention' })
       .modulate({ brightness: grade.brightness ?? 1, saturation: grade.saturation ?? 1 });
     if (grade.a !== undefined) img = img.linear(grade.a, grade.b ?? 0);
+    if (grade.gray) img = img.greyscale();
+    if (grade.tint) img = img.tint(grade.tint);
     if (grade.median) img = img.median(grade.median);
     if (grade.flip) img = img.flop();
     return img.png().toBuffer();
@@ -1756,12 +1805,21 @@ class ThumbnailDesignerAgent {
       eyebrow: plan.eyebrow || profile.eyebrow || 'HUMAN BEHAVIOR',
       badge: plan.badge || (profile.badges && profile.badges[0]) || 'LOOK CLOSER',
       question: /\?$/.test(headline),
+      title: String(options.title || plan.title || ''),
       tw: (str, size, ls = 0) => Math.ceil(String(str).length * (size * 0.72 + ls))
     };
 
     const built = fam.build(c);
     const layouts = [];
-    for (const block of built.text) layouts.push(await this.layoutBlock(block));
+    for (const block of built.text) {
+      let laid = await this.layoutBlock(block);
+      if (!laid.fitted && block.minSize > 50) {
+        // Long headline in a narrow box: allow a somewhat smaller (still large) size instead of overflowing.
+        const relaxed = await this.layoutBlock({ ...block, minSize: Math.max(50, Math.floor(block.minSize * 0.8)) });
+        if (relaxed.fitted) laid = relaxed;
+      }
+      layouts.push(laid);
+    }
 
     const minX = Math.min(...layouts.map(l => l.bbox.x));
     const minY = Math.min(...layouts.map(l => l.bbox.y));
@@ -2083,6 +2141,7 @@ class ThumbnailDesignerAgent {
         designFamily: plan.familyName,
         designFamilyId: plan.familyId,
         layoutClass: FAMILIES[plan.familyId].cls,
+        visualStrategyId: plan.visualStrategy?.id || null,
         path: optimized,
         sourceFootage: source.name,
         hook: plan.headline,
@@ -2261,6 +2320,7 @@ class ThumbnailDesignerAgent {
           designFamily: composed.designFamily,
           designFamilyId: composed.designFamilyId,
           layoutClass: FAMILIES[composed.designFamilyId].cls,
+          visualStrategyId: plan.visualStrategy?.id || null,
           path: composed.path,
           sourceFootage: 'Cloudflare Workers AI - FLUX.1 Schnell',
           provider: 'cloudflare-workers-ai',
@@ -2311,6 +2371,139 @@ class ThumbnailDesignerAgent {
     return localVariants.map(item => ({ ...item, provider: 'local-footage-fallback' }));
   }
 
+  /* ------------------------- AI visual review + quality ranking ------------------------- */
+
+  async inspectThumbnailVisual(file, variant) {
+    const result = {
+      available: false, passed: false, score: 0, concerns: [],
+      subjectQuality: null, clutter: null, focalPoint: null,
+      textReadability: null, composition: null, curiosity: null,
+      provider: null
+    };
+    const token = process.env.CLOUDFLARE_API_TOKEN;
+    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    if (!token || !accountId) return result;
+
+    try {
+      const imageBuffer = await sharp(file).resize(768, 432, { fit: 'cover' }).jpeg({ quality: 72 }).toBuffer();
+      const dataUrl = 'data:image/jpeg;base64,' + imageBuffer.toString('base64');
+      const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.2-11b-vision-instruct`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: 'Act as a strict professional YouTube thumbnail art director. Inspect this actual 16:9 thumbnail at small-screen size. Return ONLY valid JSON with keys score (0-100), passed (boolean), subjectQuality (0-10), clutter (0-10 where 10 means very cluttered), focalPoint (0-10), textReadability (0-10), composition (0-10), curiosity (0-10), concerns (array of short strings). Penalize generic stock-looking visuals, weak facial expression, repeated/template-like layout, unclear focal point, too many words, text-image repetition, poor contrast, cramped edges, outdated meme/poster aesthetics, and clutter. Reward modern cinematic art direction, strong emotion/tension, one clear focal hook, visual storytelling and a curiosity gap. Text visible in image: ' + String(variant.hook || '') + '. Video title: ' + String(variant.sourceTitle || '') + '. Design family: ' + String(variant.designFamily || '') + '. Assess whether the visual and headline complement the video title instead of repeating it; reward a genuine curiosity gap. Do not guess CTR; assess creative potential only.'
+          }],
+          image: dataUrl,
+          max_tokens: 400,
+          temperature: 0.2
+        }),
+        signal: AbortSignal.timeout(90000)
+      });
+      if (!response.ok) throw new Error('Vision API HTTP ' + response.status);
+      const payload = await response.json();
+      const raw = payload.result?.response || payload.result?.output || payload.result?.choices?.[0]?.message?.content || '';
+      const match = String(raw).match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Vision model did not return JSON');
+      const parsed = JSON.parse(match[0]);
+      result.available = true;
+      result.provider = 'cloudflare-workers-ai-llama-3.2-vision';
+      result.score = Math.max(0, Math.min(100, Number(parsed.score) || 0));
+      result.passed = parsed.passed === true && result.score >= 68;
+      for (const key of ['subjectQuality', 'clutter', 'focalPoint', 'textReadability', 'composition', 'curiosity']) {
+        result[key] = Number.isFinite(Number(parsed[key])) ? Math.max(0, Math.min(10, Number(parsed[key]))) : null;
+      }
+      result.concerns = Array.isArray(parsed.concerns) ? parsed.concerns.slice(0, 8).map(String) : [];
+    } catch (error) {
+      this.logger.warn('AI thumbnail visual review unavailable: ' + error.message);
+      result.error = error.message;
+    }
+    return result;
+  }
+
+  async scoreThumbnailCandidate(variant) {
+    const visual = await this.inspectThumbnailVisual(variant.path, variant);
+    const layout = variant.layout || {};
+    const wordCount = String(variant.hook || '').trim().split(/\s+/).filter(Boolean).length;
+    const checks = variant.qualityChecks || {};
+    const safeBounds = Array.isArray(layout.blockBounds) && layout.blockBounds.length
+      ? layout.blockBounds
+      : [layout.textBounds].filter(Boolean);
+    const safe = safeBounds.length > 0 && safeBounds.every(b => {
+      const valid = [b.x, b.y, b.w, b.h].every(value => Number.isFinite(Number(value))) &&
+        Number(b.x) >= 0 && Number(b.y) >= 0 && Number(b.w) > 0 && Number(b.h) > 0 &&
+        Number(b.x) + Number(b.w) <= 1280 && Number(b.y) + Number(b.h) <= 720;
+      if (!valid) return false;
+      const hitsBottomRightTimestamp = Number(b.x) + Number(b.w) > 1040 && Number(b.y) + Number(b.h) > 600;
+      const hitsTopRightOverlay = Number(b.x) + Number(b.w) > 1110 && Number(b.y) < 120;
+      return !hitsBottomRightTimestamp && !hitsTopRightOverlay;
+    });
+    const wordsScore = wordCount >= 2 && wordCount <= 5 ? 100 : Math.max(0, 100 - Math.abs(wordCount - 4) * 24);
+    const titleWords = new Set(String(variant.sourceTitle || variant.concept?.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 2));
+    const hookWords = String(variant.hook || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 2);
+    const titleOverlap = hookWords.length ? hookWords.filter(w => titleWords.has(w)).length / hookWords.length : 0;
+    const curiosityGapScore = titleOverlap > 0.8 ? 20 : titleOverlap > 0.6 ? 55 : 100;
+    const technical = (checks.correctDimensions ? 20 : 0) + (checks.underTwoMB ? 15 : 0) +
+      (checks.notBlank ? 15 : 0) + (checks.textFit ? 15 : 0) + (checks.contrastOk ? 15 : 0) +
+      (checks.readableAtSmallSize ? 10 : 0) + (safe ? 10 : 0);
+    const clampScore = value => Math.max(0, Math.min(100, value));
+    const contrastScore = Number.isFinite(Number(checks.contrastRatio))
+      ? clampScore(55 + (Number(checks.contrastRatio) - 3) * 7.5) : 65;
+    const fontScore = Number.isFinite(Number(checks.minFontSize))
+      ? clampScore(65 + (Number(checks.minFontSize) - 56) * 0.4) : 65;
+    const detailScore = Number.isFinite(Number(checks.pixelStdev))
+      ? clampScore(35 + (Number(checks.pixelStdev) - 12) * 1.25) : 65;
+    const heuristic = Math.round((technical * 0.35) + (wordsScore * 0.15) +
+      (curiosityGapScore * 0.15) + (contrastScore * 0.15) +
+      (fontScore * 0.10) + (detailScore * 0.10));
+    // Map heuristic-only scores into a separate 55-89 band so strong candidates do not all tie at 89.
+    const score = visual.available
+      ? Math.round(visual.score * 0.72 + heuristic * 0.28)
+      : Math.round(55 + (heuristic * 0.34));
+    const hardReject = checks.hardFailure || !checks.decodes || !checks.correctDimensions ||
+      !checks.underTwoMB || !checks.textFit || !checks.contrastOk || !checks.readableAtSmallSize || !safe || wordCount > 5 || titleOverlap > 0.8;
+    return {
+      score, passed: !hardReject && (!visual.available || visual.passed),
+      rejectionReasons: [
+        ...(hardReject ? ['technical, text, or mobile-safe-zone validation failed'] : []),
+        ...(visual.available && !visual.passed ? visual.concerns : []),
+        ...(wordCount > 5 ? ['headline exceeds five words'] : []),
+        ...(titleOverlap > 0.8 ? ['headline repeats the video title instead of creating a curiosity gap'] : [])
+      ],
+      visualReview: visual,
+      technicalScore: heuristic,
+      mobileSafeZone: safe,
+      headlineWordCount: wordCount,
+      titleOverlap: Number(titleOverlap.toFixed(2)),
+      curiosityGapScore,
+      fallbackMetrics: { contrastScore: Number(contrastScore.toFixed(1)), fontScore: Number(fontScore.toFixed(1)), detailScore: Number(detailScore.toFixed(1)) }
+    };
+  }
+
+  async reviewAndRankVariants(variants) {
+    const reviewed = [];
+    for (const variant of variants) {
+      const review = await this.scoreThumbnailCandidate(variant);
+      reviewed.push({ ...variant, reviewScore: review.score, reviewPassed: review.passed, review });
+    }
+    const diversity = await this.measureVariantDiversity(reviewed);
+    const families = new Set(reviewed.map(v => v.designFamilyId));
+    const layouts = new Set(reviewed.map(v => v.layoutClass));
+    const strategies = new Set(reviewed.map(v => v.visualStrategyId || v.concept?.plan?.visualStrategy?.id || v.concept?.variantPlans?.[v.planIndex]?.visualStrategy?.id || v.composition));
+    const duplicateComposition = families.size < 3 || layouts.size < 3 || strategies.size < 3 ||
+      (diversity.minPairwiseImageDifference !== null && diversity.minPairwiseImageDifference < 0.075);
+    if (duplicateComposition) {
+      for (const v of reviewed) {
+        v.reviewPassed = false;
+        v.review.rejectionReasons.push('candidate set repeats a visual family/layout or looks too similar');
+      }
+    }
+    reviewed.sort((a, b) => Number(b.reviewPassed) - Number(a.reviewPassed) || b.reviewScore - a.reviewScore);
+    return { variants: reviewed, diversity, duplicateComposition, allPassed: reviewed.length === 3 && reviewed.every(v => v.reviewPassed) };
+  }
+
   async generateThumbnail(script) {
     if (!script || !(script.title || script.topic)) {
       throw new Error('A script with a title or topic is required');
@@ -2318,26 +2511,97 @@ class ThumbnailDesignerAgent {
 
     await this.initialize();
     await this.resolveWorkspace(script);
-
-    this.logger.info(`V5 thumbnail design engine: ${script.title || script.topic}`);
+    this.logger.info(`V6 visual-quality thumbnail engine: ${script.title || script.topic}`);
 
     const concept = await this.generateConcept(script);
-    const prompt = await this.createPrompt(concept);
-    const variants = await this.generateABVariants(concept, script);
+    let prompt = await this.createPrompt(concept);
+    let bestReview = null;
+    let variants = [];
+    let regenerationRounds = 0;
+    const approvedPool = new Map();
+    const rejectionSummary = [];
+
+    // Keep passing candidates across rounds; only rejected design families need replacement.
+    for (let round = 0; round < 3; round++) {
+      if (round > 0) {
+        regenerationRounds++;
+        const plans = await this.ensurePlans(concept, script);
+        const scenes = concept.profile?.scenes || [];
+        concept.variantPlans = plans.map((p, i) => {
+          const currentIndex = scenes.indexOf(p.scene);
+          const nextScene = scenes[(Math.max(0, currentIndex) + round + i + 1) % Math.max(1, scenes.length)] || p.scene;
+          return {
+            ...p, scene: nextScene,
+            paletteIdx: (p.paletteIdx + round + i + 1) % FAMILIES[p.familyId].palettes.length,
+            visualStrategy: {
+              ...(p.visualStrategy || {}),
+              direction: (p.visualStrategy?.direction || '') + '; fresh alternate take, change camera distance, silhouette, gesture and foreground depth; avoid previous framing',
+              camera: round % 2 ? 'dynamic 24mm low-angle wide cinematic frame' : 'intimate 85mm portrait with strong foreground separation',
+              lighting: round % 2 ? 'hard directional chiaroscuro with atmospheric haze' : 'soft motivated key light with bold coloured rim and deep negative fill'
+            }
+          };
+        });
+        prompt = await this.createPrompt(concept);
+      }
+
+      const generated = await this.generateABVariants(concept, script);
+      if (generated.length !== 3) throw new Error(`Expected 3 thumbnail variants; generated ${generated.length}`);
+      generated.forEach((v, i) => {
+        v.planIndex = i;
+        v.sourceTitle = concept.title;
+        v.visualStrategyId = v.visualStrategyId || concept.variantPlans[i]?.visualStrategy?.id || null;
+      });
+      const reviewed = await this.reviewAndRankVariants(generated);
+      bestReview = reviewed;
+      for (const rejected of reviewed.variants.filter(v => !v.reviewPassed)) {
+        const reason = `${rejected.designFamilyId || rejected.label}: ${(rejected.review?.rejectionReasons || []).join(', ') || 'visual diversity gate'}`;
+        rejectionSummary.push(reason);
+        this.logger.warn('Rejected thumbnail candidate: ' + reason);
+      }
+
+      for (const candidate of reviewed.variants) {
+        const familyId = candidate.designFamilyId;
+        const previous = approvedPool.get(familyId);
+        if (candidate.reviewPassed && (!previous || candidate.reviewScore > previous.reviewScore)) {
+          if (previous?.path) { try { await fs.unlink(previous.path); } catch (_) {} }
+          approvedPool.set(familyId, candidate);
+        } else if (candidate.path) {
+          try { await fs.unlink(candidate.path); } catch (_) {}
+        }
+      }
+
+      variants = [...approvedPool.values()].sort((a, b) => b.reviewScore - a.reviewScore);
+      if (variants.length === 3) break;
+      this.logger.warn(`Thumbnail review round ${round + 1}: ${variants.length}/3 distinct candidates approved; regenerating rejected candidates.`);
+    }
 
     if (variants.length !== 3) {
-      throw new Error(`Expected 3 thumbnail variants; generated ${variants.length}`);
+      const reasons = rejectionSummary.slice(-18);
+      for (const candidate of approvedPool.values()) {
+        if (candidate.path) { try { await fs.unlink(candidate.path); } catch (_) {} }
+      }
+      throw new Error('Thumbnail quality gate could not approve three genuinely distinct candidates after 3 rounds. No weak thumbnail was selected. ' + [...new Set(reasons)].join('; '));
+    }
+
+    const finalDiversity = await this.measureVariantDiversity(variants);
+    const finalFamilies = new Set(variants.map(v => v.designFamilyId));
+    const finalLayouts = new Set(variants.map(v => v.layoutClass));
+    const finalStrategies = new Set(variants.map(v => v.visualStrategyId));
+    if (finalFamilies.size !== 3 || finalLayouts.size !== 3 || finalStrategies.size !== 3 ||
+        (finalDiversity.minPairwiseImageDifference !== null && finalDiversity.minPairwiseImageDifference < 0.075)) {
+      for (const candidate of variants) { try { await fs.unlink(candidate.path); } catch (_) {} }
+      throw new Error('Final thumbnail set failed the cross-round composition diversity gate; no candidate was approved.');
     }
 
     const primary = variants[0];
-    const diversity = await this.measureVariantDiversity(variants);
     const usedCloudflare = variants.some(v => v.provider === 'cloudflare-workers-ai');
-
-    await this.writeFamilyHistory((await this.readFamilyHistory()).concat([{
+    const familyHistory = (await this.readFamilyHistory()).concat([{
       title: concept.title,
       families: variants.map(v => v.designFamilyId),
-      at: new Date().toISOString()
-    }]));
+      at: new Date().toISOString(),
+      visualScores: variants.map(v => v.reviewScore)
+    }]);
+    await this.writeFamilyHistory(familyHistory);
 
     const thumbnailData = {
       path: primary.path,
@@ -2345,12 +2609,19 @@ class ThumbnailDesignerAgent {
       prompt,
       variants,
       variantCount: variants.length,
+      recommendedCandidate: primary.label,
+      comparison: variants.map((v, i) => ({
+        rank: i + 1, label: v.label, designFamily: v.designFamily,
+        headline: v.hook, score: v.reviewScore, passed: v.reviewPassed,
+        concerns: v.review?.rejectionReasons || []
+      })),
+      regenerationRounds,
       dimensions: primary.dimensions,
       fileSize: primary.fileSize,
       createdAt: new Date().toISOString(),
       generationMode: variants.every(v => v.provider === 'cloudflare-workers-ai')
-        ? 'cloudflare-flux-design-engine-v5'
-        : (usedCloudflare ? 'mixed-cloudflare-and-local-v5' : 'local-design-engine-v5-fallback'),
+        ? 'cloudflare-flux-design-engine-v6'
+        : (usedCloudflare ? 'mixed-cloudflare-and-local-v6' : 'local-design-engine-v6-fallback'),
       paidApiUsed: false,
       imageProvider: primary.provider || 'local-footage-fallback',
       imageModel: primary.model || null,
@@ -2361,20 +2632,24 @@ class ThumbnailDesignerAgent {
       workspace: this.projectRoot,
       qualityChecks: {
         allVariantsValid: variants.every(item => item.qualityChecks && item.qualityChecks.valid),
-        variantCount: variants.length,
-        diversity,
+        allCandidatesPassedVisualGate: variants.every(v => v.reviewPassed),
+        visionInspectionAvailable: variants.some(v => v.review?.visualReview?.available),
+        visualScores: variants.map(v => v.reviewScore),
+        diversity: finalDiversity,
+        duplicateCompositionRejected: false,
+        distinctVisualStrategies: finalStrategies.size,
+        regenerationRounds,
+        mobileSafeZonesChecked: true,
         ocrVerified: false,
-        visualReviewed: false,
-        note: 'Programmatic checks only (dimensions, size, decode, text bounds, measured contrast, variant difference). No OCR was run and no visual quality or CTR claim is made; inspect the images manually.'
+        visualReviewed: variants.some(v => v.review?.visualReview?.available),
+        note: 'Actual image vision review is attempted with Cloudflare Llama 3.2 Vision when credentials/model access are available; technical and layout checks always run. Vision unavailability is reported, never falsely marked as verified. Scores estimate creative quality, not guaranteed CTR.'
       }
     };
 
     if (this.db && typeof this.db.saveThumbnail === 'function') {
       await this.db.saveThumbnail(thumbnailData);
     }
-
-    this.logger.info('V5 generated three thumbnail variants: ' + thumbnailData.designFamilies.join(' | '));
-
+    this.logger.info('V6 ranked thumbnail candidates: ' + thumbnailData.comparison.map(v => v.rank + ':' + v.score).join(' | '));
     return thumbnailData;
   }
 

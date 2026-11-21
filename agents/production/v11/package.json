@@ -1,0 +1,19 @@
+{
+  "name": "yt-production-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Video production + YouTube growth checks: hooks, pacing, loudness, thumbnails, licences, recovery.",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node scripts/run-tests.js",
+    "hygiene": "node scripts/ci-hygiene.js",
+    "ci": "node scripts/ci-hygiene.js && node scripts/run-tests.js",
+    "demo": "node scripts/demo.js"
+  },
+  "optionalDependencies": {
+    "sharp": ">=0.32.0"
+  }
+}

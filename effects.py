@@ -174,6 +174,10 @@ def grade_lut(cube_path: str, intensity_mix: float = 1.0) -> str:
 class Effects:
     def __init__(self, w: int, h: int, fps: int = 24, xfade_available: Optional[Sequence[str]] = None):
         self.w, self.h, self.fps = int(w), int(h), int(fps)
+        if self.w < 2 or self.h < 2 or self.w % 2 or self.h % 2:
+            raise ValueError("frame width and height must be positive even integers (yuv420p-safe)")
+        if self.fps < 1 or self.fps > 240:
+            raise ValueError("fps must be between 1 and 240")
         self.xfade_available = set(xfade_available) if xfade_available else None
 
     # ------------------------------ MOTION ---------------------------------- #
