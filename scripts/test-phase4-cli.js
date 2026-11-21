@@ -25,10 +25,17 @@ try{
  fs.writeFileSync(file,JSON.stringify(pkg,null,2));
  result=run(['build','--file',file]);assert.equal(result.status,0,result.stderr);assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).packagingTests.variants.length,3,'Phase 4 build must include three script-matched title/thumbnail combinations');
  result=run(['check','--file',file]);assert.equal(result.status,0,result.stderr);
+ const beforeHold=JSON.parse(fs.readFileSync(file,'utf8'));
+ const held={...beforeHold,monetizationSafety:{...(beforeHold.monetizationSafety||{}),autoHold:true,status:'HOLD_FOR_REVIEW'}};
+ fs.writeFileSync(file,JSON.stringify(held,null,2));
+ result=run(['approve','--file',file,'--reviewer','phase4-cli-test'],'');
+ assert.notEqual(result.status,0,'manual approval must be blocked while high/critical monetization hold is active');
+ assert.match(result.stderr,/Approval blocked: high\/critical monetization safety hold is active/);
+ fs.writeFileSync(file,JSON.stringify(beforeHold,null,2));
  const answers=['APPROVE',...Array(11).fill('YES')].join('\n')+'\n';
  result=run(['approve','--file',file,'--reviewer','phase4-cli-test'],answers);assert.equal(result.status,0,result.stderr+result.stdout);
  result=run(['verify','--file',file]);assert.equal(result.status,0,result.stderr+result.stdout);
  const approved=JSON.parse(fs.readFileSync(file,'utf8'));approved.seo.title+=' edited after approval';fs.writeFileSync(file,JSON.stringify(approved,null,2));
  result=run(['verify','--file',file]);assert.equal(result.status,2,'metadata edits must invalidate the approval');
- console.log('PASS Phase 4 CLI init/build/check/interactive human approval/verify and tamper rejection');
+ console.log('PASS Phase 4 CLI init/build/check/hold-enforced human approval/verify and tamper rejection');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}

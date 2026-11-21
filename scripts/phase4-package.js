@@ -113,6 +113,15 @@ async function main(){
  }
  if(command==='approve'){
   const pkg=p.loadJson(file);
+  const safety=pkg.monetizationSafety||pkg.compliance?.monetizationSafety;
+  if(!safety)throw new Error('Package must have a completed monetization risk report; run the build command first.');
+  if(safety.autoHold===true)throw new Error('Approval blocked: high/critical monetization safety hold is active. Resolve the risk flags and rebuild the package before human approval.');
+  const rightsCheck=p.checkRights(pkg.rightsLedger||[]);
+  const seoCheck=p.checkSeo(pkg.seo||{});
+  const chapterCheck=p.checkChapters(pkg.seo?.chapters||[],Number(pkg.durationSeconds||0));
+  if(!rightsCheck.passed)throw new Error('Approval blocked: rights evidence is incomplete. Run check and resolve all rights findings first.');
+  if(!seoCheck.passed)throw new Error('Approval blocked: SEO metadata checks failed. Run check and resolve the findings first.');
+  if(!chapterCheck.passed)throw new Error('Approval blocked: chapter/timestamp checks failed. Run check and resolve the findings first.');
   if(!pkg.finalVideo)throw new Error('Package must include finalVideo path');
   pkg.finalVideo=path.resolve(pkg.finalVideo);
   if(!fs.existsSync(pkg.finalVideo))throw new Error('Final video file not found: '+pkg.finalVideo);
