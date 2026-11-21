@@ -92,6 +92,7 @@ async function main(){
   pkg.syntheticDisclosure={realisticSyntheticMedia:pkg.monetizationSafety.sections.syntheticMedia.realisticSyntheticMedia,decision:pkg.monetizationSafety.sections.syntheticMedia.disclosureDecision,required:pkg.monetizationSafety.sections.syntheticMedia.disclosureRequiredByReview,deceptiveRealScene:pkg.monetizationSafety.sections.syntheticMedia.deceptiveRealScene};
   pkg.sceneOriginalityChecklist=pkg.monetizationSafety.sections.sceneOriginality.scenes;
   const reportFiles=p.monetizationSafety.saveReport(pkg.monetizationSafety,path.join(path.dirname(file),'monetization-risk'));
+  if(pkg.monetizationSafety.autoHold){pkg.quarantine={status:'held_for_monetization_review',createdAt:new Date().toISOString(),reasonCodes:pkg.monetizationSafety.requiredHumanActions,reportPath:reportFiles.markdownPath};const quarantineDir=path.join(path.dirname(file),'quarantine');fs.mkdirSync(quarantineDir,{recursive:true});pkg.quarantine.packageCopy=path.join(quarantineDir,path.basename(file)+'.held.json');p.writeJson(pkg.quarantine.packageCopy,pkg);}
   p.writeJson(file,pkg);
   console.log('Phase 4 package built:',file);
   console.log('Rights records:',pkg.rightsLedger.length,'; advisory flags:',pkg.compliance.flags.length,'; originality comparisons:',pkg.compliance.originality.comparisons.length);
