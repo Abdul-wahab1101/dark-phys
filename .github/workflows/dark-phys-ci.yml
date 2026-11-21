@@ -119,9 +119,16 @@ jobs:
           node-version: '20'
           cache: npm
           cache-dependency-path: engines/youtube-automation-agent/package-lock.json
+      - name: Apply pinned upstream production dependency security floors
+        run: node scripts/patch-upstream-dependencies.js --engine engines/youtube-automation-agent
       - name: Install upstream dependencies
         working-directory: engines/youtube-automation-agent
         run: npm ci
+      - name: Production-only npm security audit
+        working-directory: engines/youtube-automation-agent
+        run: npm audit --omit=dev --audit-level=high
+      - name: Test dependency security patch
+        run: node scripts/test-upstream-dependency-security.js
       - name: Smoke-test main automation dashboard launch
         run: node scripts/test-main-dashboard-launch.js
       - name: Configure bundled FFmpeg

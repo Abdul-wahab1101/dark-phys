@@ -39,7 +39,10 @@ if (-not (Test-Path (Join-Path $Youtube ".git"))) {
 }
 Push-Location $Youtube
 try {
-  if (Test-Path "package-lock.json") { npm ci } else { npm install }
+  Write-Host "Applying reviewed production dependency security floors and regenerating the npm lockfile..."
+  node (Join-Path $Root "scripts\\patch-upstream-dependencies.js") --engine $Youtube
+  if ($LASTEXITCODE -ne 0) { throw "Could not apply the upstream npm dependency security patch." }
+  npm ci
   if ($LASTEXITCODE -ne 0) { throw "YouTube agent dependency installation failed." }
   npx playwright install chromium
   if ($LASTEXITCODE -ne 0) { throw "Playwright Chromium installation failed." }
