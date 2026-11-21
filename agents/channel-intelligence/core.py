@@ -305,6 +305,25 @@ class ChannelIntelligence:
             db.execute("INSERT INTO channel_uploads (video_id,channel_id,published_at,created_at) VALUES (?,?,?,?)",
                        (video_id.strip(), channel_id, published_at, utc_now()))
 
+    def find_angle_duplicates(self, channel_id: str, editorial_angle: str, threshold: float = 0.62) -> list[dict[str, Any]]:
+        self.get_channel(channel_id)
+        if not editorial_angle.strip():
+            raise ValueError("editorial_angle is required")
+        if not 0.1 <= threshold <= 1.0:
+            raise ValueError("threshold must be between 0.1 and 1.0")
+        with self._connect() as db:
+            rows = db.execute("SELECT video_id,title,editorial_angle FROM channel_episodes WHERE channel_id=? ORDER BY approved_at DESC",
+                              (channel_id,)).fetchall()
+        matches = []
+        for row in rows:
+            if not row["editorial_angle"]:
+                continue
+            report = similarity_report(editorial_angle, row["editorial_angle"])
+            if report["semantic_proxy"] >= threshold:
+                matches.append({"video_id": row["video_id"], "title": row["title"],
+                                "editorial_angle": row["editorial_angle"], "similarity": report})
+        return matches
+
     def upload_history(self, channel_id: str, limit: int = 200) -> list[dict[str, Any]]:
         self.get_channel(channel_id)
         if not 1 <= int(limit) <= 1000:
