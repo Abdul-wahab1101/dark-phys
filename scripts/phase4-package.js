@@ -78,13 +78,16 @@ async function main(){
   let assets=input.assets||input.rightsLedger||[];
   if(manifestPath)assets=p.importAssetManifest(p.loadJson(path.resolve(manifestPath)));
   else if(Array.isArray(input.assetManifest))assets=p.importAssetManifest(input.assetManifest);
-  const pkg={...input,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(assets)};
+  const stored=p.monetizationSafety.readChannelStore(input.channelId||'dark-phys-en');
+  const channelHistory=(Array.isArray(input.channelHistory)&&input.channelHistory.length)?input.channelHistory:stored.episodes;
+  const uploadHistory=(Array.isArray(input.uploadHistory)&&input.uploadHistory.length)?input.uploadHistory:stored.uploads;
+  const pkg={...input,channelHistory,uploadHistory,seo:p.buildSeo({...input,...(input.seo||{})}),rightsLedger:p.rightsLedger(assets)};
   let thumbnailConcepts=Array.isArray(input.thumbnailConcepts)?input.thumbnailConcepts:[];
   const conceptsFile=path.resolve(arg('thumbnail-concepts','uploads/thumbnail-concepts/concepts.json'));
   if(!thumbnailConcepts.length&&fs.existsSync(conceptsFile)){const saved=p.loadJson(conceptsFile);thumbnailConcepts=Array.isArray(saved.concepts)?saved.concepts:[];}
   pkg.packagingTests=buildPackagingTests({topic:input.topic,title:input.title,script:input.script,thumbnailConcepts,youtubeTestCompareAvailable:input.youtubeTestCompareAvailable===true,oauthAuthorized:input.youtubeAnalyticsOAuthAuthorized===true});
   if(manifestPath)pkg.importedAssetManifest=path.resolve(manifestPath);
-  pkg.compliance=p.complianceReview({...input,...pkg.seo});
+  pkg.compliance=p.complianceReview({...input,...pkg.seo,channelHistory,uploadHistory});
   pkg.monetizationSafety=pkg.compliance.monetizationSafety;
   pkg.syntheticDisclosure={realisticSyntheticMedia:pkg.monetizationSafety.sections.syntheticMedia.realisticSyntheticMedia,decision:pkg.monetizationSafety.sections.syntheticMedia.disclosureDecision,required:pkg.monetizationSafety.sections.syntheticMedia.disclosureRequiredByReview,deceptiveRealScene:pkg.monetizationSafety.sections.syntheticMedia.deceptiveRealScene};
   pkg.sceneOriginalityChecklist=pkg.monetizationSafety.sections.sceneOriginality.scenes;
@@ -131,14 +134,21 @@ async function main(){
   const checks={};
   for(const [key,question] of items){checks[key]=(await ask(question+' Type YES to confirm: '))==='YES';if(!checks[key])throw new Error('Approval stopped: '+key+' was not confirmed');}
   pkg.approval=p.createApproval(pkg,reviewer,checks);p.writeJson(file,pkg);
+  const historyRecord=p.monetizationSafety.recordApprovedEpisode(pkg);
+  console.log('Approved episode history:',historyRecord.recorded?'saved':'already present');
   console.log('Approved for manual upload only. Automated publishing remains disabled.');
   return;
+ }
+ if(command==='record-upload'){
+  const channel=arg('channel');const videoId=arg('video-id');const publishedAt=arg('published-at');
+  const result=p.monetizationSafety.recordPublishedUpload(channel,videoId,publishedAt);
+  console.log(JSON.stringify(result,null,2));return;
  }
  if(command==='verify'){
   const pkg=p.loadJson(file),result=p.verifyApproval(pkg,pkg.approval);
   console.log(JSON.stringify(result,null,2));if(!result.valid)process.exitCode=2;return;
  }
- console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|verify --file uploads/phase4-package.json [--reviewer name] [--thumbnail-concepts uploads/thumbnail-concepts/concepts.json]');
+ console.log('Usage: node scripts/phase4-package.js init|thumbnails|build [--manifest uploads/stock-footage/asset-manifest.json]|check|approve|record-upload --channel ID --video-id ID --published-at ISO|verify --file uploads/phase4-package.json [--reviewer name] [--thumbnail-concepts uploads/thumbnail-concepts/concepts.json]');
 }
 if(require.main===module)main().catch(e=>{console.error('Phase 4:',e.message);process.exitCode=1;}).finally(()=>{if(approvalReadline)approvalReadline.close();});
 module.exports={main,generateThumbnails};
