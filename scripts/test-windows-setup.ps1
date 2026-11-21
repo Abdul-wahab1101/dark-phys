@@ -23,6 +23,7 @@ if (-not $OpenMontage.Contains("22.23.4") -or -not $OpenMontage.Contains("NodeCo
 if (-not $OpenMontage.Contains("npm ci")) { throw "OpenMontage installer must use the lockfile for reproducible composer dependencies." }
 if (-not $Setup.Contains("20.17.0") -or -not $Setup.Contains("npm ci")) { throw "Main installer must enforce Node 20.17+ and use npm ci after security lockfile regeneration." }
 if (-not $Setup.Contains("patch-upstream-dependencies.js")) { throw "Main installer must apply the reviewed upstream dependency security patch before npm ci." }
+if ($Setup.Contains("require('sharp/package.json')")) { throw "Main installer must not import Sharp package.json through the restricted exports map." }
 $DependencyPatch = Get-Content (Join-Path $Root "scripts/patch-upstream-dependencies.js") -Raw
 foreach ($Package in @("axios", "sharp", "form-data", "ws", "body-parser", "1.21.1", "0.35.5", "4.0.6", "8.23.0", "1.20.9")) {
   if (-not $DependencyPatch.Contains($Package)) { throw "Dependency security patch is missing $Package." }

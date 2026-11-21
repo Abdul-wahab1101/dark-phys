@@ -35,6 +35,23 @@ function applyPolicy(engineDir) {
   return manifest;
 }
 
+function patchSharpPackageJsonImport(engineDir) {
+  const testPath = path.join(engineDir, 'test.js');
+  if (!fs.existsSync(testPath)) throw new Error('Pinned upstream test.js not found.');
+  const original = fs.readFileSync(testPath, 'utf8');
+  const legacy = "    const [major, minor] = require('sharp/package.json').version.split('.').map(Number);";
+  const replacement = "    const sharpPackagePath = require('node:path').resolve(require('node:path').dirname(require.resolve('sharp')), '..', 'package.json');\n" +
+    "    const [major, minor] = require(sharpPackagePath).version.split('.').map(Number);";
+  if (original.includes(replacement)) return false;
+  if (!original.includes(legacy)) throw new Error('Expected pinned Sharp package.json import was not found; refusing an unreviewed test.js rewrite.');
+  const backupDir = path.join(engineDir, '.dark-phys-backups');
+  fs.mkdirSync(backupDir, { recursive: true });
+  const backupPath = path.join(backupDir, 'test.js');
+  if (!fs.existsSync(backupPath)) fs.writeFileSync(backupPath, original);
+  fs.writeFileSync(testPath, original.replace(legacy, replacement));
+  return true;
+}
+
 function verifyLockfile(engineDir) {
   const manifest = JSON.parse(fs.readFileSync(path.join(engineDir, 'package.json'), 'utf8'));
   const lockPath = path.join(engineDir, 'package-lock.json');
@@ -58,6 +75,7 @@ function main() {
   const engineDir = index >= 0 ? path.resolve(process.argv[index + 1] || '') : path.resolve('engines/youtube-automation-agent');
   if (!fs.existsSync(engineDir)) throw new Error('Pinned YouTube agent directory not found: ' + engineDir);
   applyPolicy(engineDir);
+  patchSharpPackageJsonImport(engineDir);
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const result = spawnSync(npm, ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], {
     cwd: engineDir, stdio: 'inherit', shell: process.platform === 'win32'
@@ -79,4 +97,4 @@ if (require.main === module) {
   try { main(); } catch (error) { console.error('Dependency security patch failed:', error.message); process.exitCode = 1; }
 }
 
-module.exports = { POLICY, applyPolicy, verifyLockfile };
+module.exports = { POLICY, applyPolicy, patchSharpPackageJsonImport, verifyLockfile };

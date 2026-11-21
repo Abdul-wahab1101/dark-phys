@@ -60,7 +60,7 @@ Push-Location $Root
 try {
   npm install --no-save --no-package-lock sharp ffprobe-static @huggingface/transformers
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency installation failed." }
-  node -e "const sharp=require('sharp'); if(typeof sharp!=='function') process.exit(1); console.log('PASS root Sharp runtime:', require('sharp/package.json').version)"
+  node -e "const fs=require('fs'), path=require('path'), sharp=require('sharp'); if(typeof sharp!=='function') process.exit(1); const p=path.resolve(path.dirname(require.resolve('sharp')), '..', 'package.json'); console.log('PASS root Sharp runtime:', JSON.parse(fs.readFileSync(p,'utf8')).version)"
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys root Sharp dependency cannot be loaded." }
   node -e "require('ffprobe-static'); require('@huggingface/transformers'); console.log('PASS FFprobe and semantic embedding runtimes')"
   if ($LASTEXITCODE -ne 0) { throw "Dark Phys FFprobe or semantic embedding runtime cannot be loaded." }

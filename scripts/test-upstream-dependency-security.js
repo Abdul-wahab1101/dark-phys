@@ -3,10 +3,18 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { POLICY, applyPolicy, verifyLockfile } = require('./patch-upstream-dependencies');
+const { POLICY, applyPolicy, patchSharpPackageJsonImport, verifyLockfile } = require('./patch-upstream-dependencies');
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dark-phys-deps-'));
 try {
+  const upstreamTest = "    const [major, minor] = require('sharp/package.json').version.split('.').map(Number);\n";
+  fs.writeFileSync(path.join(dir, 'test.js'), upstreamTest);
+  assert.equal(patchSharpPackageJsonImport(dir), true);
+  const patchedTest = fs.readFileSync(path.join(dir, 'test.js'), 'utf8');
+  assert.match(patchedTest, /require\\(sharpPackagePath\\)/);
+  assert.equal(fs.readFileSync(path.join(dir, '.dark-phys-backups', 'test.js'), 'utf8'), upstreamTest);
+  assert.equal(patchSharpPackageJsonImport(dir), false, 'Sharp test patch is idempotent');
+
   const manifest = {
     name: 'fixture-agent',
     dependencies: { axios: '^1.7.0', sharp: '^0.34.5', 'form-data': '^4.0.4', sqlite3: '^5.1.6', express: '^4.18.2' },
