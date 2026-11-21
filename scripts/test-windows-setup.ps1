@@ -21,7 +21,7 @@ if (-not $OpenMontage.Contains("2e003e65fa99a0f329478a2c1cdcf26bc481933a")) { th
 if (-not $OpenMontage.Contains("requirements.txt")) { throw "Optional OpenMontage installer must install Python requirements." }
 if (-not $OpenMontage.Contains("22.23.4") -or -not $OpenMontage.Contains("NodeCompatible")) { throw "OpenMontage installer must enforce the pinned Remotion Composer Node runtime." }
 if (-not $OpenMontage.Contains("npm ci")) { throw "OpenMontage installer must use the lockfile for reproducible composer dependencies." }
-if (-not $Setup.Contains("18.17.0") -or -not $Setup.Contains("npm ci")) { throw "Main installer must enforce Node 18.17+ and use npm ci after security lockfile regeneration." }
+if (-not $Setup.Contains("20.9.0") -or -not $Setup.Contains("npm ci")) { throw "Main installer must enforce Node 20.9+ and use npm ci after security lockfile regeneration." }
 if (-not $Setup.Contains("patch-upstream-dependencies.js")) { throw "Main installer must apply the reviewed upstream dependency security patch before npm ci." }
 $DependencyPatch = Get-Content (Join-Path $Root "scripts/patch-upstream-dependencies.js") -Raw
 foreach ($Package in @("axios", "sharp", "form-data", "ws", "body-parser", "1.21.1", "0.35.5", "4.0.6", "8.23.0", "1.20.9")) {
