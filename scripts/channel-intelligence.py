@@ -28,6 +28,19 @@ def main():
     dup.add_argument("--core-topic", default=""); dup.add_argument("--script-file")
     get = sub.add_parser("show-topic", help="Show a topic and its evidence")
     get.add_argument("id", type=int)
+    episode = sub.add_parser("record-episode", help="Persist an approved episode for originality and template history")
+    episode.add_argument("--channel", required=True); episode.add_argument("--video-id", required=True)
+    episode.add_argument("--title", required=True); episode.add_argument("--script-file", required=True)
+    episode.add_argument("--editorial-angle", default=""); episode.add_argument("--template-id", default="")
+    episode.add_argument("--layout-id", default=""); episode.add_argument("--structure-fingerprint", default="")
+    episode.add_argument("--scenes-json", default=""); episode.add_argument("--approved-at", default=None)
+    history = sub.add_parser("episode-history", help="Show prior episodes for a channel")
+    history.add_argument("--channel", required=True); history.add_argument("--limit", type=int, default=100)
+    upload = sub.add_parser("record-upload", help="Record a manually confirmed published upload")
+    upload.add_argument("--channel", required=True); upload.add_argument("--video-id", required=True)
+    upload.add_argument("--published-at", required=True)
+    uploads = sub.add_parser("upload-history", help="Show published upload history for a channel")
+    uploads.add_argument("--channel", required=True); uploads.add_argument("--limit", type=int, default=200)
     research = sub.add_parser("research", help="Collect public topic signals from enabled providers")
     research.add_argument("--query", required=True); research.add_argument("--region", default="US")
     research.add_argument("--language", default="en"); research.add_argument("--no-reddit", action="store_true")
@@ -58,6 +71,19 @@ def main():
         if matches: raise SystemExit(2)
     elif args.command == "show-topic":
         emit(intel.get_topic(args.id))
+    elif args.command == "record-episode":
+        script = Path(args.script_file).read_text(encoding="utf-8")
+        scenes = json.loads(Path(args.scenes_json).read_text(encoding="utf-8")) if args.scenes_json else []
+        intel.record_episode(args.channel, args.video_id, args.title, script, args.editorial_angle,
+                             args.template_id, args.layout_id, args.structure_fingerprint, scenes, args.approved_at)
+        emit({"recorded": True, "video_id": args.video_id, "channel_id": args.channel})
+    elif args.command == "episode-history":
+        emit(intel.episode_history(args.channel, args.limit))
+    elif args.command == "record-upload":
+        intel.record_upload(args.channel, args.video_id, args.published_at)
+        emit({"recorded": True, "video_id": args.video_id, "channel_id": args.channel})
+    elif args.command == "upload-history":
+        emit(intel.upload_history(args.channel, args.limit))
     elif args.command == "research":
         emit(collect_research(args.query,args.region,args.language,not args.no_reddit))
     elif args.command == "trends":
