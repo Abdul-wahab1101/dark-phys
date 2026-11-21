@@ -13,6 +13,8 @@ assert(s.uploadVelocity({now:'2026-11-21T12:00:00Z',history:[1,2,3].map(n=>({pub
 assert(s.audioReview({script:'the same repeated phrase is here. the same repeated phrase is here. the same repeated phrase is here.'}).flags.length);
 assert.equal(s.syntheticReview({realisticSyntheticMedia:true}).flags[0].code,'realistic_synthetic_disclosure_missing');
 assert.equal(s.syntheticReview({realisticSyntheticMedia:true,syntheticDisclosureDecision:'disclose'}).flags.length,0);
+assert.equal(s.syntheticReview({scenes:[{realisticSynthetic:true}]}).flags[0].code,'realistic_synthetic_disclosure_missing');
+assert.equal(s.syntheticReview({scenes:[{deceptiveRealScene:true}]}).flags[0].severity,'critical');
 const report=s.buildReport({channelId:'dark-phys-en',script:base,channelHistory:[{id:'old',script:base}],scenes:[{id:'one',assetId:'x'}],realisticSyntheticMedia:true});
 assert.equal(report.autoHold,true);assert.equal(report.stopBatch,true);assert.match(s.renderMarkdown(report),/Monetization & Originality Risk Report/);
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dp-risk-'));const saved=s.saveReport(report,dir);assert(fs.existsSync(saved.jsonPath)&&fs.existsSync(saved.markdownPath));
