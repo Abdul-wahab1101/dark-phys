@@ -1,7 +1,7 @@
+#!/usr/bin/env node
 'use strict';
 const {loadLocalEnv}=require('../agents/production/local-env');
 loadLocalEnv();
-#!/usr/bin/env node
 'use strict';
 const fs=require('node:fs');
 const path=require('node:path');

@@ -23,6 +23,7 @@ console.log('PASS local environment loading: process precedence, root/upstream f
 for (const cli of ['stock-footage.js','pixabay-pool.js','viral-trends.js']) {
   const source=fs.readFileSync(path.join(__dirname,cli),'utf8');
   assert(source.includes("require('../agents/production/local-env')")&&source.includes('loadLocalEnv();'),cli+' must load local project API keys before provider initialization');
+  if(cli==='viral-trends.js')assert(source.startsWith('#!/usr/bin/env node\\n'), 'viral-trends executable shebang must remain the first line');
 }
 const pythonCli=fs.readFileSync(path.join(__dirname,'channel-intelligence.py'),'utf8');
 assert(pythonCli.includes('def load_project_env():')&&pythonCli.includes('load_project_env()'),'Python research CLI must load root/upstream .env keys before importing research providers');
