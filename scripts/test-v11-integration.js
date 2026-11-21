@@ -7,6 +7,9 @@ const { buildV11Job } = require('../agents/production/v11-integration');
 const { buildTrackDuckFilter } = require('../agents/production/v11/src/app/pipeline');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dark-phys-v11-adapter-'));
 try {
+  const { resolveChannelId } = require('../agents/production/v11-integration');
+  assert.equal(resolveChannelId({plan:{channelId:'dark-phys-ur'}}),'dark-phys-ur');
+  assert.equal(resolveChannelId({}),'dark-phys-en');
   const duckedTrack = buildTrackDuckFilter({ ducking: true }, 0);
   assert.match(duckedTrack.filter, /\[mb0\]\[sc0\]sidechaincompress/);
   assert.equal(duckedTrack.label, '[md0]');

@@ -51,6 +51,14 @@ function planScenes(input = {}) {
   const id = crypto.createHash('sha256').update(title + '\n' + scenes.map(s => s.narration).join('\n')).digest('hex').slice(0, 16);
   return {
     schemaVersion: 2, projectId: id, title, createdAt: new Date().toISOString(),
+    channelId: cleanIntent(input.channelId) || process.env.DARK_PHYS_CHANNEL_ID || 'dark-phys-en',
+    editorialAngle: cleanIntent(input.editorialAngle),
+    templateId: cleanIntent(input.templateId) || 'documentary-v1',
+    layoutId: cleanIntent(input.layoutId),
+    structureFingerprint: cleanIntent(input.structureFingerprint),
+    realisticSyntheticMedia: input.realisticSyntheticMedia === true,
+    syntheticDisclosureDecision: cleanIntent(input.syntheticDisclosureDecision) || 'not_applicable',
+    deceptiveRealScene: input.deceptiveRealScene === true,
     format: { aspectRatio: '16:9', width: 1920, height: 1080, fps: 30 },
     visualContinuity: { colourGrade: input.colourGrade || 'consistent-documentary-neutral', avoidConsecutiveShotRepeats: true, maxShotDurationSeconds: 4 },
     scenes,

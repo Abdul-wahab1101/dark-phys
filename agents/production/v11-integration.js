@@ -103,6 +103,10 @@ function buildV11Job({ plan, manifest, narrationPath, musicPath, outputPath, pro
   return { job, assets, root: path.join(base, '.dark-phys-v11-state'), profile };
 }
 
+function resolveChannelId(options = {}) {
+  return String(options.channelId || options.plan?.channelId || process.env.DARK_PHYS_CHANNEL_ID || 'dark-phys-en');
+}
+
 async function runApprovedProduction(options) {
   const prepared = buildV11Job(options);
   const system = createProductionSystem({ root: prepared.root, logger: options.logger || null,
@@ -119,7 +123,7 @@ async function runApprovedProduction(options) {
   const result = await system.pipeline.run(prepared.job);
   if (['ready', 'review'].includes(result.status) && fs.existsSync(path.resolve(options.outputPath))) {
     const safety = require('./monetization-safety');
-    const channelId = String(options.channelId || options.plan.channelId || 'unassigned');
+    const channelId = resolveChannelId(options);
     const history = safety.readChannelStore(channelId, options.historyRoot);
     const reviewed = await safety.reviewRenderedOutput({
       outputPath: options.outputPath, channelId, videoId: options.plan.projectId || path.basename(options.outputPath),
@@ -138,4 +142,4 @@ async function runApprovedProduction(options) {
   }
   return { ...result, engine: 'v11', renderProfile: prepared.profile };
 }
-module.exports = { buildV11Job, runApprovedProduction };
+module.exports = { buildV11Job, runApprovedProduction, resolveChannelId };

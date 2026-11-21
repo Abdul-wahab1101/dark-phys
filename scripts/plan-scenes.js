@@ -18,7 +18,14 @@ async function main() {
     if (draft.status !== 'draft_requires_human_review') throw new Error('Selected script is blocked; resolve validation issues before review.');
     if (data.approval?.status !== 'approved' && draft.approvalStatus !== 'approved') throw new Error('Script is still awaiting human approval. Set data.approval.status to approved only after source, claim and language review.');
     if (!Array.isArray(draft.sentenceVisuals) || !draft.sentenceVisuals.length) throw new Error('Script Engine v2 draft has no sentenceVisuals.');
-    source = { title: data.topic || draft.titleOptions?.[0] || 'Untitled documentary',
+    source = { channelId: data.channelId || data.channel?.id || process.env.DARK_PHYS_CHANNEL_ID || 'dark-phys-en',
+      editorialAngle: data.editorialAngle || data.research?.editorialAngle || '',
+      templateId: data.templateId || 'documentary-v1', layoutId: data.layoutId || '',
+      structureFingerprint: data.structureFingerprint || '',
+      realisticSyntheticMedia: data.realisticSyntheticMedia === true,
+      syntheticDisclosureDecision: data.syntheticDisclosureDecision || 'not_applicable',
+      deceptiveRealScene: data.deceptiveRealScene === true,
+      title: data.topic || draft.titleOptions?.[0] || 'Untitled documentary',
       beats: draft.sentenceVisuals.map(v => ({ narration: v.sentence, visual: v.visualIntent,
         footageQuery: v.footageQuery, sourceType: v.sourceType, durationSeconds: v.durationSeconds,
         visualIntents: [v] })) };
