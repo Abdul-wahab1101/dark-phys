@@ -16,14 +16,18 @@ const rights=rightsLedger([{assetId:'clip-01',kind:'video',source:'Pixabay',sour
 assert.equal(checkRights(rights).passed,true);assert.equal(checkRights([{source:'unknown'}]).passed,false);
 const videoPath=path.join(temp,'final.mp4');fs.writeFileSync(videoPath,'mock final video bytes');
 const pkg={finalVideo:videoPath,finalVideoSha256:sha256(fs.readFileSync(videoPath)),durationSeconds:600,seo,rightsLedger:rights,compliance:complianceReview({title:seo.title})};
-const checks={guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true};
+const checks={guidelines:true,advertiserSuitability:true,originality:true,reusedContent:true,inauthenticContent:true,claims:true,thumbnail:true,policyFlagsReviewed:true,sceneOriginality:true,syntheticDisclosure:true};
 const approval=createApproval(pkg,'reviewer',checks);
 assert.equal(verifyApproval(pkg,approval).valid,true);
 assert.equal(verifyApproval({...pkg,finalVideo:'changed.mp4'},approval).valid,false);
 const changedChecks={...approval,checks:{...approval.checks,thumbnail:false}};
 assert.equal(verifyApproval(pkg,changedChecks).valid,false,'approval confirmation edits invalidate the approval hash');
 fs.writeFileSync(videoPath,'tampered video bytes');assert.equal(verifyApproval(pkg,approval).valid,false);
-assert.equal(approval.automatedUploadAllowed,false);assert.equal(approval.publishingPermission,false);
+assert.equal(approval.automatedUploadAllowed,false);
+const safety=require('../agents/production/monetization-safety');
+const safetyReport=safety.buildReport({script:prior,channelHistory:[{id:'old-1',script:prior}],scenes:[{id:'s1',assetId:'a'}],realisticSyntheticMedia:true});
+assert.equal(safetyReport.autoHold,true);assert.equal(safetyReport.stopBatch,true);
+assert.equal(safety.syntheticReview({realisticSyntheticMedia:true,syntheticDisclosureDecision:'disclose'}).flags.length,0);assert.equal(approval.publishingPermission,false);
 const validSvg='<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"/>';
 (async()=>{
  const data=await requestThumbnailConcepts('https://worker.example.test','secret','Memory and the Mind','Psychology Explained',async()=>({ok:true,json:async()=>({requiresHumanSelection:true,concepts:['cinematic','editorial','bold-contrast'].map(id=>({id,width:1280,height:720,svg:validSvg}))})}));
