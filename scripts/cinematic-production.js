@@ -23,7 +23,10 @@ async function render(file,voice,music,out){
   const {runApprovedProduction}=require('../agents/production/v11-integration');
   const result=await runApprovedProduction({plan:p,manifest,narrationPath:voice,musicPath:music,outputPath:out,projectDir:base});
   console.log('v11 production result:',result.status,'| resumed stages:',(result.resumed||[]).join(', ')||'none','|',result.renderProfile.reason);
-  if(result.status==='blocked')process.exitCode=2;
+  const {productionExitCode}=require('../agents/production/exit-status');
+  const exitCode=productionExitCode(result);
+  if(exitCode===42)console.error('BATCH HOLD: monetization safety review is required; queued sibling jobs will be held.');
+  if(exitCode!==0)process.exitCode=exitCode;
   return;
  }
 
