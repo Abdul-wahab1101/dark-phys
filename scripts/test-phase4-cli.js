@@ -25,7 +25,7 @@ try{
  fs.writeFileSync(file,JSON.stringify(pkg,null,2));
  result=run(['build','--file',file]);assert.equal(result.status,0,result.stderr);assert.equal(JSON.parse(fs.readFileSync(file,'utf8')).packagingTests.variants.length,3,'Phase 4 build must include three script-matched title/thumbnail combinations');
  result=run(['check','--file',file]);assert.equal(result.status,0,result.stderr);
- const answers=['APPROVE',...Array(8).fill('YES')].join('\n')+'\n';
+ const answers=['APPROVE',...Array(10).fill('YES')].join('\n')+'\n';
  result=run(['approve','--file',file,'--reviewer','phase4-cli-test'],answers);assert.equal(result.status,0,result.stderr+result.stdout);
  result=run(['verify','--file',file]);assert.equal(result.status,0,result.stderr+result.stdout);
  const approved=JSON.parse(fs.readFileSync(file,'utf8'));approved.seo.title+=' edited after approval';fs.writeFileSync(file,JSON.stringify(approved,null,2));
