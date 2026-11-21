@@ -84,6 +84,8 @@ class ChannelIntelligenceTests(unittest.TestCase):
         self.assertEqual(history[0]["editorial_angle"], "Why memory changes under stress")
         self.assertEqual(history[0]["scenes"][0]["assetId"], "clip-a")
         self.assertEqual(self.intel.episode_history("dark-phys-ur"), [])
+        self.assertTrue(self.intel.find_angle_duplicates("dark-phys-en", "Why memory changes under stress"))
+        self.assertEqual(self.intel.find_angle_duplicates("dark-phys-ur", "Why memory changes under stress"), [])
         self.intel.record_upload("dark-phys-en", "video-en-1", "2026-11-21T12:00:00+00:00")
         self.assertEqual(len(self.intel.upload_history("dark-phys-en")), 1)
         self.assertEqual(self.intel.upload_history("dark-phys-ur"), [])
