@@ -33,7 +33,8 @@ for(const file of files){
  for(const match of source.matchAll(pattern)){
   const target=resolveLocal(file,match[1]);
   const relative=path.relative(root,file);
-  if(!target&&!intentionalMissingFixtures.has(relative+'::'+match[1]))failures.push({file:relative,kind:'broken-local-import',specifier:match[1]});
+  const normalizedRelative=relative.split(path.sep).join('/');
+  if(!target&&!intentionalMissingFixtures.has(normalizedRelative+'::'+match[1]))failures.push({file:relative,kind:'broken-local-import',specifier:match[1]});
  }
 }
 if(failures.length){console.error(JSON.stringify({checkedFiles:files.length,failures},null,2));process.exit(1);}
