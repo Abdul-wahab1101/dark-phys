@@ -19,7 +19,7 @@ assert.equal(env.EMPTY,undefined);
 assert.equal(env.PROCESS_ONLY,'keep-me');
 assert.equal(result.loadedFiles.length,2);
 const {parseEnv}=require('../agents/local-secrets');
-const parsedSecrets=parseEnv('GEMINI_API_KEY=gemini-one\\nGEMINI_API_KEY_2=gemini-two\\nPIXABAY_API_KEY=pix-one\\nPIXABAY_API_KEY_2=pix-two\\nCLOUDFLARE_WORKER_URL=https://worker.example\\nCLOUDFLARE_WORKER_TOKEN=cf-token\\nNOT_ALLOWED=ignore');
+const parsedSecrets=parseEnv('GEMINI_API_KEY=gemini-one\nGEMINI_API_KEY_2=gemini-two\nPIXABAY_API_KEY=pix-one\nPIXABAY_API_KEY_2=pix-two\nCLOUDFLARE_WORKER_URL=https://worker.example\nCLOUDFLARE_WORKER_TOKEN=cf-token\nNOT_ALLOWED=ignore');
 assert.deepEqual(Object.keys(parsedSecrets).sort(),['CLOUDFLARE_WORKER_TOKEN','CLOUDFLARE_WORKER_URL','GEMINI_API_KEY','GEMINI_API_KEY_2','PIXABAY_API_KEY','PIXABAY_API_KEY_2'].sort());
 assert.equal(parsedSecrets.NOT_ALLOWED,undefined);
 console.log('PASS local environment loading: process precedence, root/upstream files, export syntax, quoted values and blank-key rejection');
