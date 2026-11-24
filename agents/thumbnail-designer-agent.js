@@ -2219,7 +2219,7 @@ class ThumbnailDesignerAgent {
       const error = new Error(`Cloudflare image API failed (HTTP ${response.status}): ${detail || payload.error || 'No image returned'}`);
       error.status = response.status; throw error;
     }
-    const imageBuffer = Buffer.from(String(encodedImage).replace(/^data:image\\/[^;]+;base64,/i, ''), 'base64');
+    const imageBuffer = Buffer.from(String(encodedImage).replace(/^data:image\/[^;]+;base64,/i, ''), 'base64');
     if (imageBuffer.length < 10000) {
       throw new Error('Cloudflare returned an unexpectedly small image.');
     }
