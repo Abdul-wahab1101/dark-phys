@@ -17,6 +17,28 @@ A Pixabay Video API adapter now supports safe-search metadata discovery and expl
 
 This is a sourcing foundation, not yet an automatic scene editor. Each clip still requires human selection and license/restrictions review.
 
+## Free-provider configuration (Gemini + Pixabay)
+
+The native Dark Phys script writer and Gemini narration adapter can use Gemini Developer API keys without an OpenAI/ElevenLabs key. Add the following names to the repository-root `.env` (or the pinned YouTube engine's `.env`); never commit real values:
+
+```dotenv
+GEMINI_API_KEY=
+GEMINI_API_KEY_2=
+GEMINI_SCRIPT_MODEL=gemini-2.5-flash
+GEMINI_TTS_MODEL=gemini-3.8-flash-tts
+PIXABAY_API_KEY=
+PIXABAY_API_KEY_2=
+# Optional Cloudflare: direct account endpoint OR a custom Worker URL
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_WORKER_URL=
+CLOUDFLARE_WORKER_TOKEN=
+```
+
+Root and upstream local environment files are loaded by the native agents; process environment values take precedence. Gemini requests rotate across the two configured keys on quota/transient failures. Pixabay search/download uses its two-key pool. Cloudflare is optional: direct mode needs Account ID + API token; Worker mode needs Worker URL + token. If Cloudflare is missing or fails, thumbnail creation uses the existing local Sharp/footage renderer. A Worker URL must accept a JSON POST containing `prompt`, `steps`, and `model`, and return JSON with an image as `result.image`, `image`, `base64`, or `data.image`.
+
+Free-tier quotas, model access, network availability, FFmpeg, and manual media-rights approvals still apply; credentials alone cannot guarantee every external API call or final publication.
+
 ## Phase 3 — Cinematic Production Engine
 Dual Pixabay key support, scene-by-scene real video-footage shortlists, explicit asset/rights approval, FFmpeg moving-footage assembly, voice-led music ducking, and OpenMontage return-queue ingestion are documented in [PHASE-3-CINEMATIC-PRODUCTION.md](PHASE-3-CINEMATIC-PRODUCTION.md). Set PIXABAY_API_KEY and PIXABAY_API_KEY_2 locally. The renderer does not silently choose footage or publish; motion-map/graphics stages still depend on the separate OpenMontage runtime and human review.
 
