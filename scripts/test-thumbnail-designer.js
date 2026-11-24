@@ -60,6 +60,16 @@ async function placeholderBackground(file, i) {
     for(const [key,value] of [['CLOUDFLARE_API_TOKEN',oldCfToken],['CLOUDFLARE_ACCOUNT_ID',oldCfAccount],['CLOUDFLARE_WORKER_URL',oldWorkerUrl],['CLOUDFLARE_WORKER_TOKEN',oldWorkerToken]]) { if(value===undefined) delete process.env[key]; else process.env[key]=value; }
   }
 
+  // Downloaded Pixabay MP4s are valid local thumbnail fallback sources.
+  const pixabayDir=path.resolve(process.cwd(),'uploads','stock-footage');
+  fs.mkdirSync(pixabayDir,{recursive:true});
+  const pixabayFixture=path.join(pixabayDir,'dark-phys-ci-pixabay-fixture.mp4');
+  fs.writeFileSync(pixabayFixture,Buffer.alloc(12000,1));
+  try {
+    const sources=await agent.getFootageSources();
+    ok(sources.some(source=>source.path===pixabayFixture),'thumbnail source discovery includes downloaded Pixabay stock footage');
+  } finally { try { fs.unlinkSync(pixabayFixture); } catch (_) {} }
+
   // 0) Regression checks for candidate rejection, title curiosity gap and mobile overlays.
   const originalVisionReview = agent.inspectThumbnailVisual;
   agent.inspectThumbnailVisual = async () => ({ available: false, passed: false, score: 0, concerns: [] });
