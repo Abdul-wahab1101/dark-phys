@@ -30,13 +30,17 @@ function validateDraft(draft,knownSourceIds,knownClaimIds=new Set()){
 }
 class ViralScriptGenerator{
  constructor({apiKey=process.env.DARK_PHYS_LLM_API_KEY,baseUrl=process.env.DARK_PHYS_LLM_BASE_URL||'https://api.openai.com/v1',model=process.env.DARK_PHYS_LLM_MODEL,accountId=process.env.CLOUDFLARE_ACCOUNT_ID,cloudflareToken=process.env.CLOUDFLARE_API_TOKEN,cloudflareModel=process.env.CLOUDFLARE_TEXT_MODEL||'@cf/openai/gpt-oss-20b',fetchImpl=globalThis.fetch,timeoutMs=120000}={}) {
+  const geminiKeys=[process.env.GEMINI_API_KEY,process.env.GEMINI_API_KEY_2,process.env.GOOGLE_API_KEY].filter((v,i,a)=>v&&a.indexOf(v)===i);
+  this.geminiKeys=geminiKeys; this.geminiCursor=0;
   this.apiKey=apiKey||(cloudflareToken&&accountId?cloudflareToken:''); this.baseUrl=String(baseUrl).replace(/\/$/,'');
-  this.model=model||cloudflareModel; this.accountId=accountId; this.cloudflareToken=cloudflareToken;
-  this.provider=apiKey?'openai-compatible':cloudflareToken&&accountId?'cloudflare-workers-ai':'openai-compatible';
+  this.model=model||(geminiKeys.length?'gemini-2.5-flash':cloudflareModel); this.accountId=accountId; this.cloudflareToken=cloudflareToken;
+  const requested=String(process.env.DARK_PHYS_LLM_PROVIDER||'').toLowerCase();
+  this.provider=requested==='gemini'&&geminiKeys.length?'gemini':(apiKey?'openai-compatible':(geminiKeys.length?'gemini':(cloudflareToken&&accountId?'cloudflare-workers-ai':'openai-compatible')));
   this.fetch=fetchImpl; this.timeoutMs=timeoutMs;
  }
  async request(prompt,language) {
-  if(!this.apiKey) throw new Error('Configure DARK_PHYS_LLM_API_KEY or CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN locally');
+  if(this.provider==='gemini'&&!this.geminiKeys.length) throw new Error('Configure GEMINI_API_KEY (optionally GEMINI_API_KEY_2) locally');
+  if(this.provider!=='gemini'&&!this.apiKey) throw new Error('Configure GEMINI_API_KEY, DARK_PHYS_LLM_API_KEY, or Cloudflare Account ID + API token locally');
   if(!this.model) throw new Error('DARK_PHYS_LLM_MODEL or CLOUDFLARE_TEXT_MODEL is not configured');
   if(typeof this.fetch!=='function') throw new Error('Node.js fetch is unavailable; use Node 18+');
   const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),this.timeoutMs);
@@ -46,6 +50,21 @@ class ViralScriptGenerator{
   ];
   try {
    let response, body;
+   if(this.provider==='gemini') {
+    const errors=[];
+    for(let i=0;i<this.geminiKeys.length;i++) {
+     const index=(this.geminiCursor+i)%this.geminiKeys.length, key=this.geminiKeys[index];
+     try {
+      response=await this.fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(this.model)+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:'You are a rigorous documentary scriptwriter. Output valid JSON only. Never invent facts, studies, quotes, statistics, sources or cases. Use only supplied claims and sources. Generated work is an unverified draft for human review.'}]},contents:[{role:'user',parts:[{text:prompt+'\n\nReturn the exact requested JSON schema. Do not include a claim unless supported by the supplied source register. Language must be '+(language==='ur-Latn'?'natural Pakistani Roman Urdu':'clear international English')+'.'}]}],generationConfig:{temperature:0.55,responseMimeType:'application/json',maxOutputTokens:8192}}),signal:controller.signal});
+      body=await response.json().catch(()=>({}));
+      if(!response.ok) { const status=response.status; errors.push('HTTP '+status+': '+(body.error?.message||'Gemini request failed')); if(status===429||status>=500||status===403) continue; throw new Error(errors.join(' | ')); }
+      const content=(body.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('\n').trim();
+      if(!content) { errors.push('Gemini returned no text'); continue; }
+      this.geminiCursor=(index+1)%this.geminiKeys.length; return parseJson(content);
+     } catch(error) { if(controller.signal.aborted) throw error; errors.push(error.message); }
+    }
+    throw new Error('All configured Gemini keys failed: '+errors.join(' | '));
+   }
    if(this.provider==='cloudflare-workers-ai') {
     const endpoint='https://api.cloudflare.com/client/v4/accounts/'+encodeURIComponent(this.accountId)+'/ai/run/'+this.model.split('/').map(encodeURIComponent).join('/');
     response=await this.fetch(endpoint,{method:'POST',headers:{authorization:'Bearer '+this.cloudflareToken,'content-type':'application/json'},body:JSON.stringify({messages,max_tokens:4096,temperature:0.55,response_format:{type:'json_object'}}),signal:controller.signal});
