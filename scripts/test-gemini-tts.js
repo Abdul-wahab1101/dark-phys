@@ -27,7 +27,7 @@ const { NarrationEngine } = require('../agents/production/narration');
     assert.equal(result.provider, 'Gemini');
     assert.equal(result.voiceId, 'Charon');
     assert.equal(result.reviewRequired, true);
-    assert.match(request.url, /gemini-3\.8-flash-tts:generateContent/);
+    assert.match(request.url, /gemini-3\.8-flash-lite-tts:generateContent/);
     assert.equal(request.options.headers['x-goog-api-key'], 'test-key');
     const saved = await fs.readFile(output);
     assert.equal(saved.toString('ascii', 0, 4), 'RIFF');
