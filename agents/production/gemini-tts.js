@@ -91,8 +91,8 @@ class GeminiTTS {
         this.keyCursor = (keyIndex + 1) % keys.length;
         break;
       } catch (error) {
-        if (controller.signal.aborted) failures.push('Gemini TTS request timed out.');
-        else failures.push(error.message);
+        if (controller.signal.aborted) throw new Error('Gemini TTS request timed out after ' + (options.timeoutMs || this.timeoutMs) + ' ms.');
+        failures.push(error.message);
         if (attempt === keys.length - 1) throw new Error('All configured Gemini TTS keys failed: ' + failures.join(' | '));
       } finally { clearTimeout(timer); }
     }
