@@ -25,7 +25,7 @@ The native Dark Phys script writer and Gemini narration adapter can use Gemini D
 GEMINI_API_KEY=
 GEMINI_API_KEY_2=
 GEMINI_SCRIPT_MODEL=gemini-2.5-flash
-GEMINI_TTS_MODEL=gemini-3.8-flash-tts
+GEMINI_TTS_MODEL=gemini-3.8-flash-lite-tts
 PIXABAY_API_KEY=
 PIXABAY_API_KEY_2=
 # Optional Cloudflare: direct account endpoint OR a custom Worker URL
