@@ -33,6 +33,16 @@ const { NarrationEngine } = require('../agents/production/narration');
     assert.equal(saved.toString('ascii', 0, 4), 'RIFF');
     assert.equal(saved.length, pcm.length + 44);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'quota exceeded' } }) }), apiKey: 'x' }).synthesize('text', output), /HTTP 429: quota exceeded/);
+    let keyAttempts = [];
+    const rotating = new GeminiTTS({ apiKey: 'first-key', fetch: async (url, options) => {
+      keyAttempts.push(options.headers['x-goog-api-key']);
+      if (keyAttempts.length === 1) return { ok: false, status: 429, json: async () => ({ error: { message: 'quota exceeded' } }) };
+      return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/pcm;rate=24000', data: pcm.toString('base64') } }] } }] }) };
+    } });
+    rotating.apiKeys = ['first-key', 'second-key']; rotating.keyCursor = 0;
+    const rotated = await rotating.synthesize('rotated narration', path.join(dir, 'rotated.wav'));
+    assert.equal(rotated.provider, 'Gemini');
+    assert.deepEqual(keyAttempts, ['first-key', 'second-key'], 'Gemini TTS must rotate to the second free key after quota exhaustion');
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true, json: async () => ({ candidates: [] }) }), apiKey: 'x' }).synthesize('text', output), /did not contain audio/);
     await assert.rejects(() => new GeminiTTS({ fetch: async () => ({ ok: true }), apiKey: '' }).synthesize('text', output), /GEMINI_API_KEY/);
     await assert.rejects(() => new GeminiTTS({
