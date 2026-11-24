@@ -5,6 +5,7 @@ const fsSync = require('fs');
 const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 const { Logger } = require('../utils/logger');
+require('./local-secrets').loadLocalSecrets();
 
 /* =====================================================================
  * Helpers (module scope, pure functions)
@@ -2194,44 +2195,31 @@ class ThumbnailDesignerAgent {
   /* ------------------------- Cloudflare Workers AI (FLUX.1 Schnell) ------------------------- */
 
   async generateCloudflareImage(prompt, suffix) {
-    const token = process.env.CLOUDFLARE_API_TOKEN;
+    const token = process.env.CLOUDFLARE_WORKER_TOKEN || process.env.CLOUDFLARE_API_TOKEN;
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-
-    if (!token || !accountId) {
-      throw new Error('Cloudflare credentials are not loaded in this process.');
+    const workerUrl = String(process.env.CLOUDFLARE_WORKER_URL || '').trim();
+    if (!token || (!accountId && !workerUrl)) {
+      throw new Error('Cloudflare optional credentials incomplete; configure Account ID + API token or Worker URL + token.');
     }
 
-    const endpoint = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+    const endpoint = workerUrl || `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
     const steps = Math.max(1, Math.min(8, Number(process.env.CF_FLUX_STEPS) || 4));
-
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ prompt: String(prompt).slice(0, 2000), steps }),
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: String(prompt).slice(0, 2000), steps, model: '@cf/black-forest-labs/flux-1-schnell' }),
       signal: AbortSignal.timeout(120000)
     });
-
     let payload;
-    try {
-      payload = await response.json();
-    } catch (_) {
-      throw new Error(`Cloudflare image API returned a non-JSON response (HTTP ${response.status})`);
+    try { payload = await response.json(); }
+    catch (_) { throw new Error(`Cloudflare image API returned a non-JSON response (HTTP ${response.status})`); }
+    const encodedImage = payload?.result?.image || payload?.image || payload?.base64 || payload?.data?.image;
+    if (!response.ok || payload.success === false || !encodedImage) {
+      const detail = (payload.errors || []).map(e => e.message || e.code).filter(Boolean).join('; ');
+      const error = new Error(`Cloudflare image API failed (HTTP ${response.status}): ${detail || payload.error || 'No image returned'}`);
+      error.status = response.status; throw error;
     }
-
-    if (!response.ok || !payload.success || !payload.result?.image) {
-      const detail = (payload.errors || [])
-        .map(e => e.message || e.code)
-        .filter(Boolean)
-        .join('; ');
-      const error = new Error(`Cloudflare image API failed (HTTP ${response.status}): ${detail || 'No image returned'}`);
-      error.status = response.status;
-      throw error;
-    }
-
-    const imageBuffer = Buffer.from(payload.result.image, 'base64');
+    const imageBuffer = Buffer.from(String(encodedImage).replace(/^data:image\\/[^;]+;base64,/i, ''), 'base64');
     if (imageBuffer.length < 10000) {
       throw new Error('Cloudflare returned an unexpectedly small image.');
     }
@@ -2356,7 +2344,7 @@ class ThumbnailDesignerAgent {
   }
 
   async generateABVariants(concept, script = {}) {
-    if (process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID) {
+    if ((process.env.CLOUDFLARE_API_TOKEN || process.env.CLOUDFLARE_WORKER_TOKEN) && (process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CLOUDFLARE_WORKER_URL)) {
       try {
         this.logger.info('Generating 3 AI thumbnail backgrounds with Cloudflare FLUX.1 Schnell');
         return await this.generateCloudflareVariants(concept, script);
