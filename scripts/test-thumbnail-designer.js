@@ -40,6 +40,35 @@ async function placeholderBackground(file, i) {
   await agent.initialize();
   ok(DESIGN_FAMILIES.length >= 12, `design families available: ${DESIGN_FAMILIES.length}`);
   console.log('Fonts:', JSON.stringify(agent.getFontReport(), null, 1));
+  // Token-only Cloudflare configuration must use local Sharp/footage fallback without throwing.
+  const oldCfToken=process.env.CLOUDFLARE_API_TOKEN, oldCfAccount=process.env.CLOUDFLARE_ACCOUNT_ID;
+  const oldWorkerUrl=process.env.CLOUDFLARE_WORKER_URL, oldWorkerToken=process.env.CLOUDFLARE_WORKER_TOKEN;
+  const oldLocal=agent.generateABVariantsLocal, oldCf=agent.generateCloudflareVariants;
+  try {
+    process.env.CLOUDFLARE_API_TOKEN='token-only-test'; delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    delete process.env.CLOUDFLARE_WORKER_URL; delete process.env.CLOUDFLARE_WORKER_TOKEN;
+    agent.generateABVariantsLocal=async()=>[{provider:'local-sharp'}];
+    let cfCalled=false; agent.generateCloudflareVariants=async()=>{cfCalled=true;return[];};
+    const localOnly=await agent.generateABVariants({title:'Fallback test'},{});
+    ok(!cfCalled&&localOnly[0].provider==='local-footage-fallback','token-only Cloudflare safely selects local thumbnail fallback');
+    process.env.CLOUDFLARE_WORKER_URL='https://worker.example/run';process.env.CLOUDFLARE_WORKER_TOKEN='worker-token';
+    agent.generateCloudflareVariants=async()=>{cfCalled=true;return[{provider:'cloudflare-worker'}];};
+    const workerMode=await agent.generateABVariants({title:'Worker test'},{});
+    ok(cfCalled&&workerMode[0].provider==='cloudflare-worker','Worker URL + token activates optional Cloudflare route without Account ID');
+  } finally {
+    agent.generateABVariantsLocal=oldLocal;agent.generateCloudflareVariants=oldCf;
+    for(const [key,value] of [['CLOUDFLARE_API_TOKEN',oldCfToken],['CLOUDFLARE_ACCOUNT_ID',oldCfAccount],['CLOUDFLARE_WORKER_URL',oldWorkerUrl],['CLOUDFLARE_WORKER_TOKEN',oldWorkerToken]]) { if(value===undefined) delete process.env[key]; else process.env[key]=value; }
+  }
+
+  // Downloaded Pixabay MP4s are valid local thumbnail fallback sources.
+  const pixabayDir=path.resolve(process.cwd(),'uploads','stock-footage');
+  fs.mkdirSync(pixabayDir,{recursive:true});
+  const pixabayFixture=path.join(pixabayDir,'dark-phys-ci-pixabay-fixture.mp4');
+  fs.writeFileSync(pixabayFixture,Buffer.alloc(12000,1));
+  try {
+    const sources=await agent.getFootageSources();
+    ok(sources.some(source=>source.path===pixabayFixture),'thumbnail source discovery includes downloaded Pixabay stock footage');
+  } finally { try { fs.unlinkSync(pixabayFixture); } catch (_) {} }
 
   // 0) Regression checks for candidate rejection, title curiosity gap and mobile overlays.
   const originalVisionReview = agent.inspectThumbnailVisual;

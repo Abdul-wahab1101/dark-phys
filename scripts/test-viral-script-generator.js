@@ -20,5 +20,15 @@ const fetchImpl=async(url,opts)=>{calls.push({url,opts});return {ok:true,json:as
  assert.equal(cloudflareDraft.titleOptions.length,3);
  assert.ok(cloudflareCalls[0].url.includes('/accounts/account-test/ai/run/'));
  assert.equal(cloudflareCalls[0].opts.headers.authorization,'Bearer cf-test-token');
+ const old1=process.env.GEMINI_API_KEY,old2=process.env.GEMINI_API_KEY_2,oldProvider=process.env.DARK_PHYS_LLM_PROVIDER;
+ process.env.GEMINI_API_KEY='gemini-first';process.env.GEMINI_API_KEY_2='gemini-second';delete process.env.DARK_PHYS_LLM_PROVIDER;
+ const geminiCalls=[];
+ const gemini=new ViralScriptGenerator({apiKey:'',fetchImpl:async(url,opts)=>{geminiCalls.push(url);if(geminiCalls.length===1)return{ok:false,status:429,json:async()=>({error:{message:'quota'}})};return{ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify(draft)}]}}]})};}});
+ const geminiDraft=await gemini.request('Return JSON','en');
+ assert.equal(geminiDraft.titleOptions.length,3);assert.equal(gemini.provider,'gemini');assert.equal(geminiCalls.length,2);
+ assert(geminiCalls[0].includes('key=gemini-first'));assert(geminiCalls[1].includes('key=gemini-second'));
+ if(old1===undefined)delete process.env.GEMINI_API_KEY;else process.env.GEMINI_API_KEY=old1;
+ if(old2===undefined)delete process.env.GEMINI_API_KEY_2;else process.env.GEMINI_API_KEY_2=old2;
+ if(oldProvider===undefined)delete process.env.DARK_PHYS_LLM_PROVIDER;else process.env.DARK_PHYS_LLM_PROVIDER=oldProvider;
  console.log('PASS script generator: provider-key guard, bilingual separate drafts, schema/source validation and no-auto-publish gate');
 })().catch(e=>{console.error(e);process.exitCode=1;});

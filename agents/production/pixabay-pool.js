@@ -1,4 +1,5 @@
 'use strict';
+require('../local-secrets').loadLocalSecrets();
 const { PixabayFootageClient } = require('../stock-footage/pixabay');
 /** Two-key pool. Keys remain in process environment; never returned or logged. */
 class PixabayPool {
