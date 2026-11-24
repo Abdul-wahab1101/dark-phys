@@ -33,8 +33,9 @@ class ViralScriptGenerator{
   const geminiKeys=[process.env.GEMINI_API_KEY,process.env.GEMINI_API_KEY_2,process.env.GOOGLE_API_KEY].filter((v,i,a)=>v&&a.indexOf(v)===i);
   this.geminiKeys=geminiKeys; this.geminiCursor=0;
   this.apiKey=apiKey||(cloudflareToken&&accountId?cloudflareToken:''); this.baseUrl=String(baseUrl).replace(/\/$/,'');
-  this.model=model||(geminiKeys.length?(process.env.GEMINI_SCRIPT_MODEL||'gemini-2.5-flash'):cloudflareModel); this.accountId=accountId; this.cloudflareToken=cloudflareToken;
   const requested=String(process.env.DARK_PHYS_LLM_PROVIDER||'').toLowerCase();
+  const geminiSelected=requested==='gemini'||(!apiKey&&geminiKeys.length>0);
+  this.model=geminiSelected?(process.env.GEMINI_SCRIPT_MODEL||'gemini-2.5-flash'):(model||cloudflareModel); this.accountId=accountId; this.cloudflareToken=cloudflareToken;
   this.provider=requested==='gemini'&&geminiKeys.length?'gemini':(apiKey?'openai-compatible':(geminiKeys.length?'gemini':(cloudflareToken&&accountId?'cloudflare-workers-ai':'openai-compatible')));
   this.fetch=fetchImpl; this.timeoutMs=timeoutMs;
  }
