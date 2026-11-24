@@ -56,8 +56,6 @@ class GeminiTTS {
     if (typeof this.fetch !== 'function') throw new Error('Node.js 18+ fetch is required for Gemini TTS.');
     const voice = options.voice || this.voice;
     const direction = options.direction || 'story';
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), options.timeoutMs || this.timeoutMs);
     let response, payload;
     const failures = [];
     const keys = this.apiKeys.length ? this.apiKeys : (this.apiKey ? [this.apiKey] : []);
