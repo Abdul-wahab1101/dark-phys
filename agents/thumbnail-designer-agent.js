@@ -999,7 +999,8 @@ class ThumbnailDesignerAgent {
     const files = [];
     const seen = new Set();
 
-    for (const dir of [this.visualsPath, this.brollPath]) {
+    const pixabayDir = path.resolve(process.cwd(), 'uploads', 'stock-footage');
+    for (const dir of [...new Set([this.visualsPath, this.brollPath, pixabayDir])]) {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
 
