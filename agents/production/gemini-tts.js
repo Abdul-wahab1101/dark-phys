@@ -3,7 +3,7 @@ require('../local-secrets').loadLocalSecrets();
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
-const MODEL = 'gemini-3.8-flash-tts';
+const MODEL = 'gemini-3.8-flash-lite-tts';
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/';
 const VOICES = Object.freeze({
   documentary: 'Charon',
